@@ -214,6 +214,21 @@ public final class AppModel {
         }
     }
 
+    /// Applique une modification ponctuelle, décidée hors de la fenêtre.
+    ///
+    /// Le menu de la barre des menus écrit sans passer par le brouillon visible. Deux
+    /// sources d'écriture simultanées pour la même zone produiraient un état qu'on ne
+    /// saurait plus nommer : tant que le brouillon porte des modifications non appliquées,
+    /// la voie rapide est refusée, et le menu le dit plutôt que d'écrire les deux à la fois.
+    public func applyDirect(_ mutate: (inout DeviceSettings) -> Void) async {
+        guard let snapshot, !connection.isBusy, !hasPendingChanges else { return }
+        var target = snapshot.settings
+        mutate(&target)
+        guard target != snapshot.settings else { return }
+        draft = target
+        await apply()
+    }
+
     public func reload() async {
         guard snapshot != nil else { return }
         connection = .reading

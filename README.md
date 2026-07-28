@@ -179,6 +179,33 @@ Vérifier le rendu dans l'autre langue :
 Bibimbap.app/Contents/MacOS/Bibimbap -AppleLanguages '(en)'
 ```
 
+## Barre des menus
+
+Un accessoire de barre des menus donne les gestes courants sans ouvrir la fenêtre :
+palier DPI, fréquence de rapport, profil actif, batterie, relecture du périphérique.
+
+L'icône est un carré fixe de 18 × 18, dessinée par `MenuBarIcon` plutôt que composée d'un
+symbole et d'un pourcentage : le niveau de batterie est le remplissage du corps de la
+souris, donc l'emprise ne bouge pas d'un point quand la charge descend. L'image est un
+gabarit, teintée par le système, et suit donc le thème et la sélection sans code de couleur.
+
+Les réglages du menu écrivent directement dans la souris, avec la même règle qu'ailleurs :
+écriture, relecture, adoption de ce qui a été relu. Tant que la fenêtre porte des
+modifications non appliquées, la voie rapide est refusée et le menu le dit — deux sources
+d'écriture pour la même zone produiraient un état qu'on ne saurait plus nommer.
+
+L'icône du Dock peut être masquée depuis **Réglages**. L'application devient alors un
+accessoire, sans fenêtre imposée au lancement. Les deux points d'entrée ne peuvent pas
+disparaître ensemble : masquer le Dock force la présence de l'icône de barre des menus.
+
+Regarder l'icône dans tous ses états, sans lancer l'application :
+
+```bash
+swift run bibimbap-render .render
+```
+
+Le fichier `barre-des-menus-icone-*.png` montre chaque état à sa taille réelle et agrandi.
+
 ## Principes tenus par le code
 
 - **Rien n'est écrit sans être relu.** Une écriture dont la relecture diverge est traitée

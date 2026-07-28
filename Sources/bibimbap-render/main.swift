@@ -44,6 +44,57 @@ func render(
     return true
 }
 
+/// Planche de contrôle de l'icône de barre des menus.
+///
+/// L'icône est un carré de 18 points : c'est à cette taille qu'elle doit rester lisible,
+/// et à cette taille qu'on ne voit rien sur un écran de développement. La planche montre
+/// donc chaque état deux fois, à sa taille réelle et agrandi.
+struct MenuBarIconSheet: View {
+    struct Variant: Identifiable {
+        var label: String
+        var percent: Int?
+        var charging = false
+        var connected = true
+        var id: String { label }
+    }
+
+    let variants: [Variant] = [
+        .init(label: "100 %", percent: 100),
+        .init(label: "72 %", percent: 72),
+        .init(label: "38 %", percent: 38),
+        .init(label: "9 %", percent: 9),
+        .init(label: "en charge", percent: 60, charging: true),
+        .init(label: "filaire", percent: nil),
+        .init(label: "absente", percent: nil, connected: false),
+    ]
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 28) {
+            ForEach(variants) { variant in
+                VStack(spacing: 14) {
+                    icon(variant, side: MenuBarIcon.side * 6)
+                    icon(variant, side: MenuBarIcon.side)
+                    Text(variant.label).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(32)
+    }
+
+    private func icon(_ variant: Variant, side: CGFloat) -> some View {
+        Image(nsImage: MenuBarIcon.image(
+            batteryPercent: variant.percent,
+            isCharging: variant.charging,
+            isConnected: variant.connected
+        ))
+        .resizable()
+        .renderingMode(.template)
+        .interpolation(.high)
+        .frame(width: side, height: side)
+        .foregroundStyle(.primary)
+    }
+}
+
 @MainActor
 func main() async {
     let directory = URL(fileURLWithPath: CommandLine.arguments.count > 1
@@ -98,6 +149,13 @@ func main() async {
             print("  modifications-en-attente")
         }
         model.revert()
+
+        if render(MenuBarIconSheet(),
+                  named: "barre-des-menus-icone",
+                  size: CGSize(width: 1180, height: 240),
+                  scheme: scheme, into: directory) {
+            print("  barre-des-menus-icone")
+        }
     }
 
     await model.disconnect()

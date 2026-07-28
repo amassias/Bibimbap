@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 
 struct SettingsSection: View {
     @Bindable var model: AppModel
+    @Bindable var preferences = MenuBarPreferences.shared
 
     @State private var isConfirmingReset = false
     @State private var diagnostic: String?
@@ -20,6 +21,7 @@ struct SettingsSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             aboutCard
+            menuBarCard
             if model.snapshot != nil {
                 backupCard
                 pairingCard
@@ -100,6 +102,35 @@ struct SettingsSection: View {
             SettingsRow(label: String(localized: "Transport"), showsDivider: false) {
                 Text(model.isSimulated ? String(localized: "Simulé") : String(localized: "IOKit / IOHIDManager"))
                     .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var menuBarCard: some View {
+        SettingsGroup(
+            title: String(localized: "Barre des menus"),
+            subtitle: String(localized: "Palier DPI, fréquence et profil restent accessibles sans ouvrir la fenêtre.")
+        ) {
+            SettingsRow(
+                label: String(localized: "Afficher l'icône dans la barre des menus"),
+                help: preferences.isDockIconHidden
+                    ? String(localized: "Requise tant que l'icône du Dock est masquée : sans elle, l'application n'aurait plus de point d'entrée.")
+                    : nil
+            ) {
+                Toggle("", isOn: $preferences.isMenuBarIconVisible)
+                    .labelsHidden()
+                    .disabled(preferences.isDockIconHidden)
+                    .accessibilityLabel(String(localized: "Afficher l'icône dans la barre des menus"))
+            }
+
+            SettingsRow(
+                label: String(localized: "Masquer l'icône du Dock"),
+                help: String(localized: "L'application devient un accessoire : elle disparaît du Dock et du sélecteur d'applications, et se rouvre depuis la barre des menus."),
+                showsDivider: false
+            ) {
+                Toggle("", isOn: $preferences.isDockIconHidden)
+                    .labelsHidden()
+                    .accessibilityLabel(String(localized: "Masquer l'icône du Dock"))
             }
         }
     }
