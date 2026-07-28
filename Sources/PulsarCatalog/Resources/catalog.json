@@ -1,0 +1,5035 @@
+{
+  "families": [
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.05",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        10,
+        12,
+        13,
+        14,
+        15,
+        16,
+        41,
+        42,
+        43,
+        44,
+        85,
+        95,
+        96
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.03",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        17,
+        18,
+        116
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.04",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        19,
+        20
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.04",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        21,
+        22
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.04",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        23,
+        24,
+        117,
+        118,
+        119
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.03",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        25,
+        26
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.03",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        28,
+        30,
+        31,
+        32,
+        33,
+        35
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.04",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        29,
+        76
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.05",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        34,
+        71
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.03",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        7,
+        8,
+        37,
+        40
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "TenZ"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.03",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        38
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "DarkTheme"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.04",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        11,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "VSPO"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.04",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        39
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "DarkTheme"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 304,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 246,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 0,
+              "green": 0,
+              "red": 255
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 1200
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 255
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 255,
+              "red": 255
+            },
+            "value": 5000
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.03",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        36
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 304,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 246,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 0,
+              "green": 0,
+              "red": 255
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 1200
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 255
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 255,
+              "red": 255
+            },
+            "value": 5000
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.03",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        67
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": null,
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        68,
+        69,
+        100
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "3950"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "ZywOo"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v3.04",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        27,
+        70,
+        79,
+        80,
+        81,
+        83,
+        84,
+        86,
+        109
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": null,
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        72,
+        73,
+        77,
+        78,
+        82,
+        87,
+        88,
+        89,
+        90,
+        102,
+        103,
+        105,
+        106
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": null,
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        74,
+        75,
+        104
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 42000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v5.09",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        101
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "3955"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": true,
+      "theme": "Feinmann"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 42000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": null,
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        107,
+        110
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "3955"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "TenZ"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 42000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": null,
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        122,
+        123
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "3955"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "TenZ"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 42000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": null,
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        108,
+        113,
+        115,
+        126
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "3955"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 10,
+          "index": 6,
+          "position": {
+            "x": 158,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 42000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": null,
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        111
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "3955"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": null,
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        92,
+        94
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "3950"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "DarkTheme"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": null,
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        91,
+        127
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "3950"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "FS"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": "v4.01",
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        93
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "3950"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "DarkTheme"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": null,
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        97,
+        98
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "pulsar x1"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 32000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": null,
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        99
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "3950"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "DarkTheme"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 256,
+          "defaultType": 2,
+          "index": 5,
+          "position": {
+            "x": 315,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 42000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": null,
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "NRF52833",
+      "mids": [
+        112,
+        114,
+        120,
+        124,
+        125
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "3955"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "DarkTheme"
+    },
+    {
+      "buttons": [
+        {
+          "defaultParameter": 256,
+          "defaultType": 1,
+          "index": 0,
+          "position": {
+            "x": 110,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 512,
+          "defaultType": 1,
+          "index": 1,
+          "position": {
+            "x": 110,
+            "y": 470
+          }
+        },
+        {
+          "defaultParameter": 1024,
+          "defaultType": 1,
+          "index": 2,
+          "position": {
+            "x": 0,
+            "y": 240
+          }
+        },
+        {
+          "defaultParameter": 2048,
+          "defaultType": 1,
+          "index": 3,
+          "position": {
+            "x": 256,
+            "y": 0
+          }
+        },
+        {
+          "defaultParameter": 4096,
+          "defaultType": 1,
+          "index": 4,
+          "position": {
+            "x": 203,
+            "y": 0
+          }
+        }
+      ],
+      "cid": 87,
+      "debounce": {
+        "default": 2,
+        "maximum": 15,
+        "warnAbove": 8
+      },
+      "dongleFirmware": {
+        "dongle1": "CX52650N",
+        "dongle2": "CX52650N",
+        "dongle4": "CH32V305"
+      },
+      "dpi": {
+        "defaultStage": 1,
+        "maximum": 42000,
+        "middle": 3200,
+        "stages": [
+          {
+            "color": {
+              "blue": 242,
+              "green": 248,
+              "red": 52
+            },
+            "value": 400
+          },
+          {
+            "color": {
+              "blue": 255,
+              "green": 0,
+              "red": 0
+            },
+            "value": 800
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 0
+            },
+            "value": 1600
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 255,
+              "red": 255
+            },
+            "value": 3200
+          },
+          {
+            "color": {
+              "blue": 0,
+              "green": 163,
+              "red": 255
+            },
+            "value": 6400
+          },
+          {
+            "color": {
+              "blue": 234,
+              "green": 10,
+              "red": 242
+            },
+            "value": 12800
+          }
+        ]
+      },
+      "firmware": {
+        "deviceVersion": null,
+        "dongleVersion": null
+      },
+      "maximumReportRate": 1000,
+      "microcontroller": "54",
+      "mids": [
+        121
+      ],
+      "power": {
+        "defaultLongDistance": false,
+        "defaultPowerSaveBattery": 0,
+        "defaultSleepMinutes": 6,
+        "supportsLongDistance": true
+      },
+      "sensor": {
+        "defaultLiftOff": 1,
+        "defaultPerformance": 6,
+        "defaultSensorMode": 0,
+        "supportsAngleSnap": true,
+        "supportsMotionSync": true,
+        "supportsPerformanceMode": true,
+        "supportsRippleControl": true,
+        "type": "3955"
+      },
+      "supportsAngleTune": true,
+      "supportsFanMode": false,
+      "theme": "General"
+    }
+  ],
+  "mouseProductIDs": {
+    "wired": [
+      13332,
+      13333,
+      13574,
+      13575,
+      13576,
+      13577,
+      13584,
+      13586,
+      13587,
+      13588,
+      13589,
+      13590,
+      13591,
+      13592,
+      13593,
+      13604,
+      13605,
+      13606,
+      13607,
+      13608,
+      13609,
+      13825,
+      13827,
+      29953,
+      29954,
+      29955,
+      29956,
+      29957,
+      29958,
+      29959,
+      29960,
+      29961,
+      29968,
+      30209,
+      30210,
+      30211,
+      30212,
+      38146,
+      38147,
+      38401
+    ],
+    "wireless": [
+      21510,
+      21511,
+      21761,
+      21762,
+      21764,
+      22017,
+      62743
+    ]
+  },
+  "schemaVersion": 1,
+  "sensors": {
+    "3104": {
+      "hasLookupTable": true,
+      "ranges": [
+        {
+          "exponentCode": 0,
+          "maximum": 4000,
+          "minimum": 200,
+          "step": 100
+        },
+        {
+          "exponentCode": 1,
+          "maximum": 8000,
+          "minimum": 4200,
+          "step": 200
+        }
+      ]
+    },
+    "3212": {
+      "hasLookupTable": true,
+      "ranges": [
+        {
+          "exponentCode": 0,
+          "maximum": 2400,
+          "minimum": 200,
+          "step": 100
+        },
+        {
+          "exponentCode": 1,
+          "maximum": 4800,
+          "minimum": 2600,
+          "step": 200
+        }
+      ]
+    },
+    "3311": {
+      "hasLookupTable": true,
+      "ranges": [
+        {
+          "exponentCode": 0,
+          "maximum": 10000,
+          "minimum": 50,
+          "step": 50
+        },
+        {
+          "exponentCode": 2,
+          "maximum": 12000,
+          "minimum": 10100,
+          "step": 100
+        },
+        {
+          "exponentCode": 1,
+          "maximum": 20000,
+          "minimum": 12100,
+          "step": 100
+        },
+        {
+          "exponentCode": 3,
+          "maximum": 24000,
+          "minimum": 20200,
+          "step": 200
+        }
+      ]
+    },
+    "3325": {
+      "hasLookupTable": true,
+      "ranges": [
+        {
+          "exponentCode": 0,
+          "maximum": 5000,
+          "minimum": 200,
+          "step": 100
+        },
+        {
+          "exponentCode": 1,
+          "maximum": 10000,
+          "minimum": 5200,
+          "step": 200
+        }
+      ]
+    },
+    "3335": {
+      "hasLookupTable": true,
+      "ranges": [
+        {
+          "exponentCode": 0,
+          "maximum": 16000,
+          "minimum": 100,
+          "step": 100
+        },
+        {
+          "exponentCode": 1,
+          "maximum": 32000,
+          "minimum": 16200,
+          "step": 200
+        }
+      ]
+    },
+    "3370": {
+      "hasLookupTable": false,
+      "ranges": [
+        {
+          "exponentCode": 0,
+          "maximum": 10000,
+          "minimum": 50,
+          "step": 50
+        },
+        {
+          "exponentCode": 2,
+          "maximum": 19000,
+          "minimum": 10100,
+          "step": 100
+        },
+        {
+          "exponentCode": 1,
+          "maximum": 20000,
+          "minimum": 19100,
+          "step": 100
+        },
+        {
+          "exponentCode": 3,
+          "maximum": 38000,
+          "minimum": 20200,
+          "step": 200
+        }
+      ]
+    },
+    "3395": {
+      "hasLookupTable": false,
+      "ranges": [
+        {
+          "exponentCode": 0,
+          "maximum": 26000,
+          "minimum": 50,
+          "step": 50
+        },
+        {
+          "exponentCode": 1,
+          "maximum": 52000,
+          "minimum": 26100,
+          "step": 100
+        }
+      ]
+    },
+    "3950": {
+      "hasLookupTable": false,
+      "ranges": [
+        {
+          "exponentCode": 0,
+          "maximum": 30000,
+          "minimum": 50,
+          "step": 50
+        },
+        {
+          "exponentCode": 1,
+          "maximum": 60000,
+          "minimum": 30100,
+          "step": 100
+        }
+      ]
+    },
+    "3955": {
+      "hasLookupTable": false,
+      "ranges": [
+        {
+          "exponentCode": 0,
+          "maximum": 42000,
+          "minimum": 50,
+          "step": 1
+        },
+        {
+          "exponentCode": 1,
+          "maximum": 84000,
+          "minimum": 42002,
+          "step": 2
+        }
+      ]
+    },
+    "4090": {
+      "hasLookupTable": true,
+      "ranges": [
+        {
+          "exponentCode": 0,
+          "maximum": 5000,
+          "minimum": 200,
+          "step": 100
+        },
+        {
+          "exponentCode": 1,
+          "maximum": 10000,
+          "minimum": 5200,
+          "step": 200
+        }
+      ]
+    },
+    "8920": {
+      "hasLookupTable": true,
+      "ranges": [
+        {
+          "exponentCode": 0,
+          "maximum": 5000,
+          "minimum": 100,
+          "step": 100
+        },
+        {
+          "exponentCode": 1,
+          "maximum": 10000,
+          "minimum": 5200,
+          "step": 200
+        }
+      ]
+    },
+    "8960": {
+      "hasLookupTable": true,
+      "ranges": [
+        {
+          "exponentCode": 0,
+          "maximum": 16000,
+          "minimum": 100,
+          "step": 100
+        },
+        {
+          "exponentCode": 1,
+          "maximum": 32000,
+          "minimum": 16200,
+          "step": 200
+        }
+      ]
+    },
+    "pulsar x1": {
+      "hasLookupTable": false,
+      "ranges": [
+        {
+          "exponentCode": 0,
+          "maximum": 10000,
+          "minimum": 10,
+          "step": 10
+        },
+        {
+          "exponentCode": 2,
+          "maximum": 30000,
+          "minimum": 10050,
+          "step": 50
+        },
+        {
+          "exponentCode": 3,
+          "maximum": 32000,
+          "minimum": 30100,
+          "step": 100
+        }
+      ]
+    }
+  },
+  "sourceURL": "https://bbb.pulsar.gg/cMouse/cfg.json",
+  "sourceVersion": "1.3.11",
+  "vendorIDs": [
+    14096,
+    13652
+  ]
+}
