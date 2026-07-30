@@ -11,41 +11,93 @@ struct AppShell: View {
     @Bindable var model: AppModel
     var forcePendingBar = false
     var showsContent = true
+    @State private var sidebarWidth = Theme.Shell.sidebarWidth
+    @State private var sidebarDragStart: CGFloat?
 
     var body: some View {
-        HSplitView {
-            AppSidebar(model: model)
-                .frame(
-                    minWidth: Theme.Shell.sidebarMinimumWidth,
-                    idealWidth: Theme.Shell.sidebarWidth,
-                    maxWidth: Theme.Shell.sidebarMaximumWidth
-                )
+        ZStack(alignment: .leading) {
+            HStack(spacing: 0) {
+                AppSidebar(model: model)
+                    .frame(width: sidebarWidth)
 
-            VStack(spacing: 0) {
-                AppTitleBar(model: model)
                 Divider()
 
-                if model.section != .settings, model.snapshot != nil {
-                    DeviceStatusHeader(model: model)
-                        .padding(.horizontal, Theme.Space.medium)
-                        .padding(.vertical, Theme.Space.small)
-                }
-
-                if showsContent {
-                    AppDetail(model: model)
-                } else {
-                    Color.clear
-                }
-
-                if model.section != .settings, model.snapshot != nil {
-                    Divider()
-                    PendingChangesBar(model: model)
-                        .frame(minHeight: Theme.Shell.footerHeight)
-                }
+                detailColumn
+                    .frame(minWidth: 540, maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(minWidth: 540)
+
+            sidebarResizeHandle
+                .offset(x: sidebarWidth - 4)
         }
         .background(PremiumPalette.canvas)
+    }
+
+    private var detailColumn: some View {
+        VStack(spacing: 0) {
+            AppTitleBar(model: model)
+            Divider()
+
+            if model.section != .settings, model.snapshot != nil {
+                DeviceStatusHeader(model: model)
+                    .padding(.horizontal, Theme.Space.medium)
+                    .padding(.vertical, Theme.Space.small)
+            }
+
+            if showsContent {
+                AppDetail(model: model)
+            } else {
+                Color.clear
+            }
+
+            if model.section != .settings, model.snapshot != nil {
+                Divider()
+                PendingChangesBar(model: model)
+                    .frame(minHeight: Theme.Shell.footerHeight)
+            }
+        }
+    }
+
+    private var sidebarResizeHandle: some View {
+        Color.clear
+            .frame(width: 9)
+            .contentShape(Rectangle())
+            .onHover { isHovering in
+                (isHovering ? NSCursor.resizeLeftRight : NSCursor.arrow).set()
+            }
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        if sidebarDragStart == nil {
+                            sidebarDragStart = sidebarWidth
+                        }
+                        sidebarWidth = clampedSidebarWidth(
+                            (sidebarDragStart ?? sidebarWidth) + value.translation.width
+                        )
+                    }
+                    .onEnded { _ in
+                        sidebarDragStart = nil
+                    }
+            )
+            .accessibilityElement()
+            .accessibilityLabel(L10n.string("Resize sidebar"))
+            .accessibilityValue("\(Int(sidebarWidth))")
+            .accessibilityAdjustableAction { direction in
+                switch direction {
+                case .increment:
+                    sidebarWidth = clampedSidebarWidth(sidebarWidth + 20)
+                case .decrement:
+                    sidebarWidth = clampedSidebarWidth(sidebarWidth - 20)
+                @unknown default:
+                    break
+                }
+            }
+    }
+
+    private func clampedSidebarWidth(_ width: CGFloat) -> CGFloat {
+        min(
+            max(width, Theme.Shell.sidebarMinimumWidth),
+            Theme.Shell.sidebarMaximumWidth
+        )
     }
 }
 

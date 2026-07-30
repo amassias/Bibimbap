@@ -7229,6 +7229,13 @@
           "fr": { "stringUnit": { "state": "translated", "value": "Éclairage du récepteur" } }
         }
       },
+      "Resize sidebar": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "Resize sidebar" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "Redimensionner la barre latérale" } }
+        }
+      },
       "Sensor sleep": {
         "extractionState": "manual",
         "localizations": {
