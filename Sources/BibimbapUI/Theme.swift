@@ -21,7 +21,7 @@ public enum Theme {
 
     public enum Shell {
         public static let titleBarHeight: CGFloat = 52
-        public static let sidebarWidth: CGFloat = 272
+        public static let sidebarWidth: CGFloat = 235
         public static let sidebarMinimumWidth: CGFloat = 210
         public static let sidebarMaximumWidth: CGFloat = 420
         public static let deviceHeaderHeight: CGFloat = 142
