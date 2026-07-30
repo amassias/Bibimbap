@@ -1,3 +1,4 @@
+import BibimbapLocalization
 import Foundation
 import PulsarCatalog
 import PulsarProtocol
@@ -79,9 +80,9 @@ public struct DeviceSettings: Equatable, Sendable, Codable {
 
             public var label: String {
                 switch self {
-                case .off: String(localized: "Éteint")
-                case .steady: String(localized: "Fixe")
-                case .breathing: String(localized: "Respiration")
+                case .off: L10n.string( "Éteint")
+                case .steady: L10n.string( "Fixe")
+                case .breathing: L10n.string( "Respiration")
                 }
             }
         }
@@ -139,8 +140,8 @@ public struct HIDConnectionSummary: Equatable, Sendable {
         isWired = connectionType.isWired
         maximumReportRate = connectionType.maximumReportRate
         label = connectionType.isWired
-            ? String(localized: "USB")
-            : String(localized: "2,4 GHz")
+            ? L10n.string( "USB")
+            : L10n.string( "2,4 GHz")
     }
 }
 

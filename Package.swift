@@ -8,14 +8,24 @@ let package = Package(
         .library(name: "BibimbapCore", targets: ["BibimbapFeatures", "BibimbapUI"]),
     ],
     targets: [
-        .target(name: "PulsarHID"),
+        .target(name: "BibimbapLocalization"),
+        .target(name: "PulsarHID", dependencies: ["BibimbapLocalization"]),
         .target(name: "PulsarCatalog", resources: [.process("Resources")]),
-        .target(name: "PulsarProtocol", dependencies: ["PulsarHID", "PulsarCatalog"]),
+        .target(
+            name: "PulsarProtocol",
+            dependencies: ["BibimbapLocalization", "PulsarHID", "PulsarCatalog"]
+        ),
         .target(name: "PulsarSimulator", dependencies: ["PulsarHID", "PulsarProtocol", "PulsarCatalog"]),
-        .target(name: "BibimbapFeatures", dependencies: ["PulsarHID", "PulsarProtocol", "PulsarCatalog", "PulsarSimulator"]),
+        .target(
+            name: "BibimbapFeatures",
+            dependencies: [
+                "BibimbapLocalization", "PulsarHID", "PulsarProtocol",
+                "PulsarCatalog", "PulsarSimulator",
+            ]
+        ),
         .target(
             name: "BibimbapUI",
-            dependencies: ["BibimbapFeatures"],
+            dependencies: ["BibimbapLocalization", "BibimbapFeatures"],
             resources: [.process("Resources")]
         ),
 

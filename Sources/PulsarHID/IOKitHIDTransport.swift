@@ -184,6 +184,18 @@ final class IOKitHIDBackend: @unchecked Sendable {
             guard let device = device(matching: identifier) else {
                 return .failure(.deviceNotFound)
             }
+
+            // macOS protège l'écoute des rapports HID derrière l'autorisation
+            // « Surveillance de l'entrée ». IOHIDDeviceOpen est censé demander cet
+            // accès implicitement, mais cette demande ne se présente pas toujours pour
+            // une application sandboxée. La déclencher explicitement évite alors un
+            // kIOReturnNotPermitted opaque malgré un dongle correctement énuméré.
+            let access = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
+            if access != kIOHIDAccessTypeGranted,
+               !IOHIDRequestAccess(kIOHIDRequestTypeListenEvent) {
+                return .failure(.openFailed(kIOReturnNotPermitted))
+            }
+
             let status = IOHIDDeviceOpen(device, IOOptionBits(kIOHIDOptionsTypeNone))
             guard status == kIOReturnSuccess else {
                 return .failure(.openFailed(status))

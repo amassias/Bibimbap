@@ -1,4 +1,5 @@
 {
+  "deviceNameSourceURL": "https://bbb.pulsar.gg/cMouse/devicename.json",
   "families": [
     {
       "buttons": [
@@ -4719,6 +4720,770 @@
       "theme": "General"
     }
   ],
+  "models": [
+    {
+      "cid": 87,
+      "imageName": "mouse-57-01",
+      "mid": 1,
+      "name": "X2 CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-02",
+      "mid": 2,
+      "name": "X2 CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-03",
+      "mid": 3,
+      "name": "X2 CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-04",
+      "mid": 4,
+      "name": "X2 CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-05",
+      "mid": 5,
+      "name": "X2 CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-06",
+      "mid": 6,
+      "name": "X2 CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-07",
+      "mid": 7,
+      "name": "TenZ Signature Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-08",
+      "mid": 8,
+      "name": "TenZ"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-09",
+      "mid": 9,
+      "name": "X2 CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-0A",
+      "mid": 10,
+      "name": "X2 CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-0B",
+      "mid": 11,
+      "name": "Pulsar X VSPO! Aizawa Ema"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-0C",
+      "mid": 12,
+      "name": "X2 CrazyLight T1 Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-0D",
+      "mid": 13,
+      "name": "X2 CrazyLight T1 Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-0E",
+      "mid": 14,
+      "name": "X2 CrazyLight PRX Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-0F",
+      "mid": 15,
+      "name": "X2 CrazyLight Boardzy Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-10",
+      "mid": 16,
+      "name": "X2 CrazyLight Randomfrankp Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-11",
+      "mid": 17,
+      "name": "Xlite CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-12",
+      "mid": 18,
+      "name": "Xlite CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-13",
+      "mid": 19,
+      "name": "X3 CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-14",
+      "mid": 20,
+      "name": "X3 CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-15",
+      "mid": 21,
+      "name": "X3 LHD CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-16",
+      "mid": 22,
+      "name": "X3 LHD CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-17",
+      "mid": 23,
+      "name": "X2H CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-18",
+      "mid": 24,
+      "name": "X2H CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-19",
+      "mid": 25,
+      "name": "X2N CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-1A",
+      "mid": 26,
+      "name": "X2N CrazyLight"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-1B",
+      "mid": 27,
+      "name": "X2 CrazyLight Medium"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-1C",
+      "mid": 28,
+      "name": "X2 Mini Pulsar By You XS-1"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-1D",
+      "mid": 29,
+      "name": "X2H CrazyLight Medium"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-1E",
+      "mid": 30,
+      "name": "X2H Medium Pulsar By You XS-1"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-1F",
+      "mid": 31,
+      "name": "X2A Medium Pulsar By You XS-1"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-20",
+      "mid": 32,
+      "name": "X2A Mini Pulsar By You XS-1"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-21",
+      "mid": 33,
+      "name": "Xlite Mini Pulsar By You XS-1"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-22",
+      "mid": 34,
+      "name": "Xlite CrazyLight Medium"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-23",
+      "mid": 35,
+      "name": "Xlite Large Pulsar By You XS-1"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-24",
+      "mid": 36,
+      "name": "Pulsar Lab. X2F"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-25",
+      "mid": 37,
+      "name": "TenZ Signature RED"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-26",
+      "mid": 38,
+      "name": "JV-X Pro Series"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-27",
+      "mid": 39,
+      "name": "Susanto-X Pro Series"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-28",
+      "mid": 40,
+      "name": "TenZ Signature Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-29",
+      "mid": 41,
+      "name": "X2 CrazyLight 5th Anniversary Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-2A",
+      "mid": 42,
+      "name": "X2 CrazyLight WildScape Desert Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-2B",
+      "mid": 43,
+      "name": "X2 CrazyLight Forest"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-2C",
+      "mid": 44,
+      "name": "X2 CrazyLight WildScape Ocean Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-2D",
+      "mid": 45,
+      "name": "Pulsar X VSPO! Asumi Sena"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-2E",
+      "mid": 46,
+      "name": "Pulsar X VSPO! Hanabusa Lisa"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-2F",
+      "mid": 47,
+      "name": "Pulsar X VSPO! Ichinose Uruha"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-30",
+      "mid": 48,
+      "name": "Pulsar X VSPO! Kaga Sumire"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-31",
+      "mid": 49,
+      "name": "Pulsar X VSPO! Kisaragi Ren"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-32",
+      "mid": 50,
+      "name": "Pulsar X VSPO! Kogara Toto"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-33",
+      "mid": 51,
+      "name": "Pulsar X VSPO! Komori Met"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-34",
+      "mid": 52,
+      "name": "Pulsar X VSPO! Kurumi Noah"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-35",
+      "mid": 53,
+      "name": "Pulsar X VSPO! Kaga Nazuna"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-36",
+      "mid": 54,
+      "name": "Pulsar X VSPO! Nekota Tsuna"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-37",
+      "mid": 55,
+      "name": "Pulsar X VSPO! Kaminari Qpi"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-38",
+      "mid": 56,
+      "name": "Pulsar X VSPO! Sendo Yuuhi"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-39",
+      "mid": 57,
+      "name": "Pulsar X VSPO! Shinomiya Runa"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-3A",
+      "mid": 58,
+      "name": "Pulsar X VSPO! Shiranami Ramune"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-3B",
+      "mid": 59,
+      "name": "Pulsar X VSPO! Tachibana Hinano"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-3C",
+      "mid": 60,
+      "name": "Pulsar X VSPO! Tosaki Mimi"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-3D",
+      "mid": 61,
+      "name": "Pulsar X VSPO! Tsumugi Kokage"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-3E",
+      "mid": 62,
+      "name": "Pulsar X VSPO! Yakumo Beni"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-3F",
+      "mid": 63,
+      "name": "Pulsar X VSPO! Yano Kuromu"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-40",
+      "mid": 64,
+      "name": "Pulsar X VSPO! Yumeno Akari"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-41",
+      "mid": 65,
+      "name": "Pulsar X VSPO! Amayui Moka"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-42",
+      "mid": 66,
+      "name": "Pulsar X VSPO! Choya Hanabi"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-43",
+      "mid": 67,
+      "name": "Pulsar Lab. X2F 5th Anniversary Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-44",
+      "mid": 68,
+      "name": "Zywoo The Chosen Mouse Gen.2"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-45",
+      "mid": 69,
+      "name": "Zywoo The Chosen Mouse Gen.2"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-46",
+      "mid": 70,
+      "name": "X2 CrazyLight Medium"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-47",
+      "mid": 71,
+      "name": "Xlite CrazyLight Medium"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-48",
+      "mid": 72,
+      "name": "X3 CrazyLight Medium"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-49",
+      "mid": 73,
+      "name": "X3 CrazyLight Medium"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-4A",
+      "mid": 74,
+      "name": "X3 LHD CrazyLight Medium"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-4B",
+      "mid": 75,
+      "name": "X3 LHD CrazyLight Medium"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-4C",
+      "mid": 76,
+      "name": "X2H CrazyLight Medium"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-4D",
+      "mid": 77,
+      "name": "X2N CrazyLight Medium"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-4E",
+      "mid": 78,
+      "name": "X2N CrazyLight Medium"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-4F",
+      "mid": 79,
+      "name": "X2 CrazyLight Medium. The Finals Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-50",
+      "mid": 80,
+      "name": "X2 CrazyLight Medium. THE GRAND MAJOR 2025 Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-51",
+      "mid": 81,
+      "name": "X2 CrazyLight Medium. Bruce Lee 85th Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-52",
+      "mid": 82,
+      "name": "X2 CrazyLight Bruce Lee 85th Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-53",
+      "mid": 83,
+      "name": "X2 CrazyLight Medium. PRX Pacific Gold Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-54",
+      "mid": 84,
+      "name": "X2 CrazyLight Medium. Pokemon Pikachu Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-55",
+      "mid": 85,
+      "name": "X2 CrazyLight Pokemon Pikachu Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-56",
+      "mid": 86,
+      "name": "X2 CrazyLight Pokemon Mew-Two FF Edtion"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-57",
+      "mid": 87,
+      "name": "X2 CrazyLight Medium. BlueArchive Hoshino Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-58",
+      "mid": 88,
+      "name": "X2 CrazyLight Medium. BlueArchive Shiroko Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-59",
+      "mid": 89,
+      "name": "X2 CrazyLight Medium. BlueArchive Nonomi Editon"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-5A",
+      "mid": 90,
+      "name": "X2 CrazyLight Medium. BlueArchive Hoshino FF Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-5B",
+      "mid": 91,
+      "name": "eS FS-1 Medium. Wireless Gaming mouse"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-5C",
+      "mid": 92,
+      "name": "BUZZ-X Pro Series - MOON GRAY"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-5D",
+      "mid": 93,
+      "name": "STA-X Pro Series - STEALTH BLACK"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-5E",
+      "mid": 94,
+      "name": "CARPE-X Pro Series - CARP ORANGE"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-5F",
+      "mid": 95,
+      "name": "X2 CrazyLight Pokemon Edition Mew-Two FF Edtion"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-60",
+      "mid": 96,
+      "name": "X2 CrazyLight PRX Pacific Gold Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-61",
+      "mid": 97,
+      "name": "X2H CrazyLight Mini BadSeedTech Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-62",
+      "mid": 98,
+      "name": "X2H CrazyLight Medium BadSeedTech Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-63",
+      "mid": 99,
+      "name": "Jinggg-X Pro Series"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-64",
+      "mid": 100,
+      "name": "Zywoo The Chosen Mouse Gen.2"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-65",
+      "mid": 101,
+      "name": "Feinmann F01 Noctua Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-66",
+      "mid": 102,
+      "name": "X3 CrazyLight Desert"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-67",
+      "mid": 103,
+      "name": "X3 CrazyLight Medium Desert"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-68",
+      "mid": 104,
+      "name": "X3 LHD CrazyLight Medium Desert"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-69",
+      "mid": 105,
+      "name": "X2N CrazyLight Ocean"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-6A",
+      "mid": 106,
+      "name": "X2N CrazyLight Medium Ocean"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-6B",
+      "mid": 107,
+      "name": "TenZ 2.0 Mini Misty Blue"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-6C",
+      "mid": 108,
+      "name": "CrazyLight LA-2 Jet Black"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-6D",
+      "mid": 109,
+      "name": "X2 CrazyLight Medium Forest"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-6E",
+      "mid": 110,
+      "name": "TenZ Signature Edition 2.0 Mini"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-6F",
+      "mid": 111,
+      "name": "X5"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-70",
+      "mid": 112,
+      "name": "Susanto-X 2.0 Large Black"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-71",
+      "mid": 113,
+      "name": "X2F CrazyLight Lab Edition"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-72",
+      "mid": 114,
+      "name": "Pro series JV-X 2.0"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-73",
+      "mid": 115,
+      "name": "CrazyLight LA-2 Uyuni White"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-74",
+      "mid": 116,
+      "name": "Xlite CrazyLight Rock"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-75",
+      "mid": 117,
+      "name": "X2H CrazyLight Volcano"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-76",
+      "mid": 118,
+      "name": "Xlite CrazyLight Medium Rock"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-77",
+      "mid": 119,
+      "name": "X2H CrazyLight Medium Volcano"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-78",
+      "mid": 120,
+      "name": "Susanto-X 2.0 Large Phantom Jungle"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-79",
+      "mid": 121,
+      "name": "X4"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-7A",
+      "mid": 122,
+      "name": "TenZ Signature Edition 2.0 Medium"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-7B",
+      "mid": 123,
+      "name": "TenZ 2.0 Medium Misty Blue"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-7C",
+      "mid": 124,
+      "name": "Susanto-X 2.0 Medium Phantom Jungle"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-7D",
+      "mid": 125,
+      "name": "Susanto-X 2.0 Medium Black"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-7E",
+      "mid": 126,
+      "name": "X2F CrazyLight Black"
+    },
+    {
+      "cid": 87,
+      "imageName": "mouse-57-7F",
+      "mid": 127,
+      "name": "FS-1 GT Silver"
+    }
+  ],
   "mouseProductIDs": {
     "wired": [
       13332,
@@ -4772,7 +5537,7 @@
       62743
     ]
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "sensors": {
     "3104": {
       "hasLookupTable": true,

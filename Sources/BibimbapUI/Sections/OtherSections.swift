@@ -1,88 +1,166 @@
 import BibimbapFeatures
-import PulsarCatalog
+import BibimbapLocalization
 import PulsarProtocol
 import SwiftUI
 
-// MARK: - Vue d'ensemble
+// MARK: - Overview B
 
 struct OverviewSection: View {
     @Bindable var model: AppModel
 
     var body: some View {
-        if let snapshot = model.snapshot, let capabilities = model.capabilities {
-            VStack(alignment: .leading, spacing: 22) {
-                SettingsGroup(title: String(localized: "Périphérique")) {
-                    row(String(localized: "Modèle"), snapshot.productName)
-                    row(String(localized: "Identifiant"), "CID \(snapshot.identity.cid) · MID \(snapshot.identity.mid)")
-                    row(String(localized: "Capteur"), snapshot.family.sensor.type)
-                    row(String(localized: "Connexion"),
-                        "\(snapshot.connection.label) — jusqu'à \(snapshot.connection.maximumReportRate) Hz")
-                    row(String(localized: "Firmware"), snapshot.firmwareVersion, showsDivider: snapshot.dongleVersion != nil)
-                    if let dongle = snapshot.dongleVersion {
-                        row(String(localized: "Firmware du récepteur"), dongle, showsDivider: false)
+        if let snapshot = model.snapshot {
+            VStack(alignment: .leading, spacing: Theme.Space.xlarge) {
+                PremiumSectionHeader(title: L10n.string("Overview"))
+
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: Theme.Space.xlarge) {
+                        mouseHero(snapshot)
+                            .frame(maxWidth: .infinity)
+                        currentSetup(snapshot)
+                            .frame(width: 330)
+                    }
+
+                    VStack(spacing: Theme.Space.xlarge) {
+                        mouseHero(snapshot)
+                        currentSetup(snapshot)
                     }
                 }
 
-                SettingsGroup(title: String(localized: "Réglages actuels")) {
-                    row(String(localized: "Polling"), "\(snapshot.settings.reportRateHertz) Hz")
-                    row(String(localized: "Palier actif"),
-                        dpiSummary(snapshot.settings))
-                    row(String(localized: "Distance de décrochage"), "\(snapshot.settings.liftOffMillimetres) mm")
-                    row(String(localized: "Temps de rebond"), "\(snapshot.settings.debounceMilliseconds) ms")
-                    row(String(localized: "Mise en veille"),
-                        snapshot.settings.sleepMinutes == 0
-                            ? String(localized: "Jamais")
-                            : String(localized: "\(snapshot.settings.sleepMinutes) min"),
-                        showsDivider: false)
-                }
+                HStack(spacing: Theme.Space.medium) {
+                    QuickAction(
+                        systemImage: "gauge.with.dots.needle.50percent",
+                        title: L10n.string("Tune performance"),
+                        detail: L10n.string("Adjust DPI, polling rate and sensor behavior")
+                    ) { model.section = .performance }
 
-                SettingsGroup(
-                    title: String(localized: "Capacités détectées"),
-                    subtitle: String(localized: "Déduites du catalogue embarqué et du sondage des commandes.")
-                ) {
-                    capabilityRow(String(localized: "Motion Sync"), capabilities.supportsMotionSync)
-                    capabilityRow(String(localized: "Ripple Control"), capabilities.supportsRippleControl)
-                    capabilityRow(String(localized: "Angle Snap"), capabilities.supportsAngleSnap)
-                    capabilityRow(String(localized: "Mode performance"), capabilities.supportsPerformanceMode)
-                    capabilityRow(String(localized: "Calibration de rotation"), capabilities.supportsRotation)
-                    capabilityRow(String(localized: "Profils matériels"), capabilities.supportsProfiles)
-                    capabilityRow(String(localized: "Mode longue portée"), capabilities.supportsLongDistance)
-                    capabilityRow(String(localized: "Ventilateur"), capabilities.supportsFanMode, showsDivider: false)
+                    QuickAction(
+                        systemImage: "computermouse",
+                        title: L10n.string("Customize buttons"),
+                        detail: L10n.string("Remap the controls available on this model")
+                    ) { model.section = .customize }
+
+                    QuickAction(
+                        systemImage: "macwindow.badge.plus",
+                        title: L10n.string("Create macro"),
+                        detail: L10n.string("Record and assign repeatable actions")
+                    ) { model.section = .macros }
                 }
             }
         }
     }
 
-    private func dpiSummary(_ settings: DeviceSettings) -> String {
-        guard settings.activeStage < settings.dpiStages.count else { return "—" }
-        let stage = settings.dpiStages[settings.activeStage]
-        return stage.isSymmetric
-            ? String(localized: "Palier \(stage.index + 1) — \(stage.x) DPI")
-            : String(localized: "Palier \(stage.index + 1) — \(stage.x) × \(stage.y) DPI")
-    }
+    private func mouseHero(_ snapshot: DeviceSnapshot) -> some View {
+        PremiumPanel {
+            HStack(spacing: Theme.Space.xlarge) {
+                ZStack {
+                    Circle()
+                        .stroke(PremiumPalette.hairline.opacity(0.68), style: StrokeStyle(lineWidth: 1, dash: [3, 7]))
+                        .frame(width: 286, height: 286)
 
-    private func row(_ label: String, _ value: String, showsDivider: Bool = true) -> some View {
-        SettingsRow(label: label, showsDivider: showsDivider) {
-            Text(value)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-                .textSelection(.enabled)
+                    DeviceArtwork(model: model, maximumWidth: 205, maximumHeight: 265)
+                        .frame(width: 220, height: 286)
+
+                    VStack {
+                        Spacer()
+                        PremiumStatusDot(label: L10n.string("Connected"))
+                            .padding(.bottom, Theme.Space.small)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: Theme.Space.xlarge) {
+                    PremiumMetric(
+                        systemImage: "battery.100percent",
+                        label: L10n.string("Battery"),
+                        value: snapshot.battery.map { "\($0.percentage)%" } ?? "—",
+                        tint: .green
+                    )
+                    PremiumMetric(
+                        systemImage: snapshot.connection.isWired ? "cable.connector" : "wifi",
+                        label: L10n.string("Connection"),
+                        value: snapshot.connection.label
+                    )
+                    PremiumMetric(
+                        systemImage: "dot.radiowaves.left.and.right",
+                        label: L10n.string("Signal"),
+                        value: signalLabel(snapshot.signalStrength)
+                    )
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 336)
         }
     }
 
-    private func capabilityRow(_ label: String, _ supported: Bool, showsDivider: Bool = true) -> some View {
-        SettingsRow(label: label, showsDivider: showsDivider) {
-            Label(
-                supported ? String(localized: "Pris en charge") : String(localized: "Non disponible"),
-                systemImage: supported ? "checkmark.circle.fill" : "minus.circle"
-            )
-            .font(.callout)
-            .foregroundStyle(supported ? Color.green : Color.secondary)
+    private func currentSetup(_ snapshot: DeviceSnapshot) -> some View {
+        PremiumPanel {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(L10n.string("Current setup"))
+                    .font(.headline)
+                    .padding(.bottom, Theme.Space.medium)
+
+                setupRow(
+                    icon: "scope",
+                    label: L10n.string("Active DPI"),
+                    value: activeDPI(snapshot.settings)
+                )
+                setupRow(
+                    icon: "waveform.path.ecg",
+                    label: L10n.string("Polling Rate"),
+                    value: reportRate(snapshot.settings.reportRateHertz)
+                )
+                setupRow(
+                    icon: "person.crop.circle",
+                    label: L10n.string("Profile"),
+                    value: snapshot.activeProfile.map { L10n.format("Profile %d", $0 + 1) } ?? "—"
+                )
+                setupRow(
+                    icon: "checkmark.seal",
+                    label: L10n.string("Firmware"),
+                    value: snapshot.firmwareVersion,
+                    showsDivider: false
+                )
+            }
+        }
+    }
+
+    private func setupRow(
+        icon: String,
+        label: String,
+        value: String,
+        showsDivider: Bool = true
+    ) -> some View {
+        PremiumRow(label: label, showsDivider: showsDivider) {
+            HStack(spacing: Theme.Space.small) {
+                Image(systemName: icon)
+                    .foregroundStyle(Color.accentColor)
+                Text(value)
+                    .font(.body.weight(.medium).monospacedDigit())
+                    .foregroundStyle(Color.accentColor)
+            }
+        }
+    }
+
+    private func activeDPI(_ settings: DeviceSettings) -> String {
+        guard settings.dpiStages.indices.contains(settings.activeStage) else { return "—" }
+        return settings.dpiStages[settings.activeStage].x.formatted(.number)
+    }
+
+    private func reportRate(_ hertz: Int) -> String {
+        hertz >= 1_000 ? "\(hertz / 1_000) kHz" : "\(hertz) Hz"
+    }
+
+    private func signalLabel(_ signal: Int?) -> String {
+        guard let signal else { return L10n.string("Not reported") }
+        return switch signal {
+        case 4...: L10n.string("Excellent")
+        case 3: L10n.string("Good")
+        case 2: L10n.string("Fair")
+        default: L10n.string("Weak")
         }
     }
 }
 
-// MARK: - Personnaliser
+// MARK: - Customize A
 
 struct CustomizeSection: View {
     @Bindable var model: AppModel
@@ -90,61 +168,95 @@ struct CustomizeSection: View {
 
     var body: some View {
         if model.snapshot != nil {
-            HStack(alignment: .top, spacing: Theme.Space.xlarge) {
-                MouseSchematic(
-                    buttons: model.draft.buttons,
-                    highlighted: $highlighted
+            VStack(alignment: .leading, spacing: Theme.Space.xlarge) {
+                PremiumSectionHeader(
+                    title: L10n.string("Customize"),
+                    subtitle: L10n.format(
+                        "%d configurable buttons detected for %@.",
+                        model.draft.buttons.count,
+                        model.deviceDisplayName
+                    )
                 )
-                .frame(width: 220)
 
-                SettingsGroup(
-                    title: String(localized: "Affectation des boutons"),
-                    subtitle: String(localized: "Survolez une ligne pour situer le bouton sur le schéma.")
-                ) {
-                    ForEach($model.draft.buttons) { $button in
-                        SettingsRow(
-                            label: String(localized: "Bouton \(button.index + 1)"),
-                            help: positionHint(button.index),
-                            showsDivider: button.index != model.draft.buttons.count - 1
-                        ) {
-                            HStack(spacing: Theme.Space.small) {
-                                Picker("", selection: Binding(
-                                    get: { button.function },
-                                    set: { newFunction in
-                                        button.function = newFunction
-                                        button.parameter = defaultParameter(
-                                            for: newFunction, buttonIndex: button.index
-                                        )
-                                    }
-                                )) {
-                                    ForEach(assignableFunctions, id: \.self) { function in
-                                        Text(label(for: function)).tag(function)
-                                    }
-                                }
-                                .frame(width: 186)
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: Theme.Space.xlarge) {
+                        buttonMap
+                            .frame(width: 455)
+                        assignmentsPanel
+                            .frame(maxWidth: .infinity)
+                    }
 
-                                if button.function == .dpiLock {
-                                    TextField("", value: $button.parameter, format: .number)
-                                        .textFieldStyle(.roundedBorder)
-                                        .monospacedDigit()
-                                        .multilineTextAlignment(.trailing)
-                                        .frame(width: 68)
-                                }
-                            }
-                        }
-                        .onHover { highlighted = $0 ? button.index : nil }
+                    VStack(spacing: Theme.Space.xlarge) {
+                        buttonMap
+                        assignmentsPanel
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
 
-    /// Paramètre cohérent pour une fonction fraîchement choisie.
-    ///
-    /// Une macro pointe l'emplacement du bouton en poids fort et son nombre de
-    /// répétitions en poids faible : laisser l'ancien paramètre ferait pointer un
-    /// emplacement arbitraire.
+    private var buttonMap: some View {
+        DeviceButtonMap(
+            model: model,
+            assignments: model.draft.buttons,
+            highlighted: $highlighted,
+            title: L10n.string("Button map")
+        )
+    }
+
+    private var assignmentsPanel: some View {
+        PremiumPanel {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    Text(L10n.string("Button assignments"))
+                        .font(.headline)
+                    Spacer()
+                    Button(L10n.string("Restore defaults")) {
+                        model.revert()
+                    }
+                    .buttonStyle(.link)
+                    .disabled(!model.hasPendingChanges)
+                }
+                .padding(.bottom, Theme.Space.medium)
+
+                ForEach($model.draft.buttons) { $button in
+                    PremiumRow(
+                        label: buttonRole(button.index),
+                        detail: L10n.format("Button %d", button.index + 1),
+                        showsDivider: button.index != model.draft.buttons.last?.index
+                    ) {
+                        Picker("", selection: Binding(
+                            get: { button.function },
+                            set: { newFunction in
+                                button.function = newFunction
+                                button.parameter = defaultParameter(
+                                    for: newFunction,
+                                    buttonIndex: button.index
+                                )
+                            }
+                        )) {
+                            ForEach(assignableFunctions, id: \.self) { function in
+                                Text(label(for: function)).tag(function)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 190)
+                    }
+                    .padding(.horizontal, Theme.Space.small)
+                    .background(
+                        RoundedRectangle(cornerRadius: Theme.Radius.control)
+                            .fill(
+                                highlighted == button.index
+                                    ? Color.accentColor.opacity(0.08)
+                                    : Color.clear
+                            )
+                    )
+                    .onHover { highlighted = $0 ? button.index : nil }
+                }
+            }
+        }
+    }
+
     private func defaultParameter(for function: PulsarKeyFunction, buttonIndex: Int) -> Int {
         switch function {
         case .macro: (buttonIndex << 8) | 1
@@ -161,116 +273,33 @@ struct CustomizeSection: View {
          .profileSwitch, .disabled]
     }
 
+    private func buttonRole(_ index: Int) -> String {
+        switch index {
+        case 0: L10n.string("Left Click")
+        case 1: L10n.string("Right Click")
+        case 2: L10n.string("Middle Click")
+        case 3: L10n.string("Back")
+        case 4: L10n.string("Forward")
+        case 5: L10n.string("DPI Cycle")
+        default: L10n.format("Button %d", index + 1)
+        }
+    }
+
     private func label(for function: PulsarKeyFunction) -> String {
         switch function {
-        case .disabled: String(localized: "Désactivé")
-        case .mouseButton: String(localized: "Bouton souris")
-        case .dpiSwitch: String(localized: "Changement de DPI")
-        case .horizontalScroll: String(localized: "Défilement horizontal")
-        case .rapidFire: String(localized: "Tir rapide")
-        case .keyboardShortcut: String(localized: "Raccourci clavier")
-        case .macro: String(localized: "Macro")
-        case .reportRateSwitch: String(localized: "Changement de polling")
-        case .lighting: String(localized: "Éclairage")
-        case .profileSwitch: String(localized: "Changement de profil")
-        case .dpiLock: String(localized: "Verrouillage DPI")
-        case .verticalScroll: String(localized: "Défilement vertical")
+        case .disabled: L10n.string("Disabled")
+        case .mouseButton: L10n.string("Mouse button")
+        case .dpiSwitch: L10n.string("DPI Cycle")
+        case .horizontalScroll: L10n.string("Horizontal scroll")
+        case .rapidFire: L10n.string("Rapid Fire")
+        case .keyboardShortcut: L10n.string("Keyboard Shortcut")
+        case .macro: L10n.string("Macro")
+        case .reportRateSwitch: L10n.string("Polling Rate Cycle")
+        case .lighting: L10n.string("Lighting")
+        case .profileSwitch: L10n.string("Profile Cycle")
+        case .dpiLock: L10n.string("DPI Lock")
+        case .verticalScroll: L10n.string("Vertical scroll")
         }
-    }
-
-    private func positionHint(_ index: Int) -> String? {
-        switch index {
-        case 0: String(localized: "Clic principal")
-        case 1: String(localized: "Clic secondaire")
-        case 2: String(localized: "Molette")
-        case 3, 4: String(localized: "Flanc gauche")
-        default: nil
-        }
-    }
-}
-
-/// Schéma de repérage des boutons.
-///
-/// Les coordonnées du catalogue positionnent des étiquettes sur le visuel du fabricant,
-/// pas des boutons sur un boîtier : les reprendre telles quelles empilait quatre repères
-/// dans le même coin. Le schéma place donc les boutons par rôle, ce qui est à la fois
-/// honnête — c'est une aide au repérage, pas une photo — et lisible.
-struct MouseSchematic: View {
-    let buttons: [DeviceSettings.ButtonAssignment]
-    @Binding var highlighted: Int?
-
-    /// Position relative de chaque bouton, par index.
-    private func anchor(for index: Int) -> CGPoint {
-        switch index {
-        case 0: CGPoint(x: 0.29, y: 0.14)
-        case 1: CGPoint(x: 0.71, y: 0.14)
-        case 2: CGPoint(x: 0.50, y: 0.20)
-        case 3: CGPoint(x: 0.10, y: 0.34)
-        case 4: CGPoint(x: 0.10, y: 0.45)
-        case 5: CGPoint(x: 0.50, y: 0.40)
-        default: CGPoint(x: 0.50, y: 0.62)
-        }
-    }
-
-    var body: some View {
-        SettingsGroup(title: String(localized: "Repérage")) {
-            GeometryReader { proxy in
-                let size = proxy.size
-                ZStack {
-                    MouseOutline()
-                        .fill(.background.tertiary)
-                    MouseOutline()
-                        .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-
-                    // Séparation des deux clics principaux et molette.
-                    Path { path in
-                        path.move(to: CGPoint(x: size.width / 2, y: size.height * 0.02))
-                        path.addLine(to: CGPoint(x: size.width / 2, y: size.height * 0.30))
-                    }
-                    .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(.tertiary)
-                        .frame(width: 8, height: 20)
-                        .position(x: size.width / 2, y: size.height * 0.14)
-
-                    ForEach(buttons) { button in
-                        let point = anchor(for: button.index)
-                        ButtonMarker(
-                            number: button.index + 1,
-                            isHighlighted: highlighted == button.index
-                        )
-                        .position(x: point.x * size.width, y: point.y * size.height)
-                    }
-                }
-            }
-            .frame(height: 250)
-            .padding(.vertical, Theme.Space.large)
-            .accessibilityHidden(true)
-        }
-    }
-}
-
-/// Silhouette neutre : un boîtier arrondi, sans reproduire le dessin du fabricant.
-struct MouseOutline: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let w = rect.width, h = rect.height
-        path.move(to: CGPoint(x: w * 0.5, y: 0))
-        path.addCurve(to: CGPoint(x: w * 0.96, y: h * 0.42),
-                      control1: CGPoint(x: w * 0.82, y: 0),
-                      control2: CGPoint(x: w * 0.96, y: h * 0.18))
-        path.addCurve(to: CGPoint(x: w * 0.5, y: h),
-                      control1: CGPoint(x: w * 0.96, y: h * 0.82),
-                      control2: CGPoint(x: w * 0.78, y: h))
-        path.addCurve(to: CGPoint(x: w * 0.04, y: h * 0.42),
-                      control1: CGPoint(x: w * 0.22, y: h),
-                      control2: CGPoint(x: w * 0.04, y: h * 0.82))
-        path.addCurve(to: CGPoint(x: w * 0.5, y: 0),
-                      control1: CGPoint(x: w * 0.04, y: h * 0.18),
-                      control2: CGPoint(x: w * 0.18, y: 0))
-        path.closeSubpath()
-        return path
     }
 }
 
@@ -282,99 +311,261 @@ struct ButtonMarker: View {
         Text("\(number)")
             .font(.caption2.weight(.bold))
             .foregroundStyle(isHighlighted ? .white : Color.accentColor)
-            .frame(width: 18, height: 18)
+            .frame(width: 22, height: 22)
             .background(
-                Circle().fill(isHighlighted
-                              ? AnyShapeStyle(Color.accentColor)
-                              : AnyShapeStyle(.background))
+                Circle().fill(
+                    isHighlighted
+                        ? AnyShapeStyle(Color.accentColor)
+                        : AnyShapeStyle(PremiumPalette.elevated)
+                )
             )
-            .overlay(Circle().strokeBorder(Color.accentColor, lineWidth: 1.5))
-            .scaleEffect(isHighlighted ? 1.18 : 1)
+            .overlay(Circle().strokeBorder(Color.accentColor, lineWidth: 1.25))
+            .scaleEffect(isHighlighted ? 1.12 : 1)
             .animates(isHighlighted)
     }
 }
 
-// MARK: - Alimentation et dongle
+// MARK: - Power A
 
 struct PowerSection: View {
     @Bindable var model: AppModel
 
     var body: some View {
         if let capabilities = model.capabilities, let snapshot = model.snapshot {
-            VStack(alignment: .leading, spacing: 22) {
-                SettingsGroup(title: String(localized: "Économie d'énergie")) {
-                    SettingsRow(
-                        label: String(localized: "Mise en veille"),
-                        help: String(localized: "Délai d'inactivité avant la mise en veille du capteur.")
-                    ) {
-                        HStack(spacing: 10) {
-                            Slider(
-                                value: Binding(
-                                    get: { Double(model.draft.sleepMinutes) },
-                                    set: { model.draft.sleepMinutes = Int($0.rounded()) }
-                                ),
-                                in: 0...30,
-                                step: 1
-                            )
-                            .frame(width: 180)
-                            Text(model.draft.sleepMinutes == 0
-                                 ? String(localized: "Jamais")
-                                 : String(localized: "\(model.draft.sleepMinutes) min"))
-                                .monospacedDigit()
-                                .frame(width: 62, alignment: .trailing)
+            VStack(alignment: .leading, spacing: Theme.Space.xlarge) {
+                PremiumSectionHeader(title: L10n.string("Power & Dongle"))
+
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: Theme.Space.xlarge) {
+                        batteryPanel(snapshot, capabilities: capabilities)
+                        receiverPanel(snapshot, capabilities: capabilities)
+                    }
+                    VStack(spacing: Theme.Space.xlarge) {
+                        batteryPanel(snapshot, capabilities: capabilities)
+                        receiverPanel(snapshot, capabilities: capabilities)
+                    }
+                }
+
+                powerBehavior(snapshot, capabilities: capabilities)
+            }
+        }
+    }
+
+    private func batteryPanel(
+        _ snapshot: DeviceSnapshot,
+        capabilities: DeviceCapabilities
+    ) -> some View {
+        PremiumPanel {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(L10n.string("Battery"))
+                    .font(.headline)
+                    .padding(.bottom, Theme.Space.large)
+
+                if let battery = snapshot.battery {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("\(battery.percentage)%")
+                            .font(.system(size: 42, weight: .light, design: .rounded))
+                            .monospacedDigit()
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: Theme.Space.tight) {
+                            Text(L10n.string("Voltage"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text("\(battery.millivolts) mV")
+                                .font(.body.monospacedDigit())
                         }
                     }
+                    ProgressView(value: Double(battery.percentage), total: 100)
+                        .tint(battery.percentage < 15 ? .red : .green)
+                        .padding(.bottom, Theme.Space.large)
+                } else {
+                    Text(L10n.string("Battery data is not reported over USB."))
+                        .foregroundStyle(.secondary)
+                        .padding(.bottom, Theme.Space.large)
+                }
 
-                    SettingsRow(
-                        label: String(localized: "Seuil de basse consommation"),
-                        help: String(localized: "Niveau de batterie sous lequel la souris réduit sa consommation."),
-                        showsDivider: capabilities.supportsLongDistance
-                    ) {
-                        HStack(spacing: 10) {
-                            Slider(
-                                value: Binding(
-                                    get: { Double(model.draft.powerSaveBatteryPercent) },
-                                    set: { model.draft.powerSaveBatteryPercent = Int($0.rounded()) }
-                                ),
-                                in: 0...50,
-                                step: 5
-                            )
-                            .frame(width: 180)
-                            Text(model.draft.powerSaveBatteryPercent == 0
-                                 ? String(localized: "Désactivé")
-                                 : "\(model.draft.powerSaveBatteryPercent) %")
-                                .monospacedDigit()
-                                .frame(width: 72, alignment: .trailing)
+                PremiumRow(label: L10n.string("Sleep after")) {
+                    Picker("", selection: $model.draft.sleepMinutes) {
+                        Text(L10n.string("Never")).tag(0)
+                        ForEach(sleepOptions, id: \.self) { minutes in
+                            Text(L10n.format("%d min", minutes)).tag(minutes)
                         }
                     }
+                    .labelsHidden()
+                    .frame(width: 120)
+                }
 
-                    if capabilities.supportsLongDistance {
-                        SettingsRow(
-                            label: String(localized: "Mode longue portée"),
-                            help: String(localized: "Augmente la puissance d'émission au détriment de l'autonomie."),
+                PremiumRow(
+                    label: L10n.string("Power saving threshold"),
+                    showsDivider: capabilities.supportsPerformanceMode
+                ) {
+                    Picker("", selection: $model.draft.powerSaveBatteryPercent) {
+                        Text(L10n.string("Off")).tag(0)
+                        ForEach([10, 15, 20, 30, 40, 50], id: \.self) { percent in
+                            Text("\(percent)%").tag(percent)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 120)
+                }
+
+                if capabilities.supportsPerformanceMode {
+                    PremiumRow(
+                        label: L10n.string("Performance mode"),
+                        showsDivider: false
+                    ) {
+                        Toggle("", isOn: $model.draft.performanceMode)
+                            .labelsHidden()
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func receiverPanel(
+        _ snapshot: DeviceSnapshot,
+        capabilities: DeviceCapabilities
+    ) -> some View {
+        PremiumPanel {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(L10n.string("Wireless receiver"))
+                    .font(.headline)
+                    .padding(.bottom, Theme.Space.large)
+
+                HStack(alignment: .center, spacing: Theme.Space.xlarge) {
+                    Image(systemName: "externaldrive.connected.to.line.below")
+                        .font(.system(size: 66, weight: .ultraLight))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 100)
+
+                    VStack(spacing: 0) {
+                        PremiumRow(label: L10n.string("Connection")) {
+                            Text(snapshot.connection.label)
+                        }
+                        PremiumRow(label: L10n.string("Signal")) {
+                            Label(
+                                signalLabel(snapshot.signalStrength),
+                                systemImage: "circle.fill"
+                            )
+                            .labelStyle(.titleAndIcon)
+                            .foregroundStyle(.green)
+                        }
+                        PremiumRow(label: L10n.string("Polling capacity")) {
+                            Text(reportRate(snapshot.connection.maximumReportRate))
+                                .monospacedDigit()
+                        }
+                        PremiumRow(
+                            label: L10n.string("Firmware"),
                             showsDivider: false
                         ) {
-                            Toggle("", isOn: $model.draft.longDistance)
-                                .toggleStyle(.switch)
+                            Text(snapshot.dongleVersion ?? snapshot.firmwareVersion)
+                                .monospacedDigit()
                         }
                     }
                 }
 
-                if let battery = snapshot.battery {
-                    SettingsGroup(title: String(localized: "Batterie")) {
-                        SettingsRow(label: String(localized: "Niveau")) {
-                            Text("\(battery.percentage) %")
-                                .monospacedDigit()
-                                .foregroundStyle(.secondary)
-                        }
-                        SettingsRow(label: String(localized: "Tension"), showsDivider: false) {
-                            Text("\(battery.millivolts) mV")
-                                .monospacedDigit()
-                                .foregroundStyle(.secondary)
+                Divider()
+                    .padding(.vertical, Theme.Space.medium)
+
+                HStack {
+                    pairingStatus
+                    Spacer()
+                    Button(pairingButtonLabel) {
+                        switch model.pairing {
+                        case .searching:
+                            model.cancelPairing()
+                        default:
+                            Task { await model.startPairing() }
                         }
                     }
                 }
             }
         }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func powerBehavior(
+        _ snapshot: DeviceSnapshot,
+        capabilities: DeviceCapabilities
+    ) -> some View {
+        PremiumPanel {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(L10n.string("Power behavior"))
+                    .font(.headline)
+                    .padding(.bottom, Theme.Space.medium)
+
+                HStack(spacing: Theme.Space.section) {
+                    VStack(alignment: .leading, spacing: Theme.Space.tight) {
+                        Text(L10n.string("Current mode"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(snapshot.connection.isWired
+                             ? L10n.string("Charge and play")
+                             : L10n.string("Wireless"))
+                    }
+
+                    Divider()
+                        .frame(height: 38)
+
+                    VStack(alignment: .leading, spacing: Theme.Space.tight) {
+                        Text(L10n.string("DPI lighting"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(model.draft.dpiEffect.mode.label)
+                    }
+
+                    Spacer()
+
+                    if capabilities.supportsLongDistance {
+                        Toggle(
+                            L10n.string("Long range mode"),
+                            isOn: $model.draft.longDistance
+                        )
+                        .toggleStyle(.switch)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var pairingStatus: some View {
+        switch model.pairing {
+        case .idle:
+            Text(L10n.string("Ready to pair"))
+                .foregroundStyle(.secondary)
+        case .searching(let seconds):
+            Label("\(seconds) s", systemImage: "dot.radiowaves.left.and.right")
+                .foregroundStyle(Color.accentColor)
+        case .succeeded:
+            Label(L10n.string("Paired"), systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        case .failed(let message):
+            Label(message, systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+        }
+    }
+
+    private var pairingButtonLabel: String {
+        if case .searching = model.pairing {
+            return L10n.string("Cancel")
+        }
+        return L10n.string("Pair device")
+    }
+
+    private func signalLabel(_ signal: Int?) -> String {
+        guard let signal else { return L10n.string("Not reported") }
+        return signal >= 4 ? L10n.string("Excellent") : L10n.string("Connected")
+    }
+
+    private func reportRate(_ hertz: Int) -> String {
+        hertz >= 1_000 ? L10n.format("Up to %d kHz", hertz / 1_000) : "\(hertz) Hz"
+    }
+
+    private var sleepOptions: [Int] {
+        Set([model.draft.sleepMinutes, 1, 2, 3, 5, 10, 15, 30])
+            .filter { $0 > 0 }
+            .sorted()
     }
 }

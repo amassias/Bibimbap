@@ -1,3 +1,4 @@
+import BibimbapLocalization
 import Foundation
 import PulsarCatalog
 import PulsarProtocol
@@ -36,7 +37,7 @@ public struct ProfileArchive: Codable, Equatable, Sendable {
         public var errorDescription: String? {
             switch self {
             case .unsupportedVersion(let version):
-                String(localized: "Cette sauvegarde est en version \(version), que cette application ne sait pas relire.")
+                L10n.format("This backup uses version %d, which this app cannot read.", version)
             }
         }
     }
@@ -76,13 +77,13 @@ public struct ProfileArchive: Codable, Equatable, Sendable {
         if capabilities.availableReportRates.contains(settings.reportRateHertz) {
             result.reportRateHertz = settings.reportRateHertz
         } else {
-            skipped.append(String(localized: "Polling (\(settings.reportRateHertz) Hz)"))
+            skipped.append(L10n.format("Polling (%d Hz)", settings.reportRateHertz))
         }
 
         if settings.debounceMilliseconds <= capabilities.maximumDebounce {
             result.debounceMilliseconds = settings.debounceMilliseconds
         } else {
-            skipped.append(String(localized: "Temps de rebond"))
+            skipped.append(L10n.string( "Temps de rebond"))
         }
 
         result.liftOffMillimetres = settings.liftOffMillimetres
@@ -105,24 +106,24 @@ public struct ProfileArchive: Codable, Equatable, Sendable {
         }
 
         adopt(capabilities.supportsMotionSync, settings.motionSync,
-              into: &result.motionSync, labelled: String(localized: "Motion Sync"))
+              into: &result.motionSync, labelled: L10n.string( "Motion Sync"))
         adopt(capabilities.supportsAngleSnap, settings.angleSnap,
-              into: &result.angleSnap, labelled: String(localized: "Angle Snap"))
+              into: &result.angleSnap, labelled: L10n.string( "Angle Snap"))
         adopt(capabilities.supportsRippleControl, settings.rippleControl,
-              into: &result.rippleControl, labelled: String(localized: "Ripple Control"))
+              into: &result.rippleControl, labelled: L10n.string( "Ripple Control"))
         adopt(capabilities.supportsPerformanceMode, settings.performanceMode,
-              into: &result.performanceMode, labelled: String(localized: "Mode performance"))
+              into: &result.performanceMode, labelled: L10n.string( "Mode performance"))
 
         if capabilities.supportsRotation {
             result.rotationDegrees = settings.rotationDegrees
         } else if settings.rotationDegrees != 0 {
-            skipped.append(String(localized: "Calibration de rotation"))
+            skipped.append(L10n.string( "Calibration de rotation"))
         }
 
         if capabilities.supportsLongDistance {
             result.longDistance = settings.longDistance
         } else if settings.longDistance {
-            skipped.append(String(localized: "Mode longue portée"))
+            skipped.append(L10n.string( "Mode longue portée"))
         }
 
         // Paliers DPI : seuls ceux que le capteur sait représenter sont repris.
@@ -136,7 +137,7 @@ public struct ProfileArchive: Codable, Equatable, Sendable {
                 let snappedX = (try? codec.snap(dpi: saved.x)) ?? result.dpiStages[index].x
                 let snappedY = (try? codec.snap(dpi: saved.y)) ?? result.dpiStages[index].y
                 if snappedX != saved.x || snappedY != saved.y {
-                    skipped.append(String(localized: "Palier \(saved.index + 1) ramené à \(snappedX) DPI"))
+                    skipped.append(L10n.format("Stage %d adjusted to %d DPI", saved.index + 1, snappedX))
                 }
                 result.dpiStages[index].x = snappedX
                 result.dpiStages[index].y = snappedY
@@ -147,7 +148,7 @@ public struct ProfileArchive: Codable, Equatable, Sendable {
         // Boutons : uniquement ceux qui existent sur ce modèle.
         for saved in settings.buttons {
             guard let index = result.buttons.firstIndex(where: { $0.index == saved.index }) else {
-                skipped.append(String(localized: "Bouton \(saved.index + 1) (absent de ce modèle)"))
+                skipped.append(L10n.format("Button %d (not available on this model)", saved.index + 1))
                 continue
             }
             result.buttons[index] = saved
@@ -156,7 +157,7 @@ public struct ProfileArchive: Codable, Equatable, Sendable {
         result.macros = settings.macros.filter { $0.slot < capabilities.buttonCount }
         let droppedMacros = settings.macros.count - result.macros.count
         if droppedMacros > 0 {
-            skipped.append(String(localized: "\(droppedMacros) macro(s) hors des emplacements de ce modèle"))
+            skipped.append(L10n.format("%d macro(s) outside this model's slots", droppedMacros))
         }
 
         return (result, skipped)

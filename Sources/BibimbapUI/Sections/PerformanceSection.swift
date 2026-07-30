@@ -1,38 +1,93 @@
 import BibimbapFeatures
-import PulsarCatalog
+import BibimbapLocalization
 import SwiftUI
 
-/// Réglages de performance, composés comme un inspecteur macOS compact.
-///
-/// La hiérarchie suit le visuel de référence : le DPI forme un bloc continu, puis les
-/// réglages ponctuels se lisent comme des rangées. Rien n'est déplacé dans une seconde
-/// colonne, afin que les valeurs et les contrôles restent sur les mêmes axes.
+/// Performance reprend la composition validée : réglages de précision à gauche,
+/// capteur et mouvement dans un inspecteur stable à droite.
 struct PerformanceSection: View {
     @Bindable var model: AppModel
 
     var body: some View {
         if let capabilities = model.capabilities {
             VStack(alignment: .leading, spacing: Theme.Space.xlarge) {
-                dpiGroup(capabilities)
-                pollingGroup(capabilities)
-                trackingGroup(capabilities)
-                sensorGroup(capabilities)
-                if capabilities.supportsRotation {
-                    rotationGroup
+                PremiumSectionHeader(title: L10n.string("Performance"))
+
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: Theme.Space.large) {
+                        mainColumn(capabilities)
+                            .frame(maxWidth: .infinity)
+                        inspectorColumn(capabilities)
+                            .frame(width: 400)
+                    }
+
+                    VStack(spacing: Theme.Space.xlarge) {
+                        mainColumn(capabilities)
+                        inspectorColumn(capabilities)
+                    }
                 }
             }
         }
     }
 
-    // MARK: - DPI
+    private func mainColumn(_ capabilities: DeviceCapabilities) -> some View {
+        VStack(spacing: Theme.Space.large) {
+            dpiPanel(capabilities)
+            pollingPanel(capabilities)
+            trackingPanel(capabilities)
+        }
+    }
 
-    private func dpiGroup(_ capabilities: DeviceCapabilities) -> some View {
-        SettingsGroup(title: String(localized: "DPI")) {
-            SettingsRow(label: String(localized: "Paliers DPI")) {
+    private func inspectorColumn(_ capabilities: DeviceCapabilities) -> some View {
+        VStack(spacing: Theme.Space.large) {
+            sensorPanel(capabilities)
+            if capabilities.supportsRotation {
+                rotationPanel
+            }
+            dpiBehaviorPanel
+        }
+    }
+
+    // MARK: DPI
+
+    private func dpiPanel(_ capabilities: DeviceCapabilities) -> some View {
+        PremiumPanel {
+            VStack(alignment: .leading, spacing: Theme.Space.large) {
+                HStack {
+                    Text(L10n.string("DPI Stages"))
+                        .font(.headline)
+                    Spacer()
+                    Menu {
+                        ForEach(1...capabilities.maximumStages, id: \.self) { count in
+                            Button(L10n.format("%d stages", count)) {
+                                model.draft.enabledStageCount = count
+                                model.draft.activeStage = min(
+                                    model.draft.activeStage,
+                                    count - 1
+                                )
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: Theme.Space.snug) {
+                            Text(L10n.string("Stages"))
+                                .foregroundStyle(.secondary)
+                            Text("\(model.draft.enabledStageCount)")
+                                .monospacedDigit()
+                            Image(systemName: "chevron.down")
+                                .font(.caption2)
+                        }
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                }
+
                 HStack(spacing: Theme.Space.small) {
-                    ForEach(model.draft.dpiStages.prefix(model.draft.enabledStageCount)) { stage in
-                        if let index = model.draft.dpiStages.firstIndex(where: { $0.index == stage.index }) {
-                            InlineDPIStage(
+                    ForEach(
+                        model.draft.dpiStages.prefix(model.draft.enabledStageCount)
+                    ) { stage in
+                        if let index = model.draft.dpiStages.firstIndex(
+                            where: { $0.index == stage.index }
+                        ) {
+                            DPIStageCard(
                                 stage: $model.draft.dpiStages[index],
                                 isActive: model.draft.activeStage == stage.index
                             ) {
@@ -40,146 +95,188 @@ struct PerformanceSection: View {
                             }
                         }
                     }
+                }
 
-                    Menu {
-                        ForEach(1...capabilities.maximumStages, id: \.self) { count in
-                            Button("\(count) paliers") {
-                                model.draft.enabledStageCount = count
-                                model.draft.activeStage = min(model.draft.activeStage, count - 1)
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .foregroundStyle(.secondary)
-                    }
-                    .menuStyle(.borderlessButton)
-                    .fixedSize()
-                    .help(String(localized: "Nombre de paliers actifs"))
+                if model.draft.dpiStages.indices.contains(model.draft.activeStage) {
+                    activeDPISlider(capabilities)
                 }
             }
+        }
+    }
 
-            SettingsRow(label: String(localized: "Effet DPI")) {
-                InlineRadioGroup(
-                    values: DeviceSettings.DPIEffect.Mode.allCases,
-                    title: \.label,
-                    selection: $model.draft.dpiEffect.mode
+    private func activeDPISlider(_ capabilities: DeviceCapabilities) -> some View {
+        let activeIndex = model.draft.activeStage
+        let stage = $model.draft.dpiStages[activeIndex]
+
+        return VStack(spacing: Theme.Space.small) {
+            HStack {
+                Text(capabilities.minimumDPI.formatted(.number))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(capabilities.maximumDPI.formatted(.number))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: Theme.Space.medium) {
+                Slider(
+                    value: Binding(
+                        get: { Double(stage.wrappedValue.x) },
+                        set: { rawValue in
+                            let value = Int(rawValue.rounded())
+                            let symmetric = stage.wrappedValue.isSymmetric
+                            stage.wrappedValue.x = value
+                            if symmetric { stage.wrappedValue.y = value }
+                        }
+                    ),
+                    in: Double(capabilities.minimumDPI)...Double(capabilities.maximumDPI),
+                    step: 50
                 )
-            }
 
-            SettingsRow(label: String(localized: "Luminosité")) {
-                PercentageSlider(value: $model.draft.dpiEffect.brightness)
-            }
-
-            SettingsRow(label: String(localized: "Vitesse"), showsDivider: false) {
-                PercentageSlider(value: $model.draft.dpiEffect.speed)
+                TextField(
+                    "",
+                    value: Binding(
+                        get: { stage.wrappedValue.x },
+                        set: { value in
+                            let symmetric = stage.wrappedValue.isSymmetric
+                            stage.wrappedValue.x = value
+                            if symmetric { stage.wrappedValue.y = value }
+                        }
+                    ),
+                    format: .number
+                )
+                .textFieldStyle(.roundedBorder)
+                .multilineTextAlignment(.trailing)
+                .monospacedDigit()
+                .frame(width: 96)
             }
         }
     }
 
-    // MARK: - Cadence et suivi
+    // MARK: Polling and tracking
 
-    private func pollingGroup(_ capabilities: DeviceCapabilities) -> some View {
-        SettingsGroup {
-            SettingsRow(
-                label: String(localized: "Taux de rafraîchissement"),
-                help: model.snapshot.map {
-                    String(localized: "Maximum \($0.connection.maximumReportRate) Hz via \($0.connection.label).")
-                },
-                showsDivider: false
-            ) {
-                InlineRadioGroup(
-                    values: capabilities.availableReportRates,
-                    title: { $0 >= 1000 ? "\($0 / 1000) kHz" : "\($0) Hz" },
-                    selection: $model.draft.reportRateHertz
-                )
+    private func pollingPanel(_ capabilities: DeviceCapabilities) -> some View {
+        PremiumPanel {
+            VStack(alignment: .leading, spacing: Theme.Space.medium) {
+                HStack {
+                    Text(L10n.string("Polling Rate"))
+                        .font(.headline)
+                    Spacer()
+                    if let connection = model.snapshot?.connection {
+                        Text(
+                            L10n.format(
+                                "Maximum %d Hz via %@.",
+                                connection.maximumReportRate,
+                                connection.label
+                            )
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+
+                HStack(spacing: Theme.Space.small) {
+                    ForEach(capabilities.availableReportRates, id: \.self) { rate in
+                        SelectableValueButton(
+                            title: reportRate(rate),
+                            isSelected: model.draft.reportRateHertz == rate
+                        ) {
+                            model.draft.reportRateHertz = rate
+                        }
+                    }
+                }
             }
         }
     }
 
-    private func trackingGroup(_ capabilities: DeviceCapabilities) -> some View {
-        SettingsGroup {
-            SettingsRow(
-                label: String(localized: "Distance de décrochage"),
-                help: String(localized: "Hauteur à laquelle le capteur cesse de suivre.")
-            ) {
-                ValueSlider(
+    private func trackingPanel(_ capabilities: DeviceCapabilities) -> some View {
+        PremiumPanel {
+            VStack(alignment: .leading, spacing: Theme.Space.section) {
+                PrecisionSlider(
+                    title: L10n.string("Lift-Off Distance"),
+                    help: L10n.string("Height at which the sensor stops tracking."),
                     value: $model.draft.liftOffMillimetres,
                     range: 1...2,
-                    width: 260
-                ) { "\($0) mm" }
-            }
+                    format: { "\($0) mm" }
+                )
 
-            SettingsRow(
-                label: String(localized: "Temps de rebond"),
-                help: debounceHelp(capabilities),
-                showsDivider: false
-            ) {
-                ValueSlider(
+                Divider()
+
+                PrecisionSlider(
+                    title: L10n.string("Debounce Time"),
+                    help: debounceHelp(capabilities),
                     value: $model.draft.debounceMilliseconds,
                     range: 0...capabilities.maximumDebounce,
-                    width: 260
-                ) { "\($0) ms" }
+                    format: { "\($0) ms" }
+                )
             }
         }
     }
 
-    private func debounceHelp(_ capabilities: DeviceCapabilities) -> String {
-        model.draft.debounceMilliseconds > capabilities.debounceWarningThreshold
-            ? String(localized: "Cette valeur peut rendre la latence des clics perceptible.")
-            : String(localized: "Ignore les rebonds mécaniques du contacteur.")
-    }
+    // MARK: Inspector
 
-    // MARK: - Capteur
-
-    private func sensorGroup(_ capabilities: DeviceCapabilities) -> some View {
+    private func sensorPanel(_ capabilities: DeviceCapabilities) -> some View {
         let toggles: [(String, String, Binding<Bool>)] = [
-            (capabilities.supportsMotionSync, String(localized: "Motion Sync"),
-             String(localized: "Synchronise les données du capteur avec chaque rapport."),
+            (capabilities.supportsMotionSync, L10n.string("Motion Sync"),
+             L10n.string("Synchronizes sensor data with each report."),
              $model.draft.motionSync),
-            (capabilities.supportsRippleControl, String(localized: "Ripple Control"),
-             String(localized: "Lisse les micro-vibrations du suivi."),
+            (capabilities.supportsRippleControl, L10n.string("Ripple Control"),
+             L10n.string("Smooths out tracking micro-vibrations."),
              $model.draft.rippleControl),
-            (capabilities.supportsAngleSnap, String(localized: "Angle Snap"),
-             String(localized: "Contraint le déplacement du curseur aux axes."),
+            (capabilities.supportsAngleSnap, L10n.string("Angle Snap"),
+             L10n.string("Constrains cursor movement to the axes."),
              $model.draft.angleSnap),
-            (capabilities.supportsPerformanceMode, String(localized: "Mode performance"),
-             String(localized: "Augmente la fréquence de balayage du capteur."),
+            (capabilities.supportsPerformanceMode, L10n.string("Performance mode"),
+             L10n.string("Raises the sensor scan rate."),
              $model.draft.performanceMode),
         ].filter(\.0).map { ($0.1, $0.2, $0.3) }
 
-        return SettingsGroup {
-            ForEach(Array(toggles.enumerated()), id: \.offset) { offset, entry in
-                SettingsRow(
-                    label: entry.0,
-                    help: entry.1,
-                    showsDivider: offset != toggles.count - 1
-                ) {
-                    Toggle("", isOn: entry.2)
-                        .toggleStyle(.switch)
-                        .controlSize(.small)
+        return PremiumPanel {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(L10n.string("Sensor & Motion"))
+                    .font(.headline)
+                    .padding(.bottom, Theme.Space.medium)
+
+                ForEach(Array(toggles.enumerated()), id: \.offset) { index, item in
+                    PremiumRow(
+                        label: item.0,
+                        detail: item.1,
+                        showsDivider: index != toggles.count - 1
+                    ) {
+                        Toggle("", isOn: item.2)
+                            .labelsHidden()
+                    }
                 }
             }
         }
     }
 
-    // MARK: - Rotation
+    private var rotationPanel: some View {
+        PremiumPanel {
+            VStack(alignment: .leading, spacing: Theme.Space.large) {
+                HStack {
+                    Text(L10n.string("Mouse Rotation Calibration"))
+                        .font(.headline)
+                    Spacer()
+                    Text("\(model.draft.rotationDegrees)°")
+                        .font(.title3.weight(.medium).monospacedDigit())
+                }
 
-    private var rotationGroup: some View {
-        SettingsGroup {
-            SettingsRow(
-                label: String(localized: "Calibration de rotation"),
-                help: String(localized: "Compense une prise en main légèrement de biais."),
-                showsDivider: false
-            ) {
+                ZStack {
+                    Circle()
+                        .stroke(PremiumPalette.hairline, lineWidth: 1)
+                        .frame(width: 110, height: 110)
+                    Image(systemName: "computermouse")
+                        .font(.system(size: 58, weight: .ultraLight))
+                        .foregroundStyle(Color.accentColor)
+                        .rotationEffect(.degrees(Double(model.draft.rotationDegrees)))
+                        .animates(model.draft.rotationDegrees)
+                }
+                .frame(maxWidth: .infinity)
+
                 HStack(spacing: Theme.Space.medium) {
-                    Button("Réinitialiser") {
-                        model.draft.rotationDegrees = 0
-                    }
-                    .controlSize(.small)
-                    .disabled(model.draft.rotationDegrees == 0)
-
-                    Text("−30°")
-                        .supporting()
+                    Text("−30°").font(.caption).foregroundStyle(.secondary)
                     Slider(
                         value: Binding(
                             get: { Double(model.draft.rotationDegrees) },
@@ -188,141 +285,174 @@ struct PerformanceSection: View {
                         in: -30...30,
                         step: 1
                     )
-                    .frame(width: 260)
-                    Text("30°")
-                        .supporting()
-                    Text("\(model.draft.rotationDegrees)°")
-                        .settingValue()
-                        .frame(width: 42, alignment: .trailing)
+                    Text("30°").font(.caption).foregroundStyle(.secondary)
+                    Button(L10n.string("Reset")) {
+                        model.draft.rotationDegrees = 0
+                    }
+                    .disabled(model.draft.rotationDegrees == 0)
                 }
             }
         }
     }
+
+    private var dpiBehaviorPanel: some View {
+        PremiumPanel {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(L10n.string("DPI Indicator"))
+                    .font(.headline)
+                    .padding(.bottom, Theme.Space.medium)
+
+                PremiumRow(label: L10n.string("Effect")) {
+                    Picker("", selection: $model.draft.dpiEffect.mode) {
+                        ForEach(DeviceSettings.DPIEffect.Mode.allCases, id: \.self) {
+                            Text($0.label).tag($0)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 130)
+                }
+
+                PremiumRow(
+                    label: L10n.string("Brightness"),
+                    showsDivider: false
+                ) {
+                    Text("\((model.draft.dpiEffect.brightness + 1) * 10)%")
+                        .monospacedDigit()
+                    Slider(
+                        value: Binding(
+                            get: { Double(model.draft.dpiEffect.brightness) },
+                            set: { model.draft.dpiEffect.brightness = Int($0.rounded()) }
+                        ),
+                        in: 0...9,
+                        step: 1
+                    )
+                    .frame(width: 130)
+                }
+            }
+        }
+    }
+
+    private func debounceHelp(_ capabilities: DeviceCapabilities) -> String {
+        model.draft.debounceMilliseconds > capabilities.debounceWarningThreshold
+            ? L10n.string("This value may make click latency noticeable.")
+            : L10n.string("Ignores mechanical bounce from the switch.")
+    }
+
+    private func reportRate(_ hertz: Int) -> String {
+        hertz >= 1_000 ? "\(hertz / 1_000) kHz" : "\(hertz) Hz"
+    }
 }
 
-/// Un palier DPI en ligne : couleur, numéro et valeur éditable.
-private struct InlineDPIStage: View {
+private struct DPIStageCard: View {
     @Binding var stage: DeviceSettings.DPIStage
     let isActive: Bool
-    let select: () -> Void
+    let action: () -> Void
     @State private var isHovering = false
 
     var body: some View {
-        HStack(spacing: Theme.Space.snug) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(stage.color.swiftUIColor)
-                .frame(width: 10, height: 10)
-                .overlay(
+        Button(action: action) {
+            VStack(spacing: Theme.Space.small) {
+                HStack {
                     RoundedRectangle(cornerRadius: 2)
-                        .strokeBorder(.black.opacity(0.12), lineWidth: 0.5)
-                )
+                        .fill(stage.color.swiftUIColor)
+                        .frame(width: 9, height: 13)
+                    Text("\(stage.index + 1)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
 
-            Text("\(stage.index + 1)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            if isActive {
-                TextField("", value: Binding(
-                    get: { stage.x },
-                    set: { value in
-                        let wasSymmetric = stage.isSymmetric
-                        stage.x = value
-                        if wasSymmetric { stage.y = value }
-                    }
-                ), format: .number)
-                .textFieldStyle(.plain)
-                .multilineTextAlignment(.trailing)
-                .monospacedDigit()
-                .frame(width: 48)
-            } else {
-                Text(stage.isSymmetric ? "\(stage.x)" : "\(stage.x)×\(stage.y)")
-                    .monospacedDigit()
-                    .frame(minWidth: 48, alignment: .trailing)
+                Text(stage.x.formatted(.number))
+                    .font(.body.weight(.medium).monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
             }
+            .padding(Theme.Space.medium)
+            .frame(maxWidth: .infinity, minHeight: 74)
+            .background(
+                RoundedRectangle(cornerRadius: Theme.Radius.chip)
+                    .fill(
+                        isActive
+                            ? Color.accentColor.opacity(0.10)
+                            : isHovering ? Color.primary.opacity(0.04) : PremiumPalette.elevated.opacity(0.34)
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Radius.chip)
+                    .strokeBorder(
+                        isActive ? Color.accentColor : PremiumPalette.hairline.opacity(0.65),
+                        lineWidth: isActive ? 1.5 : 0.5
+                    )
+            )
         }
-        .font(.callout)
-        .padding(.horizontal, Theme.Space.small)
-        .frame(height: 30)
-        .background(
-            RoundedRectangle(cornerRadius: Theme.Radius.control)
-                .fill(isActive
-                      ? Color.accentColor.opacity(0.08)
-                      : isHovering ? Color.primary.opacity(0.035) : Color.clear)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.Radius.control)
-                .strokeBorder(
-                    isActive ? Color.accentColor : Color.clear,
-                    lineWidth: 1
-                )
-        )
-        .contentShape(Rectangle())
-        .onTapGesture(perform: select)
+        .buttonStyle(.plain)
         .onHover { isHovering = $0 }
-        .animates(isActive)
         .animates(isHovering)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Palier \(stage.index + 1), \(stage.x) DPI")
+        .accessibilityLabel(
+            L10n.format("Stage %d", stage.index + 1) + ", \(stage.x) DPI"
+        )
         .accessibilityAddTraits(isActive ? .isSelected : [])
     }
 }
 
-/// Choix exclusifs compacts avec la grammaire visuelle des boutons radio macOS.
-private struct InlineRadioGroup<Value: Hashable>: View {
-    let values: [Value]
-    let title: (Value) -> String
-    @Binding var selection: Value
+private struct SelectableValueButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
 
     var body: some View {
-        HStack(spacing: Theme.Space.large) {
-            ForEach(values, id: \.self) { value in
-                Button {
-                    selection = value
-                } label: {
-                    HStack(spacing: Theme.Space.snug) {
-                        ZStack {
-                            Circle()
-                                .strokeBorder(
-                                    selection == value ? Color.accentColor : Color.secondary.opacity(0.45),
-                                    lineWidth: 1
-                                )
-                                .frame(width: 14, height: 14)
-                            if selection == value {
-                                Circle()
-                                    .fill(Color.accentColor)
-                                    .frame(width: 6, height: 6)
-                            }
-                        }
-                        Text(title(value))
-                            .foregroundStyle(.primary)
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selection == value ? .isSelected : [])
-            }
+        Button(action: action) {
+            Text(title)
+                .font(.callout.monospacedDigit())
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Theme.Space.medium)
+                .background(
+                    RoundedRectangle(cornerRadius: Theme.Radius.control)
+                        .fill(isSelected ? Color.accentColor.opacity(0.10) : PremiumPalette.elevated.opacity(0.34))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.Radius.control)
+                        .strokeBorder(
+                            isSelected ? Color.accentColor : PremiumPalette.hairline.opacity(0.65),
+                            lineWidth: isSelected ? 1.5 : 0.5
+                        )
+                )
         }
-        .font(.callout)
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
-private struct PercentageSlider: View {
+private struct PrecisionSlider: View {
+    let title: String
+    let help: String
     @Binding var value: Int
+    let range: ClosedRange<Int>
+    let format: (Int) -> String
 
     var body: some View {
-        HStack(spacing: Theme.Space.medium) {
+        VStack(alignment: .leading, spacing: Theme.Space.medium) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: Theme.Space.tight) {
+                    Text(title)
+                        .font(.headline)
+                    Text(help)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text(format(value))
+                    .font(.body.weight(.medium).monospacedDigit())
+            }
+
             Slider(
                 value: Binding(
                     get: { Double(value) },
                     set: { value = Int($0.rounded()) }
                 ),
-                in: 0...9,
+                in: Double(range.lowerBound)...Double(range.upperBound),
                 step: 1
             )
-            .frame(width: 360)
-
-            Text("\((value + 1) * 10) %")
-                .settingValue()
-                .frame(width: Theme.Row.valueWidth, alignment: .trailing)
         }
     }
 }

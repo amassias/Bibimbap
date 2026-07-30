@@ -1,3 +1,4 @@
+import BibimbapLocalization
 import BibimbapFeatures
 import SwiftUI
 
@@ -30,7 +31,7 @@ struct DeviceHeaderView: View {
                 if let battery = snapshot.battery {
                     metric(
                         systemImage: batterySymbol(battery.percentage, charging: battery.isCharging),
-                        title: String(localized: "Batterie"),
+                        title: L10n.string( "Batterie"),
                         detail: "\(battery.percentage) %"
                     )
                 }
@@ -38,7 +39,7 @@ struct DeviceHeaderView: View {
                 if let signal = snapshot.signalStrength {
                     metric(
                         systemImage: "antenna.radiowaves.left.and.right",
-                        title: String(localized: "Signal"),
+                        title: L10n.string( "Signal"),
                         detail: "\(signal)/5"
                     )
                 }
@@ -74,7 +75,7 @@ struct DeviceHeaderView: View {
     }
 
     private func profilePicker(current: Int) -> some View {
-        Picker(String(localized: "Profil"), selection: Binding(
+        Picker(L10n.string( "Profil"), selection: Binding(
             get: { current },
             set: { profile in Task { await model.selectProfile(profile) } }
         )) {
@@ -85,7 +86,7 @@ struct DeviceHeaderView: View {
         .pickerStyle(.menu)
         .labelsHidden()
         .frame(width: 130)
-        .accessibilityLabel(String(localized: "Profil actif"))
+        .accessibilityLabel(L10n.string( "Profil actif"))
     }
 
     @ViewBuilder
@@ -105,11 +106,11 @@ struct DeviceHeaderView: View {
 
     private var syncLabel: String {
         switch model.connection {
-        case .reading: String(localized: "Lecture…")
-        case .writing: String(localized: "Écriture…")
-        case .disconnectedDuringWrite: String(localized: "État matériel incertain")
-        case .connected where model.hasPendingChanges: String(localized: "Modifications non appliquées")
-        default: String(localized: "Synchronisé")
+        case .reading: L10n.string( "Lecture…")
+        case .writing: L10n.string( "Écriture…")
+        case .disconnectedDuringWrite: L10n.string( "État matériel incertain")
+        case .connected where model.hasPendingChanges: L10n.string( "Modifications non appliquées")
+        default: L10n.string( "Synchronisé")
         }
     }
 
@@ -136,16 +137,25 @@ struct PendingChangesBar: View {
                 resultBanner(result)
             }
 
-            if model.hasPendingChanges {
-                HStack(spacing: Theme.Space.large) {
-                    Button {
-                        isShowingDetail.toggle()
-                    } label: {
-                        HStack(spacing: Theme.Space.small) {
-                            Circle()
-                                .fill(Color.accentColor)
-                                .frame(width: 7, height: 7)
-                            Text(changeCountLabel)
+            HStack(spacing: Theme.Space.large) {
+                Button {
+                    isShowingDetail.toggle()
+                } label: {
+                    HStack(spacing: Theme.Space.small) {
+                        Text(L10n.string("Pending Changes"))
+                            .font(.callout.weight(.medium))
+                        Text("\(model.pendingChanges.count)")
+                            .font(.caption.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(.white)
+                            .frame(minWidth: 22, minHeight: 22)
+                            .background(
+                                Circle().fill(
+                                    model.hasPendingChanges
+                                        ? Color.accentColor
+                                        : Color.secondary.opacity(0.45)
+                                )
+                            )
+                        if model.hasPendingChanges {
                             Image(systemName: "chevron.up")
                                 .font(.caption2.weight(.semibold))
                                 .foregroundStyle(.secondary)
@@ -153,45 +163,49 @@ struct PendingChangesBar: View {
                                 .animates(isShowingDetail)
                         }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityHint(String(localized: "Affiche le détail des modifications"))
-
-                    if let blocking = model.validationIssues.first(where: \.isBlocking) {
-                        Label(blocking.message, systemImage: "exclamationmark.octagon.fill")
-                            .font(.callout)
-                            .foregroundStyle(.red)
-                    } else if let warning = model.validationIssues.first {
-                        Label(warning.message, systemImage: "exclamationmark.triangle.fill")
-                            .font(.callout)
-                            .foregroundStyle(.orange)
-                    }
-
-                    Spacer()
-
-                    // Les raccourcis sont affichés à côté des boutons : ils existaient
-                    // déjà, mais un raccourci qu'on ne voit pas n'est un raccourci pour
-                    // personne.
-                    Button { model.revert() } label: {
-                        HStack(spacing: Theme.Space.snug) {
-                            Text("Annuler")
-                            ShortcutHint("⌘R")
-                        }
-                    }
-                    .keyboardShortcut("r", modifiers: .command)
-
-                    Button { Task { await model.apply() } } label: {
-                        HStack(spacing: Theme.Space.snug) {
-                            Text("Appliquer")
-                            ShortcutHint("⌘↩", onAccent: model.canApply)
-                        }
-                    }
-                    .keyboardShortcut(.return, modifiers: .command)
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!model.canApply)
                 }
-                .padding(.horizontal, Theme.Space.page)
-                .padding(.vertical, Theme.Space.medium)
+                .buttonStyle(.plain)
+                .disabled(!model.hasPendingChanges)
+                .accessibilityHint(L10n.string("Show pending change details"))
+
+                if let blocking = model.validationIssues.first(where: \.isBlocking) {
+                    Label(blocking.message, systemImage: "exclamationmark.octagon.fill")
+                        .font(.callout)
+                        .foregroundStyle(.red)
+                } else if let warning = model.validationIssues.first {
+                    Label(warning.message, systemImage: "exclamationmark.triangle.fill")
+                        .font(.callout)
+                        .foregroundStyle(.orange)
+                }
+
+                Spacer()
+
+                HStack(spacing: Theme.Space.large) {
+                    ShortcutHint("⌘R")
+                    Text(L10n.string("Revert"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    ShortcutHint("⌘↩")
+                    Text(L10n.string("Apply"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Button(L10n.string("Revert")) {
+                    model.revert()
+                }
+                .keyboardShortcut("r", modifiers: .command)
+                .disabled(!model.hasPendingChanges)
+
+                Button(L10n.string("Apply")) {
+                    Task { await model.apply() }
+                }
+                .keyboardShortcut(.return, modifiers: .command)
+                .buttonStyle(.borderedProminent)
+                .disabled(!model.canApply)
             }
+            .padding(.horizontal, Theme.Space.page)
+            .padding(.vertical, Theme.Space.medium)
 
             if isShowingDetail, model.hasPendingChanges {
                 detailList
@@ -200,13 +214,6 @@ struct PendingChangesBar: View {
         .background(.bar)
         .animates(model.hasPendingChanges, using: Theme.Motion.layout)
         .animates(isShowingDetail, using: Theme.Motion.layout)
-    }
-
-    private var changeCountLabel: String {
-        let count = model.pendingChanges.count
-        return count == 1
-            ? String(localized: "1 modification en attente")
-            : String(localized: "\(count) modifications en attente")
     }
 
     private var detailList: some View {
@@ -243,14 +250,14 @@ struct PendingChangesBar: View {
             banner(
                 systemImage: "checkmark.circle.fill",
                 tint: .green,
-                title: String(localized: "Réglages appliqués et relus."),
+                title: L10n.string( "Réglages appliqués et relus."),
                 detail: nil
             )
         case .failedAndRestored(let failure):
             banner(
                 systemImage: "arrow.uturn.backward.circle.fill",
                 tint: .orange,
-                title: String(localized: "Échec de l'écriture — l'état précédent a été restauré."),
+                title: L10n.string( "Échec de l'écriture — l'état précédent a été restauré."),
                 detail: failure
             )
         case .failedAndUncertain(let failure, let uncertain):
@@ -259,8 +266,8 @@ struct PendingChangesBar: View {
             banner(
                 systemImage: "exclamationmark.triangle.fill",
                 tint: .red,
-                title: String(localized: "État matériel incertain."),
-                detail: failure + "\n" + String(localized: "Réglages non restaurés : ")
+                title: L10n.string( "État matériel incertain."),
+                detail: failure + "\n" + L10n.string( "Réglages non restaurés : ")
                     + uncertain.joined(separator: ", ")
             )
         }

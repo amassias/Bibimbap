@@ -1,3 +1,4 @@
+import BibimbapLocalization
 import Foundation
 import PulsarCatalog
 import PulsarProtocol
@@ -14,12 +15,12 @@ public struct PendingChange: Identifiable, Equatable, Sendable {
 
         public var label: String {
             switch self {
-            case .performance: String(localized: "Performance")
-            case .dpi: String(localized: "DPI")
-            case .lighting: String(localized: "Éclairage")
-            case .buttons: String(localized: "Boutons")
-            case .macros: String(localized: "Macros")
-            case .power: String(localized: "Alimentation")
+            case .performance: L10n.string( "Performance")
+            case .dpi: L10n.string( "DPI")
+            case .lighting: L10n.string( "Éclairage")
+            case .buttons: L10n.string( "Boutons")
+            case .macros: L10n.string( "Macros")
+            case .power: L10n.string( "Alimentation")
             }
         }
     }
@@ -168,7 +169,7 @@ public struct WritePlanner: Sendable {
                     operations.append(WriteOperation(
                         id: "dpi.value.\(stage.index)",
                         group: .dpi,
-                        label: String(localized: "Palier \(stage.index + 1)"),
+                        label: L10n.format("Stage %d", stage.index + 1),
                         address: FlashMap.dpiValue(stage: stage.index, extended: codec.usesExtendedBlock),
                         payload: .block(block),
                         rollback: .block(restore)
@@ -178,7 +179,7 @@ public struct WritePlanner: Sendable {
                     operations.append(WriteOperation(
                         id: "dpi.color.\(stage.index)",
                         group: .dpi,
-                        label: String(localized: "Couleur du palier \(stage.index + 1)"),
+                        label: L10n.format("Stage %d color", stage.index + 1),
                         address: FlashMap.dpiColor(stage: stage.index),
                         payload: .block(colourBlock(stage.color)),
                         rollback: .block(colourBlock(previous.color))
@@ -187,9 +188,9 @@ public struct WritePlanner: Sendable {
             }
         }
 
-        scalar("dpi.count", .dpi, String(localized: "Nombre de paliers"),
+        scalar("dpi.count", .dpi, L10n.string( "Nombre de paliers"),
                FlashMap.maxDPIStage, draft.enabledStageCount, current.enabledStageCount)
-        scalar("dpi.active", .dpi, String(localized: "Palier actif"),
+        scalar("dpi.active", .dpi, L10n.string( "Palier actif"),
                FlashMap.currentDPI, draft.activeStage, current.activeStage)
 
         // 2. Performance et capteur.
@@ -198,48 +199,48 @@ public struct WritePlanner: Sendable {
            let old = ReportRateCodec.code(from: current.reportRateHertz) {
             operations.append(WriteOperation(
                 id: "perf.rate", group: .performance,
-                label: String(localized: "Polling"),
+                label: L10n.string( "Polling"),
                 address: FlashMap.reportRate,
                 payload: .scalar(new), rollback: .scalar(old)
             ))
         }
-        scalar("perf.lod", .performance, String(localized: "Distance de décrochage"),
+        scalar("perf.lod", .performance, L10n.string( "Distance de décrochage"),
                FlashMap.liftOffDistance, draft.liftOffMillimetres, current.liftOffMillimetres)
-        scalar("perf.debounce", .performance, String(localized: "Temps de rebond"),
+        scalar("perf.debounce", .performance, L10n.string( "Temps de rebond"),
                FlashMap.debounceTime, draft.debounceMilliseconds, current.debounceMilliseconds)
-        scalar("perf.motionSync", .performance, String(localized: "Motion Sync"),
+        scalar("perf.motionSync", .performance, L10n.string( "Motion Sync"),
                FlashMap.motionSync, draft.motionSync ? 1 : 0, current.motionSync ? 1 : 0)
-        scalar("perf.angleSnap", .performance, String(localized: "Angle Snap"),
+        scalar("perf.angleSnap", .performance, L10n.string( "Angle Snap"),
                FlashMap.angleSnap, draft.angleSnap ? 1 : 0, current.angleSnap ? 1 : 0)
-        scalar("perf.ripple", .performance, String(localized: "Ripple Control"),
+        scalar("perf.ripple", .performance, L10n.string( "Ripple Control"),
                FlashMap.rippleControl, draft.rippleControl ? 1 : 0, current.rippleControl ? 1 : 0)
-        scalar("perf.performanceState", .performance, String(localized: "Mode performance"),
+        scalar("perf.performanceState", .performance, L10n.string( "Mode performance"),
                FlashMap.performanceState, draft.performanceMode ? 1 : 0, current.performanceMode ? 1 : 0)
-        scalar("perf.performance", .performance, String(localized: "Niveau de performance"),
+        scalar("perf.performance", .performance, L10n.string( "Niveau de performance"),
                FlashMap.performance, draft.performanceLevel, current.performanceLevel)
-        scalar("perf.sensorMode", .performance, String(localized: "Mode capteur"),
+        scalar("perf.sensorMode", .performance, L10n.string( "Mode capteur"),
                FlashMap.sensorMode, draft.sensorMode, current.sensorMode)
 
         if draft.rotationDegrees != current.rotationDegrees {
             // La rotation est signée ; l'octet la porte en complément à deux.
-            scalar("perf.rotation", .performance, String(localized: "Rotation"),
+            scalar("perf.rotation", .performance, L10n.string( "Rotation"),
                    FlashMap.angleTune,
                    Int(UInt8(bitPattern: Int8(clamping: draft.rotationDegrees))),
                    Int(UInt8(bitPattern: Int8(clamping: current.rotationDegrees))))
-            scalar("perf.rotationState", .performance, String(localized: "Rotation active"),
+            scalar("perf.rotationState", .performance, L10n.string( "Rotation active"),
                    FlashMap.angleTuneState,
                    draft.rotationDegrees == 0 ? 0 : 1,
                    current.rotationDegrees == 0 ? 0 : 1)
         }
 
         // 3. Effet lumineux du palier.
-        scalar("light.mode", .lighting, String(localized: "Effet DPI"),
+        scalar("light.mode", .lighting, L10n.string( "Effet DPI"),
                FlashMap.dpiEffectMode, draft.dpiEffect.mode.rawValue, current.dpiEffect.mode.rawValue)
-        scalar("light.brightness", .lighting, String(localized: "Luminosité"),
+        scalar("light.brightness", .lighting, L10n.string( "Luminosité"),
                FlashMap.dpiEffectBrightness, draft.dpiEffect.brightness, current.dpiEffect.brightness)
-        scalar("light.speed", .lighting, String(localized: "Vitesse"),
+        scalar("light.speed", .lighting, L10n.string( "Vitesse"),
                FlashMap.dpiEffectSpeed, draft.dpiEffect.speed, current.dpiEffect.speed)
-        scalar("light.state", .lighting, String(localized: "Indicateur DPI"),
+        scalar("light.state", .lighting, L10n.string( "Indicateur DPI"),
                FlashMap.dpiEffectState, draft.dpiEffect.enabled ? 1 : 0, current.dpiEffect.enabled ? 1 : 0)
 
         // 4. Macros, avant les boutons qui les référencent : un bouton ne doit jamais
@@ -251,7 +252,7 @@ public struct WritePlanner: Sendable {
             operations.append(WriteOperation(
                 id: "macro.\(binding.slot)",
                 group: .macros,
-                label: String(localized: "Macro « \(binding.macro.name) »"),
+                label: L10n.format("Macro “%@”", binding.macro.name),
                 address: FlashMap.macro(slot: binding.slot),
                 payload: .block(block),
                 // Sans état antérieur connu, on ne fabrique pas de restauration :
@@ -267,7 +268,7 @@ public struct WritePlanner: Sendable {
             operations.append(WriteOperation(
                 id: "button.\(button.index)",
                 group: .buttons,
-                label: String(localized: "Bouton \(button.index + 1)"),
+                label: L10n.format("Button %d", button.index + 1),
                 address: FlashMap.keyFunction(button: button.index),
                 payload: .block(buttonBlock(button)),
                 rollback: .block(buttonBlock(previous))
@@ -275,16 +276,16 @@ public struct WritePlanner: Sendable {
         }
 
         // 6. Alimentation, en dernier : la veille peut couper le dialogue.
-        scalar("power.sleep", .power, String(localized: "Mise en veille"),
+        scalar("power.sleep", .power, L10n.string( "Mise en veille"),
                FlashMap.sleepTime, draft.sleepMinutes, current.sleepMinutes)
-        scalar("power.saveBattery", .power, String(localized: "Seuil d'économie"),
+        scalar("power.saveBattery", .power, L10n.string( "Seuil d'économie"),
                FlashMap.powerSaveBattery, draft.powerSaveBatteryPercent, current.powerSaveBatteryPercent)
 
         if draft.longDistance != current.longDistance {
             operations.append(WriteOperation(
                 id: "power.longDistance",
                 group: .power,
-                label: String(localized: "Mode longue portée"),
+                label: L10n.string( "Mode longue portée"),
                 address: 0,
                 payload: .command(.setLongRangeMode, [draft.longDistance ? 1 : 0]),
                 rollback: .command(.setLongRangeMode, [current.longDistance ? 1 : 0])
@@ -344,20 +345,26 @@ public struct DraftValidator: Sendable {
         if !capabilities.availableReportRates.contains(draft.reportRateHertz) {
             issues.append(Issue(
                 id: "rate",
-                message: String(localized: "Ce modèle ne dépasse pas \(capabilities.availableReportRates.last ?? 1000) Hz sur cette connexion."),
+                message: L10n.format(
+                    "This model supports up to %d Hz on this connection.",
+                    capabilities.availableReportRates.last ?? 1000
+                ),
                 isBlocking: true
             ))
         }
         if draft.debounceMilliseconds > capabilities.maximumDebounce {
             issues.append(Issue(
                 id: "debounce.max",
-                message: String(localized: "Le temps de rebond ne peut pas dépasser \(capabilities.maximumDebounce) ms."),
+                message: L10n.format("Debounce time cannot exceed %d ms.", capabilities.maximumDebounce),
                 isBlocking: true
             ))
         } else if draft.debounceMilliseconds > capabilities.debounceWarningThreshold {
             issues.append(Issue(
                 id: "debounce.warn",
-                message: String(localized: "Au-delà de \(capabilities.debounceWarningThreshold) ms, la latence des clics devient perceptible."),
+                message: L10n.format(
+                    "Above %d ms, click latency becomes noticeable.",
+                    capabilities.debounceWarningThreshold
+                ),
                 isBlocking: false
             ))
         }
@@ -366,21 +373,26 @@ public struct DraftValidator: Sendable {
             if nameBytes == 0 || nameBytes > PulsarMacro.nameCapacity {
                 issues.append(Issue(
                     id: "macro.\(binding.slot).name",
-                    message: String(localized: "Le nom d'une macro doit tenir en 1 à \(PulsarMacro.nameCapacity) octets ; « \(binding.macro.name) » en fait \(nameBytes)."),
+                    message: L10n.format(
+                        "A macro name must be 1 to %d bytes; “%@” uses %d.",
+                        PulsarMacro.nameCapacity,
+                        binding.macro.name,
+                        nameBytes
+                    ),
                     isBlocking: true
                 ))
             }
             if binding.macro.steps.count > PulsarMacro.stepCapacity {
                 issues.append(Issue(
                     id: "macro.\(binding.slot).steps",
-                    message: String(localized: "Une macro ne peut pas dépasser \(PulsarMacro.stepCapacity) étapes."),
+                    message: L10n.format("A macro cannot exceed %d steps.", PulsarMacro.stepCapacity),
                     isBlocking: true
                 ))
             }
             if !(1...255).contains(binding.repeatCount) {
                 issues.append(Issue(
                     id: "macro.\(binding.slot).repeat",
-                    message: String(localized: "Le nombre de répétitions doit aller de 1 à 255."),
+                    message: L10n.string( "Le nombre de répétitions doit aller de 1 à 255."),
                     isBlocking: true
                 ))
             }
@@ -389,14 +401,14 @@ public struct DraftValidator: Sendable {
         if draft.enabledStageCount < 1 || draft.enabledStageCount > capabilities.maximumStages {
             issues.append(Issue(
                 id: "stages.count",
-                message: String(localized: "Ce modèle accepte de 1 à \(capabilities.maximumStages) paliers DPI."),
+                message: L10n.format("This model supports 1 to %d DPI stages.", capabilities.maximumStages),
                 isBlocking: true
             ))
         }
         if draft.activeStage >= draft.enabledStageCount {
             issues.append(Issue(
                 id: "stages.active",
-                message: String(localized: "Le palier actif doit faire partie des paliers activés."),
+                message: L10n.string( "Le palier actif doit faire partie des paliers activés."),
                 isBlocking: true
             ))
         }
@@ -406,7 +418,11 @@ public struct DraftValidator: Sendable {
                 if (try? codec.snap(dpi: value)) != value {
                     issues.append(Issue(
                         id: "stage.\(stage.index).\(axis)",
-                        message: String(localized: "Le palier \(stage.index + 1) (\(axis)) doit être un multiple du pas du capteur."),
+                        message: L10n.format(
+                            "Stage %d (%@) must be a multiple of the sensor step.",
+                            stage.index + 1,
+                            axis
+                        ),
                         isBlocking: true
                     ))
                 }
@@ -415,7 +431,7 @@ public struct DraftValidator: Sendable {
         if !capabilities.supportsRotation, draft.rotationDegrees != 0 {
             issues.append(Issue(
                 id: "rotation",
-                message: String(localized: "Ce modèle ne gère pas la calibration de rotation."),
+                message: L10n.string( "Ce modèle ne gère pas la calibration de rotation."),
                 isBlocking: true
             ))
         }

@@ -1,3 +1,4 @@
+import BibimbapLocalization
 import BibimbapFeatures
 import SwiftUI
 
@@ -37,11 +38,11 @@ struct ConnectionProgressView: View {
 
     private var label: String {
         switch state {
-        case .scanning: String(localized: "Recherche d'un périphérique…")
-        case .connecting: String(localized: "Connexion…")
-        case .reading: String(localized: "Lecture des réglages…")
-        case .writing: String(localized: "Écriture en cours…")
-        default: String(localized: "Préparation…")
+        case .scanning: L10n.string( "Recherche d'un périphérique…")
+        case .connecting: L10n.string( "Connexion…")
+        case .reading: L10n.string( "Lecture des réglages…")
+        case .writing: L10n.string( "Écriture en cours…")
+        default: L10n.string( "Préparation…")
         }
     }
 

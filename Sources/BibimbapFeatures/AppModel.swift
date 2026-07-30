@@ -1,3 +1,4 @@
+import BibimbapLocalization
 import Foundation
 import Observation
 import PulsarCatalog
@@ -37,12 +38,12 @@ public final class AppModel {
 
         public var label: String {
             switch self {
-            case .overview: String(localized: "Vue d'ensemble")
-            case .customize: String(localized: "Personnaliser")
-            case .performance: String(localized: "Performance")
-            case .macros: String(localized: "Macros")
-            case .power: String(localized: "Alimentation et dongle")
-            case .settings: String(localized: "Réglages")
+            case .overview: L10n.string( "Vue d'ensemble")
+            case .customize: L10n.string( "Personnaliser")
+            case .performance: L10n.string( "Performance")
+            case .macros: L10n.string( "Macros")
+            case .power: L10n.string( "Alimentation et dongle")
+            case .settings: L10n.string( "Réglages")
             }
         }
 
@@ -120,6 +121,26 @@ public final class AppModel {
     }
 
     public var hasPendingChanges: Bool { !pendingChanges.isEmpty }
+
+    /// Présentation officielle correspondant au CID/MID réellement lu.
+    public var deviceModel: DeviceModel? {
+        guard let snapshot else { return nil }
+        return catalog.model(cid: snapshot.identity.cid, mid: snapshot.identity.mid)
+    }
+
+    public var deviceDisplayName: String {
+        if let name = deviceModel?.name { return name }
+        guard let productName = snapshot?.productName, !productName.isEmpty else {
+            return L10n.string( "Souris Pulsar")
+        }
+        return productName
+    }
+
+    public var deviceImageName: String? { deviceModel?.imageName }
+
+    public var buttonProfiles: [ButtonProfile] {
+        snapshot?.family.buttons ?? []
+    }
 
     public var canApply: Bool {
         hasPendingChanges
@@ -244,7 +265,7 @@ public final class AppModel {
         connection = .writing(progress: 0)
         do {
             adopt(try await controller.factoryReset())
-            lastResult = WriteResult(outcome: .succeeded, applied: [String(localized: "Réinitialisation")])
+            lastResult = WriteResult(outcome: .succeeded, applied: [L10n.string( "Réinitialisation")])
             connection = .connected
         } catch {
             connection = .failed(message(for: error))
@@ -300,7 +321,7 @@ public final class AppModel {
                         await self.reload()
                         return
                     case .failed:
-                        await self.setPairing(.failed(String(localized: "Aucune souris ne s'est présentée.")))
+                        await self.setPairing(.failed(L10n.string( "Aucune souris ne s'est présentée.")))
                         return
                     }
                 } catch {

@@ -1,3 +1,4 @@
+import BibimbapLocalization
 import Foundation
 
 /// Identité d'une collection HID candidate, telle qu'énumérée par le système.
@@ -101,17 +102,17 @@ extension HIDTransportError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .notOpen:
-            String(localized: "Aucun périphérique ouvert.")
+            L10n.string( "Aucun périphérique ouvert.")
         case .deviceNotFound:
-            String(localized: "Périphérique introuvable.")
+            L10n.string( "Périphérique introuvable.")
         case .openFailed(let code):
-            String(localized: "Ouverture du périphérique refusée (code \(code)).")
+            L10n.format("Device opening denied (code %d).", code)
         case .writeFailed(let code):
-            String(localized: "Échec d'écriture du rapport HID (code \(code)).")
+            L10n.format("HID report write failed (code %d).", code)
         case .disconnected:
-            String(localized: "Le périphérique s'est déconnecté.")
+            L10n.string( "Le périphérique s'est déconnecté.")
         case .reportTooLarge(let size):
-            String(localized: "Rapport de \(size) octets trop long pour ce périphérique.")
+            L10n.format("A %d-byte report is too long for this device.", size)
         }
     }
 }
