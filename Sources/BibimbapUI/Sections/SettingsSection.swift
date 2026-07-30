@@ -1,3 +1,4 @@
+import AppKit
 import BibimbapFeatures
 import BibimbapLocalization
 import PulsarCatalog
@@ -10,8 +11,8 @@ struct SettingsSection: View {
     @Bindable var preferences = MenuBarPreferences.shared
 
     @State private var isConfirmingReset = false
-    @State private var diagnostic: String?
-    @State private var isExportingDiagnostic = false
+    @State private var isPreparingDiagnostic = false
+    @State private var diagnosticExportError: String?
     @State private var archive: ProfileArchive?
     @State private var isExportingProfile = false
     @State private var isImportingProfile = false
@@ -49,9 +50,15 @@ struct SettingsSection: View {
             }
 
             HStack(spacing: Theme.Space.large) {
-                Text(L10n.string("About Bibimbap"))
+                Button(L10n.string("About Bibimbap")) {
+                    BibimbapApplicationActions.showAbout()
+                }
+                .buttonStyle(.link)
                 Divider().frame(height: 16)
-                Text(L10n.string("127 Pulsar model images"))
+                Button(L10n.string("Help")) {
+                    BibimbapApplicationActions.openHelp()
+                }
+                .buttonStyle(.link)
                 Divider().frame(height: 16)
                 Text(L10n.format("Catalog v%@", catalog.sourceVersion))
             }
@@ -76,12 +83,6 @@ struct SettingsSection: View {
                 )
             )
         }
-        .fileExporter(
-            isPresented: $isExportingDiagnostic,
-            document: DiagnosticDocument(text: diagnostic ?? ""),
-            contentType: .plainText,
-            defaultFilename: "bibimbap-diagnostic"
-        ) { _ in }
         .fileExporter(
             isPresented: $isExportingProfile,
             document: ProfileDocument(archive: archive),
@@ -116,6 +117,17 @@ struct SettingsSection: View {
         } message: {
             Text(importError ?? "")
         }
+        .alert(
+            L10n.string("Diagnostic export failed"),
+            isPresented: Binding(
+                get: { diagnosticExportError != nil },
+                set: { if !$0 { diagnosticExportError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(diagnosticExportError ?? "")
+        }
     }
 
     private var interfacePanel: some View {
@@ -132,23 +144,23 @@ struct SettingsSection: View {
                         appearanceOption(
                             title: L10n.string("Dark"),
                             mode: .dark,
-                            isSelected: false
+                            isSelected: preferences.appearance == .dark
                         )
                         appearanceOption(
                             title: L10n.string("System"),
                             mode: .system,
-                            isSelected: true
+                            isSelected: preferences.appearance == .system
                         )
                         appearanceOption(
                             title: L10n.string("Light"),
                             mode: .light,
-                            isSelected: false
+                            isSelected: preferences.appearance == .light
                         )
                     }
                     .frame(maxWidth: .infinity)
 
                     Label(
-                        L10n.string("Automatically follows macOS"),
+                        appearanceDescription,
                         systemImage: "checkmark.circle.fill"
                     )
                     .font(.caption)
@@ -270,12 +282,17 @@ struct SettingsSection: View {
 
                 Spacer()
 
-                Button(L10n.string("Export diagnostics")) {
-                    Task {
-                        diagnostic = await model.diagnosticReport()
-                        isExportingDiagnostic = true
+                Button {
+                    exportDiagnostic()
+                } label: {
+                    if isPreparingDiagnostic {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Text(L10n.string("Export diagnostics"))
                     }
                 }
+                .disabled(isPreparingDiagnostic)
             }
         }
     }
@@ -329,47 +346,84 @@ struct SettingsSection: View {
         }
     }
 
-    fileprivate enum AppearanceMode {
-        case dark, system, light
-    }
-
     private func appearanceOption(
         title: String,
-        mode: AppearanceMode,
+        mode: AppAppearance,
         isSelected: Bool
     ) -> some View {
-        VStack(spacing: Theme.Space.small) {
-            AppearancePreview(mode: mode)
-                .frame(maxWidth: .infinity)
-                .overlay(
-                    RoundedRectangle(cornerRadius: Theme.Radius.chip)
-                        .strokeBorder(
-                            isSelected ? Color.accentColor : PremiumPalette.hairline,
-                            lineWidth: isSelected ? 2 : 0.5
+        Button {
+            preferences.appearance = mode
+        } label: {
+            VStack(spacing: Theme.Space.small) {
+                AppearancePreview(mode: mode)
+                    .frame(maxWidth: .infinity)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.Radius.chip)
+                            .strokeBorder(
+                                isSelected ? Color.accentColor : PremiumPalette.hairline,
+                                lineWidth: isSelected ? 2 : 0.5
+                            )
                         )
-                )
 
-            HStack(spacing: Theme.Space.snug) {
-                Circle()
-                    .strokeBorder(
-                        isSelected ? Color.accentColor : Color.secondary.opacity(0.5),
-                        lineWidth: 1
-                    )
-                    .frame(width: 14, height: 14)
-                    .overlay {
-                        if isSelected {
-                            Circle()
-                                .fill(Color.accentColor)
-                                .frame(width: 7, height: 7)
+                HStack(spacing: Theme.Space.snug) {
+                    Circle()
+                        .strokeBorder(
+                            isSelected ? Color.accentColor : Color.secondary.opacity(0.5),
+                            lineWidth: 1
+                        )
+                        .frame(width: 14, height: 14)
+                        .overlay {
+                            if isSelected {
+                                Circle()
+                                    .fill(Color.accentColor)
+                                    .frame(width: 7, height: 7)
+                            }
                         }
-                    }
-                Text(title)
-                    .font(.callout)
+                    Text(title)
+                        .font(.callout)
+                }
             }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
         }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var appearanceDescription: String {
+        switch preferences.appearance {
+        case .dark: L10n.string("Dark appearance is active")
+        case .system: L10n.string("Automatically follows macOS")
+        case .light: L10n.string("Light appearance is active")
+        }
+    }
+
+    private func exportDiagnostic() {
+        guard !isPreparingDiagnostic else { return }
+        isPreparingDiagnostic = true
+
+        Task {
+            let report = await model.diagnosticReport()
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [.plainText]
+            panel.nameFieldStringValue = "bibimbap-diagnostic.txt"
+            panel.canCreateDirectories = true
+
+            guard panel.runModal() == .OK, let url = panel.url else {
+                isPreparingDiagnostic = false
+                return
+            }
+
+            do {
+                try report.write(to: url, atomically: true, encoding: .utf8)
+                diagnosticExportError = nil
+            } catch {
+                diagnosticExportError = (error as? LocalizedError)?.errorDescription
+                    ?? String(describing: error)
+            }
+            isPreparingDiagnostic = false
+        }
     }
 
     private var appVersion: String {
@@ -408,7 +462,7 @@ struct SettingsSection: View {
 }
 
 private struct AppearancePreview: View {
-    let mode: SettingsSection.AppearanceMode
+    let mode: AppAppearance
 
     var body: some View {
         HStack(spacing: 0) {

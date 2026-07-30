@@ -24,6 +24,20 @@ struct DeviceControllerTests {
         #expect(snapshot.settings.dpiStages.count == snapshot.family.dpi.stages.count)
         #expect(snapshot.settings.buttons.count == snapshot.family.buttons.count)
         #expect(snapshot.firmwareVersion == snapshot.family.firmware.deviceVersion)
+        #expect(snapshot.dongleLighting?.isEnabled == true)
+        await controller.disconnect()
+    }
+
+    @Test("L'éclairage du récepteur peut être éteint et rallumé")
+    func toggleDongleLighting() async throws {
+        let (_, controller) = makeController()
+        _ = try await controller.connect()
+
+        let disabled = try await controller.setDongleLightEnabled(false)
+        #expect(disabled.dongleLighting?.isEnabled == false)
+
+        let enabled = try await controller.setDongleLightEnabled(true)
+        #expect(enabled.dongleLighting?.isEnabled == true)
         await controller.disconnect()
     }
 
@@ -57,7 +71,7 @@ struct DeviceControllerTests {
 
         var draft = snapshot.settings
         draft.debounceMilliseconds = 5
-        draft.sleepMinutes = 2
+        draft.sleepTimeCode = 30
 
         // La souris accepte les trames mais n'applique plus rien.
         await transport.setFaults({
@@ -86,7 +100,7 @@ struct DeviceControllerTests {
         var draft = snapshot.settings
         draft.debounceMilliseconds = 5
         draft.liftOffMillimetres = 2
-        draft.sleepMinutes = 2
+        draft.sleepTimeCode = 30
 
         let plan = WritePlanner(family: snapshot.family, catalog: .embedded)
             .plan(from: snapshot.settings, to: draft)

@@ -41,6 +41,10 @@ public actor SimulatedHIDTransport: HIDTransport {
     private var battery = BatteryState(percentage: 78, isCharging: false, millivolts: 3980)
     private var activeProfile = 0
     private var longDistance = false
+    private var dongleLighting = DongleLightingState(
+        mode: 1,
+        colors: [255, 255, 255, 255, 255, 255, 255, 255, 255]
+    )
 
     private var inputContinuations: [UUID: AsyncStream<HIDInputReport>.Continuation] = [:]
     private var eventContinuations: [UUID: AsyncStream<HIDDeviceEvent>.Continuation] = [:]
@@ -101,9 +105,9 @@ public actor SimulatedHIDTransport: HIDTransport {
         scalar(family.sensor.supportsMotionSync ? 1 : 0, at: FlashMap.motionSync)
         scalar(0, at: FlashMap.angleSnap)
         scalar(family.sensor.supportsRippleControl ? 1 : 0, at: FlashMap.rippleControl)
-        scalar(UInt8(family.power.defaultSleepMinutes), at: FlashMap.sleepTime)
+        scalar(UInt8(family.power.defaultSleepTimeCode), at: FlashMap.sleepTime)
         scalar(family.sensor.supportsPerformanceMode ? 1 : 0, at: FlashMap.performanceState)
-        scalar(UInt8(family.sensor.defaultPerformance), at: FlashMap.performance)
+        scalar(UInt8(family.power.defaultSleepTimeCode), at: FlashMap.performance)
         scalar(UInt8(family.sensor.defaultSensorMode), at: FlashMap.sensorMode)
         scalar(0, at: FlashMap.angleTune)
         scalar(0, at: FlashMap.angleTuneState)
@@ -265,6 +269,25 @@ public actor SimulatedHIDTransport: HIDTransport {
         case .setLongRangeMode:
             longDistance = frame[byte: 5] == 1
             return PulsarFrame(command: .setLongRangeMode)
+
+        case .get4KDongleRGBValue:
+            guard !identity.connectionType.isWired else {
+                return PulsarFrame(command: .get4KDongleRGBValue, status: 1)
+            }
+            return PulsarFrame(
+                command: .get4KDongleRGBValue,
+                payload: [dongleLighting.mode] + dongleLighting.colors
+            )
+
+        case .set4KDongleRGB:
+            guard !identity.connectionType.isWired else {
+                return PulsarFrame(command: .set4KDongleRGB, status: 1)
+            }
+            dongleLighting = DongleLightingState(
+                mode: frame[byte: 5],
+                colors: (6...14).map { frame[byte: $0] }
+            )
+            return PulsarFrame(command: .set4KDongleRGB)
 
         case .getRSSIValue:
             guard !identity.connectionType.isWired else {

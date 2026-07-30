@@ -281,6 +281,17 @@ public final class AppModel {
         }
     }
 
+    public func setDongleLightEnabled(_ enabled: Bool) async {
+        guard snapshot?.dongleLighting != nil, !connection.isBusy else { return }
+        connection = .writing(progress: 0)
+        do {
+            adopt(try await controller.setDongleLightEnabled(enabled))
+            connection = .connected
+        } catch {
+            connection = .failed(message(for: error))
+        }
+    }
+
     // MARK: Appairage
 
     public enum PairingPhase: Equatable, Sendable {

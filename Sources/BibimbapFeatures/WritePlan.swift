@@ -120,15 +120,17 @@ public struct WritePlanner: Sendable {
     }
 
     public func changes(from current: DeviceSettings, to draft: DeviceSettings) -> [PendingChange] {
-        plan(from: current, to: draft).operations.map {
-            PendingChange(
-                id: $0.id,
-                group: $0.group,
-                label: $0.label,
-                before: describe($0.rollback),
-                after: describe($0.payload)
-            )
-        }
+        plan(from: current, to: draft).operations
+            .filter { $0.id != "power.sleepPerformance" }
+            .map {
+                PendingChange(
+                    id: $0.id,
+                    group: $0.group,
+                    label: $0.label,
+                    before: describe($0.rollback),
+                    after: describe($0.payload)
+                )
+            }
     }
 
     private func describe(_ payload: WriteOperation.Payload?) -> String {
@@ -216,8 +218,6 @@ public struct WritePlanner: Sendable {
                FlashMap.rippleControl, draft.rippleControl ? 1 : 0, current.rippleControl ? 1 : 0)
         scalar("perf.performanceState", .performance, L10n.string( "Mode performance"),
                FlashMap.performanceState, draft.performanceMode ? 1 : 0, current.performanceMode ? 1 : 0)
-        scalar("perf.performance", .performance, L10n.string( "Niveau de performance"),
-               FlashMap.performance, draft.performanceLevel, current.performanceLevel)
         scalar("perf.sensorMode", .performance, L10n.string( "Mode capteur"),
                FlashMap.sensorMode, draft.sensorMode, current.sensorMode)
 
@@ -276,8 +276,12 @@ public struct WritePlanner: Sendable {
         }
 
         // 6. Alimentation, en dernier : la veille peut couper le dialogue.
-        scalar("power.sleep", .power, L10n.string( "Mise en veille"),
-               FlashMap.sleepTime, draft.sleepMinutes, current.sleepMinutes)
+        if draft.sleepTimeCode != current.sleepTimeCode {
+            scalar("power.sleep", .power, L10n.string("Mise en veille"),
+                   FlashMap.sleepTime, draft.sleepTimeCode, current.sleepTimeCode)
+            scalar("power.sleepPerformance", .power, L10n.string("Sensor sleep"),
+                   FlashMap.performance, draft.sleepTimeCode, current.performanceLevel)
+        }
         scalar("power.saveBattery", .power, L10n.string( "Seuil d'économie"),
                FlashMap.powerSaveBattery, draft.powerSaveBatteryPercent, current.powerSaveBatteryPercent)
 

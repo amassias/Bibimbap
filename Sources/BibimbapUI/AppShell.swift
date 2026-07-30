@@ -13,11 +13,13 @@ struct AppShell: View {
     var showsContent = true
 
     var body: some View {
-        HStack(spacing: 0) {
+        HSplitView {
             AppSidebar(model: model)
-                .frame(width: Theme.Shell.sidebarWidth)
-
-            Divider()
+                .frame(
+                    minWidth: Theme.Shell.sidebarMinimumWidth,
+                    idealWidth: Theme.Shell.sidebarWidth,
+                    maxWidth: Theme.Shell.sidebarMaximumWidth
+                )
 
             VStack(spacing: 0) {
                 AppTitleBar(model: model)
@@ -41,6 +43,7 @@ struct AppShell: View {
                         .frame(minHeight: Theme.Shell.footerHeight)
                 }
             }
+            .frame(minWidth: 540)
         }
         .background(PremiumPalette.canvas)
     }
@@ -117,7 +120,7 @@ private struct AppSidebar: View {
             Spacer()
 
             Button {
-                model.section = .settings
+                BibimbapApplicationActions.openHelp()
             } label: {
                 Label(L10n.string("Support"), systemImage: "questionmark.circle.fill")
                     .font(.callout)
@@ -136,6 +139,7 @@ private struct AppSidebar: View {
             }
             .buttonStyle(.plain)
             .padding(Theme.Space.large)
+            .help(L10n.string("Open Bibimbap help"))
         }
         .background(PremiumPalette.sidebar.opacity(0.92))
     }

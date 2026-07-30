@@ -98,6 +98,9 @@ public actor DeviceController {
 
         let firmware = (try? await session.readFirmwareVersion()) ?? "—"
         let dongle = identity.connectionType.isWired ? nil : try? await session.readDongleVersion()
+        let dongleLighting = identity.connectionType.isWired
+            ? nil
+            : try? await session.readDongleLighting()
         let battery = identity.connectionType.isWired ? nil : try? await session.readBattery()
         let signal = try? await session.readSignalStrength()
         let profile = try? await session.readActiveProfile()
@@ -125,6 +128,7 @@ public actor DeviceController {
             connection: HIDConnectionSummary(connectionType: identity.connectionType),
             firmwareVersion: firmware,
             dongleVersion: dongle ?? nil,
+            dongleLighting: dongleLighting ?? nil,
             battery: battery,
             signalStrength: signal ?? nil,
             activeProfile: profile ?? nil,
@@ -189,7 +193,9 @@ public actor DeviceController {
         settings.performanceMode = scalar(FlashMap.performanceState, default: 0) == 1
         settings.performanceLevel = scalar(FlashMap.performance, default: family.sensor.defaultPerformance)
         settings.sensorMode = scalar(FlashMap.sensorMode, default: family.sensor.defaultSensorMode)
-        settings.sleepMinutes = scalar(FlashMap.sleepTime, default: family.power.defaultSleepMinutes)
+        settings.sleepTimeCode = scalar(
+            FlashMap.sleepTime, default: family.power.defaultSleepTimeCode
+        )
         settings.powerSaveBatteryPercent = scalar(
             FlashMap.powerSaveBattery, default: family.power.defaultPowerSaveBattery
         )
@@ -331,6 +337,23 @@ public actor DeviceController {
     public func setActiveProfile(_ profile: Int) async throws {
         guard let session else { throw ControllerError.notConnected }
         try await session.setActiveProfile(profile)
+    }
+
+    /// Bascule l'éclairage du récepteur en conservant les couleurs actuellement stockées.
+    public func setDongleLightEnabled(_ enabled: Bool) async throws -> DeviceSnapshot {
+        guard let session else { throw ControllerError.notConnected }
+        guard let current = try await session.readDongleLighting() else {
+            throw PulsarSession.SessionError.unsupported(.get4KDongleRGBValue)
+        }
+
+        let target = current.setting(enabled: enabled)
+        try await session.setDongleLighting(target)
+
+        guard let confirmed = try await session.readDongleLighting(),
+              confirmed.isEnabled == enabled else {
+            throw PulsarSession.SessionError.unsupported(.set4KDongleRGB)
+        }
+        return try await readSnapshot()
     }
 
     /// Réinitialisation complète. Le périphérique recharge ses réglages d'usine.

@@ -18,6 +18,7 @@ public final class MenuBarPreferences {
         static let menuBarIcon = "menuBarIconVisible"
         static let dockIcon = "dockIconHidden"
         static let language = L10n.defaultsKey
+        static let appearance = "appAppearance"
     }
 
     private let defaults: UserDefaults
@@ -48,7 +49,14 @@ public final class MenuBarPreferences {
         }
     }
 
+    public var appearance: AppAppearance {
+        didSet {
+            defaults.set(appearance.rawValue, forKey: Key.appearance)
+        }
+    }
+
     public var locale: Locale { language.locale }
+    public var preferredColorScheme: ColorScheme? { appearance.colorScheme }
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -58,6 +66,9 @@ public final class MenuBarPreferences {
         language = defaults.string(forKey: Key.language)
             .flatMap(AppLanguage.init(rawValue:))
             ?? .english
+        appearance = defaults.string(forKey: Key.appearance)
+            .flatMap(AppAppearance.init(rawValue:))
+            ?? .system
     }
 
     /// Aligne la politique d'activation sur la préférence, au lancement et à chaque bascule.
@@ -66,5 +77,21 @@ public final class MenuBarPreferences {
     /// scène : `NSApp` n'existe pas encore à ce moment-là, et l'application s'arrête net.
     public func applyActivationPolicy() {
         NSApplication.shared.setActivationPolicy(isDockIconHidden ? .accessory : .regular)
+    }
+}
+
+public enum AppAppearance: String, CaseIterable, Identifiable, Sendable {
+    case dark
+    case system
+    case light
+
+    public var id: String { rawValue }
+
+    public var colorScheme: ColorScheme? {
+        switch self {
+        case .dark: .dark
+        case .system: nil
+        case .light: .light
+        }
     }
 }

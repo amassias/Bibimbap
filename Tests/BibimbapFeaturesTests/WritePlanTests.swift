@@ -15,7 +15,7 @@ private func baselineSettings() -> DeviceSettings {
     settings.activeStage = 1
     settings.debounceMilliseconds = family.debounce.default
     settings.liftOffMillimetres = family.sensor.defaultLiftOff
-    settings.sleepMinutes = family.power.defaultSleepMinutes
+    settings.sleepTimeCode = family.power.defaultSleepTimeCode
     settings.dpiStages = family.dpi.stages.enumerated().map { index, stage in
         DeviceSettings.DPIStage(index: index, x: stage.value, y: stage.value, color: stage.color)
     }
@@ -70,12 +70,24 @@ struct WritePlanTests {
     @Test("L'alimentation est écrite en dernier")
     func powerComesLast() {
         var draft = baselineSettings()
-        draft.sleepMinutes = 3
+        draft.sleepTimeCode = 30
         draft.debounceMilliseconds = 5
         draft.reportRateHertz = 500
 
         let plan = planner.plan(from: baselineSettings(), to: draft)
         #expect(plan.operations.last?.group == .power)
+    }
+
+    @Test("La veille synchronise les deux temporisations firmware")
+    func sleepWritesBothFirmwareTimers() {
+        var draft = baselineSettings()
+        draft.sleepTimeCode = 60
+        let operations = planner.plan(from: baselineSettings(), to: draft).operations
+            .filter { $0.id.hasPrefix("power.sleep") }
+
+        #expect(operations.map(\.address) == [FlashMap.sleepTime, FlashMap.performance])
+        #expect(operations.allSatisfy { $0.payload == .scalar(60) })
+        #expect(planner.changes(from: baselineSettings(), to: draft).count == 1)
     }
 
     @Test("Chaque opération porte de quoi revenir en arrière")
@@ -85,7 +97,7 @@ struct WritePlanTests {
         draft.dpiStages[2].x = 2000
         draft.dpiStages[2].y = 2000
         draft.buttons[0].function = .macro
-        draft.sleepMinutes = 2
+        draft.sleepTimeCode = 30
 
         for operation in planner.plan(from: baselineSettings(), to: draft).operations {
             #expect(operation.rollback != nil, "\(operation.id)")

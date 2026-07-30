@@ -198,10 +198,13 @@ public struct DebounceProfile: Sendable, Codable {
 }
 
 public struct PowerProfile: Sendable, Codable {
+    /// Code firmware exprimé en unités de dix secondes malgré le nom historique JSON.
     public var defaultSleepMinutes: Int
     public var defaultPowerSaveBattery: Int
     public var supportsLongDistance: Bool
     public var defaultLongDistance: Bool
+
+    public var defaultSleepTimeCode: Int { defaultSleepMinutes }
 }
 
 public struct FirmwareProfile: Sendable, Codable {

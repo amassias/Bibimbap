@@ -21,6 +21,8 @@ public struct DeviceSettings: Equatable, Sendable, Codable {
     public var performanceLevel: Int = 6
     public var sensorMode: Int = 0
     public var rotationDegrees: Int = 0
+    /// Code brut du délai de veille, conservé sous son ancien nom afin que les profils
+    /// JSON déjà exportés restent lisibles. Une unité vaut dix secondes.
     public var sleepMinutes: Int = 6
     public var powerSaveBatteryPercent: Int = 0
     public var longDistance = false
@@ -29,6 +31,26 @@ public struct DeviceSettings: Equatable, Sendable, Codable {
     public var macros: [MacroBinding] = []
 
     public init() {}
+
+    public var sleepTimeCode: Int {
+        get { sleepMinutes }
+        set { sleepMinutes = newValue }
+    }
+
+    /// Valeurs proposées par le configurateur officiel Pulsar.
+    public static let supportedSleepTimeCodes = [1, 3, 6, 30, 60, 180]
+
+    public static func sleepTimeLabel(for code: Int) -> String {
+        switch code {
+        case 1: L10n.string("10 s")
+        case 3: L10n.string("30 s")
+        case 6: L10n.string("1 min")
+        case 30: L10n.string("5 min")
+        case 60: L10n.string("10 min")
+        case 180: L10n.string("30 min")
+        default: L10n.format("Unknown value (%d)", code)
+        }
+    }
 
     /// Une macro et son nombre de répétitions, pour un emplacement donné.
     ///
@@ -113,6 +135,7 @@ public struct DeviceSnapshot: Equatable, Sendable {
     public var connection: HIDConnectionSummary
     public var firmwareVersion: String
     public var dongleVersion: String?
+    public var dongleLighting: DongleLightingState?
     public var battery: BatteryState?
     public var signalStrength: Int?
     public var activeProfile: Int?
@@ -124,6 +147,7 @@ public struct DeviceSnapshot: Equatable, Sendable {
             && lhs.connection == rhs.connection
             && lhs.firmwareVersion == rhs.firmwareVersion
             && lhs.dongleVersion == rhs.dongleVersion
+            && lhs.dongleLighting == rhs.dongleLighting
             && lhs.battery == rhs.battery
             && lhs.signalStrength == rhs.signalStrength
             && lhs.activeProfile == rhs.activeProfile

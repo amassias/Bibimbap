@@ -103,6 +103,19 @@ struct SimulatorHappyPathTests {
         #expect(try await wired.readSignalStrength() == nil)
         await wired.stop()
     }
+
+    @Test("L'éclairage du dongle conserve ses couleurs lors d'une extinction")
+    func dongleLighting() async throws {
+        let (_, session) = try await makeSession()
+        let initial = try #require(try await session.readDongleLighting())
+        let disabled = initial.setting(enabled: false)
+        try await session.setDongleLighting(disabled)
+        let readBack = try #require(try await session.readDongleLighting())
+
+        #expect(!readBack.isEnabled)
+        #expect(readBack.colors == initial.colors)
+        await session.stop()
+    }
 }
 
 @Suite("Simulateur — chemins d'erreur")

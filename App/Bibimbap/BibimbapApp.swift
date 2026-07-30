@@ -31,6 +31,7 @@ struct BibimbapApp: App {
             RootView(model: model)
                 .frame(minWidth: 980, minHeight: 700)
                 .environment(\.locale, preferences.locale)
+                .preferredColorScheme(preferences.preferredColorScheme)
                 .id(preferences.language)
                 // L'accessoire de barre des menus lance la même connexion : le garde-fou
                 // évite deux balayages quand les deux scènes apparaissent au lancement.
@@ -40,6 +41,19 @@ struct BibimbapApp: App {
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1180, height: 780)
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About Bibimbap") {
+                    BibimbapApplicationActions.showAbout()
+                }
+            }
+
+            CommandGroup(replacing: .help) {
+                Button("Bibimbap Help") {
+                    BibimbapApplicationActions.openHelp()
+                }
+                .keyboardShortcut("?", modifiers: .command)
+            }
+
             CommandGroup(after: .saveItem) {
                 Button("Appliquer les modifications") {
                     Task { await model.apply() }

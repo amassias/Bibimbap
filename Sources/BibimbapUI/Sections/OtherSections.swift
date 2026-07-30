@@ -384,11 +384,13 @@ struct PowerSection: View {
                         .padding(.bottom, Theme.Space.large)
                 }
 
-                PremiumRow(label: L10n.string("Sleep after")) {
-                    Picker("", selection: $model.draft.sleepMinutes) {
-                        Text(L10n.string("Never")).tag(0)
-                        ForEach(sleepOptions, id: \.self) { minutes in
-                            Text(L10n.format("%d min", minutes)).tag(minutes)
+                PremiumRow(
+                    label: L10n.string("Sleep after"),
+                    detail: L10n.string("The selected delay is written to both firmware sleep timers.")
+                ) {
+                    Picker("", selection: $model.draft.sleepTimeCode) {
+                        ForEach(DeviceSettings.supportedSleepTimeCodes, id: \.self) { code in
+                            Text(DeviceSettings.sleepTimeLabel(for: code)).tag(code)
                         }
                     }
                     .labelsHidden()
@@ -434,10 +436,8 @@ struct PowerSection: View {
                     .padding(.bottom, Theme.Space.large)
 
                 HStack(alignment: .center, spacing: Theme.Space.xlarge) {
-                    Image(systemName: "externaldrive.connected.to.line.below")
-                        .font(.system(size: 66, weight: .ultraLight))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 100)
+                    dongleArtwork(snapshot)
+                        .frame(width: 120, height: 150)
 
                     VStack(spacing: 0) {
                         PremiumRow(label: L10n.string("Connection")) {
@@ -457,10 +457,30 @@ struct PowerSection: View {
                         }
                         PremiumRow(
                             label: L10n.string("Firmware"),
-                            showsDivider: false
+                            showsDivider: snapshot.dongleLighting != nil
                         ) {
                             Text(snapshot.dongleVersion ?? snapshot.firmwareVersion)
                                 .monospacedDigit()
+                        }
+                        if let lighting = snapshot.dongleLighting {
+                            PremiumRow(
+                                label: L10n.string("Receiver lighting"),
+                                detail: L10n.string("Turns off the receiver LEDs without changing their colors."),
+                                showsDivider: false
+                            ) {
+                                Toggle(
+                                    "",
+                                    isOn: Binding(
+                                        get: { lighting.isEnabled },
+                                        set: { enabled in
+                                            Task { await model.setDongleLightEnabled(enabled) }
+                                        }
+                                    )
+                                )
+                                .labelsHidden()
+                                .disabled(model.connection.isBusy)
+                                .accessibilityLabel(L10n.string("Receiver lighting"))
+                            }
                         }
                     }
                 }
@@ -563,9 +583,30 @@ struct PowerSection: View {
         hertz >= 1_000 ? L10n.format("Up to %d kHz", hertz / 1_000) : "\(hertz) Hz"
     }
 
-    private var sleepOptions: [Int] {
-        Set([model.draft.sleepMinutes, 1, 2, 3, 5, 10, 15, 30])
-            .filter { $0 > 0 }
-            .sorted()
+    @ViewBuilder
+    private func dongleArtwork(_ snapshot: DeviceSnapshot) -> some View {
+        if snapshot.connection.isWired {
+            Image(systemName: "cable.connector")
+                .font(.system(size: 58, weight: .ultraLight))
+                .foregroundStyle(.secondary)
+                .accessibilityLabel(L10n.string("Wired connection"))
+        } else {
+            Image(dongleImageName(for: snapshot.identity.dongleType), bundle: .module)
+                .resizable()
+                .scaledToFit()
+                .accessibilityLabel(L10n.string("Pulsar wireless receiver"))
+        }
     }
+
+    private func dongleImageName(for type: Int) -> String {
+        switch type {
+        case 1:
+            "dongle-b"
+        case 2, 4:
+            "dongle-a"
+        default:
+            "dongle-c"
+        }
+    }
+
 }

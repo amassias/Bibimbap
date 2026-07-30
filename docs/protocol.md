@@ -137,7 +137,7 @@ attente de 5 ms par tour et 40 tours au maximum, soit un timeout de ~200 ms par 
 | 16 | `ReadCIDMID` | — |
 | 17 | `EnterMTKMode` | Phase 2 uniquement |
 | 18 | `ReadVersionID` | Version : `"v" + data[5] + "." + hex2(data[6])` |
-| 20 | `Set4KDongleRGB` | — |
+| 20 | `Set4KDongleRGB` | `mode=data[5]`, puis trois couleurs RGB en `6`, `9`, `12` |
 | 21 | `Get4KDongleRGBValue` | `mode=data[5]`, trois couleurs RGB en `6`, `9`, `12` |
 | 22 | `SetLongRangeMode` | — |
 | 23 | `GetLongRangeMode` | `actif=data[5]` ; `status = 1` ⇒ non supporté |
@@ -203,6 +203,11 @@ Les réglages vivent dans une flash de configuration lue en bloc de `0x0000` à 
 | 217 | `PowerSaveTime` | 2 |
 | 231 | `FanMode` | 2 |
 | 256 | `ShortcutKey` | 32 par emplacement |
+
+`SleepTime` et `Performance` contiennent le même code de délai, exprimé en unités
+de 10 secondes. Les valeurs proposées par l'application officielle sont `1`, `3`,
+`6`, `30`, `60` et `180`, soit 10 s, 30 s, 1 min, 5 min, 10 min et 30 min.
+Toute modification du délai doit écrire la même valeur aux adresses 173 et 183.
 | 768 | `Macro` | 384 par emplacement |
 | 6912 | `Sensor3955DPI` | 6 par palier |
 
@@ -349,24 +354,18 @@ en est l'inverse exact. Un second encodeur, exporté dans l'objet utilitaire mai
 appelé, calculerait `hz / 1000 × 16`, soit le double — c'est du code mort. L'implémentation
 Swift reprend le premier.
 
-## 6 ter. Observation non expliquée : veille et performance selon le chemin
+## 6 ter. Veille et performance
 
-Deux adresses ont été relevées avec des valeurs différentes selon la session, sans qu'aucune
-écriture ne les vise :
+Deux adresses portent volontairement le même délai :
 
-| Adresse | Champ | Filaire | Dongle, 1ʳᵉ session | Dongle, 2ᵉ session |
-|---|---|---|---|---|
-| `0x00AD` | `SleepTime` | 6 | 6 | 60 |
-| `0x00B7` | `Performance` | 6 | 6 | 60 |
+| Adresse | Champ | Exemple | Délai |
+|---|---|---|---|
+| `0x00AD` | `SleepTime` | 6 | 1 min |
+| `0x00B7` | `Performance` | 6 | 1 min |
 
-Les deux ont basculé ensemble, avec des checksums valides — donc écrits délibérément par
-quelque chose, pas corrompus. Le relevé filaire ultérieur retrouve 6, qui est aussi la
-valeur d'usine déclarée par le catalogue.
-
-L'outil d'essai relève l'empreinte des 256 octets avant et après chaque passage et n'a
-jamais constaté de dérive de son fait. L'origine du basculement reste inconnue : firmware
-s'ajustant au débit du dongle, cache côté récepteur, ou action extérieure. À surveiller,
-sans conclusion pour l'instant.
+Le configurateur officiel écrit les deux champs à chaque changement. N'en modifier
+qu'un laisse le second à sa valeur précédente ; le firmware peut alors utiliser ce
+second délai et mettre la souris en veille bien plus tôt que ce qu'affiche l'interface.
 
 ## 7. Ce qui reste à vérifier sur matériel
 

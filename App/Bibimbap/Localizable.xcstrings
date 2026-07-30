@@ -7138,6 +7138,132 @@
           }
         }
       },
+      "1 min": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "1 min" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "1 min" } }
+        }
+      },
+      "10 min": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "10 min" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "10 min" } }
+        }
+      },
+      "10 s": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "10 s" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "10 s" } }
+        }
+      },
+      "30 min": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "30 min" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "30 min" } }
+        }
+      },
+      "30 s": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "30 s" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "30 s" } }
+        }
+      },
+      "5 min": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "5 min" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "5 min" } }
+        }
+      },
+      "Dark appearance is active": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "Dark appearance is active" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "Le mode sombre est actif" } }
+        }
+      },
+      "Diagnostic export failed": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "Diagnostic export failed" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "Échec de l’export du diagnostic" } }
+        }
+      },
+      "Help": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "Help" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "Aide" } }
+        }
+      },
+      "Light appearance is active": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "Light appearance is active" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "Le mode clair est actif" } }
+        }
+      },
+      "Open Bibimbap help": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "Open Bibimbap help" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "Ouvrir l’aide de Bibimbap" } }
+        }
+      },
+      "Pulsar wireless receiver": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "Pulsar wireless receiver" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "Récepteur sans fil Pulsar" } }
+        }
+      },
+      "Receiver lighting": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "Receiver lighting" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "Éclairage du récepteur" } }
+        }
+      },
+      "Sensor sleep": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "Sensor sleep" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "Veille du capteur" } }
+        }
+      },
+      "The selected delay is written to both firmware sleep timers.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "The selected delay is written to both firmware sleep timers." } },
+          "fr": { "stringUnit": { "state": "translated", "value": "Le délai sélectionné est écrit dans les deux minuteries de veille du firmware." } }
+        }
+      },
+      "Turns off the receiver LEDs without changing their colors.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "Turns off the receiver LEDs without changing their colors." } },
+          "fr": { "stringUnit": { "state": "translated", "value": "Éteint les LED du récepteur sans modifier leurs couleurs." } }
+        }
+      },
+      "Unknown value (%d)": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "Unknown value (%d)" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "Valeur inconnue (%d)" } }
+        }
+      },
+      "Wired connection": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": { "stringUnit": { "state": "translated", "value": "Wired connection" } },
+          "fr": { "stringUnit": { "state": "translated", "value": "Connexion filaire" } }
+        }
+      },
       "Writing…": {
         "extractionState": "manual",
         "localizations": {

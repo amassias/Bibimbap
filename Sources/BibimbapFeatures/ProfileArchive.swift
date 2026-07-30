@@ -87,7 +87,7 @@ public struct ProfileArchive: Codable, Equatable, Sendable {
         }
 
         result.liftOffMillimetres = settings.liftOffMillimetres
-        result.sleepMinutes = settings.sleepMinutes
+        result.sleepTimeCode = settings.sleepTimeCode
         result.powerSaveBatteryPercent = settings.powerSaveBatteryPercent
         result.dpiEffect = settings.dpiEffect
 
