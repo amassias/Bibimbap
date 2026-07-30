@@ -1,3 +1,4 @@
+import BibimbapLocalization
 import AppKit
 
 /// L'icône affichée dans la barre des menus.
@@ -121,10 +122,10 @@ public enum MenuBarIcon {
     private static func accessibilityDescription(
         batteryPercent: Int?, isCharging: Bool, isConnected: Bool
     ) -> String {
-        guard isConnected else { return String(localized: "Bibimbap, aucune souris") }
-        guard let percent = batteryPercent else { return String(localized: "Bibimbap") }
+        guard isConnected else { return L10n.string( "Bibimbap, aucune souris") }
+        guard let percent = batteryPercent else { return L10n.string( "Bibimbap") }
         return isCharging
-            ? String(localized: "Bibimbap, batterie \(percent) %, en charge")
-            : String(localized: "Bibimbap, batterie \(percent) %")
+            ? L10n.format("Bibimbap, battery %d%%, charging", percent)
+            : L10n.format("Bibimbap, battery %d%%", percent)
     }
 }

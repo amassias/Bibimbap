@@ -20,20 +20,18 @@ public enum Theme {
     }
 
     public enum Shell {
-        public static let topBarHeight: CGFloat = 68
-        public static let sidebarWidth: CGFloat = 268
-        public static let deviceWidth: CGFloat = 330
-        /// Sous ce seuil, la zone de travail garde toute la largeur et la vue produit
-        /// s'efface. Elle revient automatiquement sur les grandes fenêtres.
-        public static let devicePaneThreshold: CGFloat = 1_020
+        public static let titleBarHeight: CGFloat = 52
+        public static let sidebarWidth: CGFloat = 272
+        public static let deviceHeaderHeight: CGFloat = 142
         public static let footerHeight: CGFloat = 68
-        public static let detailMaximumWidth: CGFloat = 900
+        public static let detailMaximumWidth: CGFloat = 1_300
     }
 
     public enum Radius {
         public static let control: CGFloat = 6
         public static let chip: CGFloat = 8
         public static let group: CGFloat = 10
+        public static let panel: CGFloat = 12
     }
 
     /// Rythme vertical d'une ligne de réglage. Assez d'air pour respirer, assez serré

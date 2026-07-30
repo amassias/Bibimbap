@@ -1,3 +1,4 @@
+import BibimbapLocalization
 import AppKit
 import BibimbapFeatures
 import SwiftUI
@@ -74,17 +75,17 @@ public struct MenuBarMenu: View {
 
     private func batteryLine(_ percentage: Int, isCharging: Bool) -> String {
         isCharging
-            ? String(localized: "Batterie \(percentage) % — en charge")
-            : String(localized: "Batterie \(percentage) %")
+            ? L10n.format("Battery %d%% — charging", percentage)
+            : L10n.format("Battery %d%%", percentage)
     }
 
     private var disconnectedLabel: String {
         switch model.connection {
-        case .scanning, .connecting, .reading: String(localized: "Recherche d'un périphérique…")
-        case .offline: String(localized: "Souris endormie")
-        case .unrecognised: String(localized: "Modèle non reconnu")
+        case .scanning, .connecting, .reading: L10n.string( "Recherche d'un périphérique…")
+        case .offline: L10n.string( "Souris endormie")
+        case .unrecognised: L10n.string( "Modèle non reconnu")
         case .failed(let reason): reason
-        default: String(localized: "Aucune souris détectée")
+        default: L10n.string( "Aucune souris détectée")
         }
     }
 
@@ -111,7 +112,7 @@ public struct MenuBarMenu: View {
 
     private func dpiMenu(snapshot: DeviceSnapshot) -> some View {
         let stages = Array(snapshot.settings.dpiStages.prefix(snapshot.settings.enabledStageCount))
-        return Menu(String(localized: "Palier DPI")) {
+        return Menu(L10n.string( "Palier DPI")) {
             ForEach(stages) { stage in
                 Toggle(
                     stageLabel(stage),
@@ -128,11 +129,11 @@ public struct MenuBarMenu: View {
         let value = stage.isSymmetric
             ? "\(stage.x)"
             : "\(stage.x) × \(stage.y)"
-        return String(localized: "Palier \(stage.index + 1) — \(value) DPI")
+        return L10n.format("Stage %d — %@ DPI", stage.index + 1, value)
     }
 
     private func reportRateMenu(snapshot: DeviceSnapshot, capabilities: DeviceCapabilities) -> some View {
-        Menu(String(localized: "Fréquence de rapport")) {
+        Menu(L10n.string( "Fréquence de rapport")) {
             ForEach(capabilities.availableReportRates, id: \.self) { rate in
                 Toggle(
                     "\(rate) Hz",
@@ -146,10 +147,10 @@ public struct MenuBarMenu: View {
     }
 
     private func profileMenu(active: Int) -> some View {
-        Menu(String(localized: "Profil")) {
+        Menu(L10n.string( "Profil")) {
             ForEach(0..<3, id: \.self) { index in
                 Toggle(
-                    String(localized: "Profil \(index + 1)"),
+                    L10n.format("Profile %d", index + 1),
                     isOn: binding(isOn: index == active) {
                         Task { await model.selectProfile(index) }
                     }
@@ -174,15 +175,15 @@ public struct MenuBarMenu: View {
     @ViewBuilder
     private var deviceActions: some View {
         if model.hasPendingChanges {
-            Button(String(localized: "Appliquer les modifications")) {
+            Button(L10n.string( "Appliquer les modifications")) {
                 Task { await model.apply() }
             }
             .disabled(!model.canApply)
         }
 
         Button(model.snapshot == nil
-            ? String(localized: "Rechercher une souris")
-            : String(localized: "Relire le périphérique")
+            ? L10n.string( "Rechercher une souris")
+            : L10n.string( "Relire le périphérique")
         ) {
             Task { model.snapshot == nil ? await model.connect() : await model.reload() }
         }
@@ -193,16 +194,16 @@ public struct MenuBarMenu: View {
 
     @ViewBuilder
     private var applicationActions: some View {
-        Button(String(localized: "Ouvrir Bibimbap")) {
+        Button(L10n.string( "Ouvrir Bibimbap")) {
             openWindow(id: "main")
             NSApp.activate(ignoringOtherApps: true)
         }
 
-        Toggle(String(localized: "Masquer l'icône du Dock"), isOn: $preferences.isDockIconHidden)
+        Toggle(L10n.string( "Masquer l'icône du Dock"), isOn: $preferences.isDockIconHidden)
 
         Divider()
 
-        Button(String(localized: "Quitter Bibimbap")) {
+        Button(L10n.string( "Quitter Bibimbap")) {
             NSApp.terminate(nil)
         }
         .keyboardShortcut("q")

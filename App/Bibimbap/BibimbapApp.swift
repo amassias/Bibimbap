@@ -30,7 +30,8 @@ struct BibimbapApp: App {
         Window("Bibimbap", id: "main") {
             RootView(model: model)
                 .frame(minWidth: 980, minHeight: 700)
-                .preferredColorScheme(.light)
+                .environment(\.locale, preferences.locale)
+                .id(preferences.language)
                 // L'accessoire de barre des menus lance la même connexion : le garde-fou
                 // évite deux balayages quand les deux scènes apparaissent au lancement.
                 .task { if model.connection == .idle { await model.connect() } }
@@ -65,6 +66,8 @@ struct BibimbapApp: App {
         // fenêtre : les deux vues lisent le même état relu, jamais deux copies.
         MenuBarExtra(isInserted: $preferences.isMenuBarIconVisible) {
             MenuBarMenu(model: model, preferences: preferences)
+                .environment(\.locale, preferences.locale)
+                .id(preferences.language)
         } label: {
             MenuBarLabel(model: model)
         }

@@ -1,213 +1,455 @@
 import BibimbapFeatures
+import BibimbapLocalization
 import PulsarProtocol
 import SwiftUI
 
-/// Édition des macros affectées aux boutons.
-///
-/// Le firmware réserve un emplacement par bouton : une macro n'existe donc que si un
-/// bouton lui est affecté. La section le dit plutôt que d'afficher une liste vide.
+/// Macro A : bibliothèque, table d'événements et inspecteur d'affectation.
 struct MacrosSection: View {
     @Bindable var model: AppModel
-    @State private var selection: Int?
+    @State private var selectedSlot: Int?
 
     private var macroButtons: [DeviceSettings.ButtonAssignment] {
         model.draft.buttons.filter { $0.function == .macro }
     }
 
+    private var selectedMacroIndex: Int? {
+        let slot = selectedSlot ?? model.draft.macros.first?.slot
+        return model.draft.macros.firstIndex { $0.slot == slot }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
+        VStack(alignment: .leading, spacing: Theme.Space.xlarge) {
+            PremiumSectionHeader(
+                title: L10n.string("Macro"),
+                subtitle: L10n.string("Create, edit and assign repeatable input sequences.")
+            )
+
             if macroButtons.isEmpty {
-                ContentUnavailableView {
-                    Label("Aucun bouton affecté à une macro", systemImage: "list.bullet.rectangle")
-                } description: {
-                    Text("Chaque macro occupe l'emplacement du bouton auquel elle est affectée. Assignez la fonction « Macro » à un bouton dans Personnaliser pour en créer une.")
-                } actions: {
-                    Button("Ouvrir Personnaliser") { model.section = .customize }
-                        .buttonStyle(.borderedProminent)
-                }
-                .frame(minHeight: 260)
+                emptyState
             } else {
-                ForEach(macroButtons) { button in
-                    macroCard(for: button)
+                macroWorkspace
+            }
+        }
+        .onAppear {
+            if selectedSlot == nil,
+               let firstAvailableSlot = model.draft.macros.first?.slot
+                    ?? macroButtons.first.map(macroSlot) {
+                selectedSlot = firstAvailableSlot
+            }
+        }
+    }
+
+    private var macroWorkspace: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: Theme.Space.small) {
+                libraryPanel
+                    .frame(width: 230)
+
+                editorPanel
+                    .frame(maxWidth: .infinity)
+
+                inspectorPanel
+                    .frame(width: 300)
+            }
+            .frame(minHeight: 520)
+
+            VStack(spacing: Theme.Space.large) {
+                libraryPanel
+                editorPanel
+                inspectorPanel
+            }
+        }
+    }
+
+    private var emptyState: some View {
+        PremiumPanel {
+            ContentUnavailableView {
+                Label(
+                    L10n.string("No button assigned to a macro"),
+                    systemImage: "macwindow.badge.plus"
+                )
+            } description: {
+                Text(
+                    L10n.string(
+                        "Assign the Macro action to a button in Customize. Its hardware slot will then appear here."
+                    )
+                )
+            } actions: {
+                Button(L10n.string("Open Customize")) {
+                    model.section = .customize
                 }
+                .buttonStyle(.borderedProminent)
+            }
+            .frame(maxWidth: .infinity, minHeight: 420)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var libraryPanel: some View {
+        PremiumPanel(padding: Theme.Space.medium) {
+            VStack(alignment: .leading, spacing: Theme.Space.medium) {
+                HStack {
+                    Text(L10n.string("Macros"))
+                        .font(.headline)
+                    Spacer()
+                    Image(systemName: "plus")
+                        .foregroundStyle(.tertiary)
+                        .help(
+                            L10n.string(
+                                "Assign another Macro action in Customize to add a hardware slot."
+                            )
+                        )
+                }
+
+                ForEach(macroButtons) { button in
+                    let slot = macroSlot(button)
+                    let binding = model.draft.macros.first { $0.slot == slot }
+                    Button {
+                        ensureMacro(slot: slot)
+                        selectedSlot = slot
+                    } label: {
+                        HStack(spacing: Theme.Space.small) {
+                            Circle()
+                                .fill(selectedSlot == slot ? Color.accentColor : Color.secondary.opacity(0.45))
+                                .frame(width: 8, height: 8)
+
+                            VStack(alignment: .leading, spacing: Theme.Space.hairline) {
+                                Text(binding?.macro.name ?? L10n.format("Macro %d", slot + 1))
+                                    .lineLimit(1)
+                                Text(L10n.format("Button %d", button.index + 1))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, Theme.Space.small)
+                        .frame(height: 52)
+                        .background(
+                            RoundedRectangle(cornerRadius: Theme.Radius.control)
+                                .fill(
+                                    selectedSlot == slot
+                                        ? Color.accentColor.opacity(0.10)
+                                        : Color.clear
+                                )
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.Radius.control)
+                                .strokeBorder(
+                                    selectedSlot == slot
+                                        ? Color.accentColor
+                                        : PremiumPalette.hairline.opacity(0.55),
+                                    lineWidth: selectedSlot == slot ? 1 : 0.5
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Spacer()
             }
         }
     }
 
     @ViewBuilder
-    private func macroCard(for button: DeviceSettings.ButtonAssignment) -> some View {
-        let slot = (button.parameter >> 8) & 0xFF
-
-        if let index = model.draft.macros.firstIndex(where: { $0.slot == slot }) {
-            MacroEditor(binding: $model.draft.macros[index], buttonIndex: button.index)
+    private var editorPanel: some View {
+        if let index = selectedMacroIndex {
+            MacroTableEditor(binding: $model.draft.macros[index])
         } else {
-            SettingsGroup(
-                title: String(localized: "Bouton \(button.index + 1)"),
-                subtitle: String(localized: "Emplacement \(slot) — aucune macro enregistrée.")
-            ) {
-                SettingsRow(label: String(localized: "Créer une macro"), showsDivider: false) {
-                    Button("Créer") {
-                        model.draft.macros.append(DeviceSettings.MacroBinding(
-                            slot: slot,
-                            macro: PulsarMacro(name: String(localized: "Macro \(slot + 1)"), steps: []),
-                            repeatCount: 1
-                        ))
-                    }
-                }
+            PremiumPanel {
+                ContentUnavailableView(
+                    L10n.string("Select a macro"),
+                    systemImage: "list.bullet.rectangle"
+                )
             }
         }
+    }
+
+    @ViewBuilder
+    private var inspectorPanel: some View {
+        if let index = selectedMacroIndex {
+            let slot = model.draft.macros[index].slot
+            let button = macroButtons.first { macroSlot($0) == slot }
+
+            PremiumPanel {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(L10n.string("Playback"))
+                        .font(.headline)
+                        .padding(.bottom, Theme.Space.medium)
+
+                    PremiumRow(label: L10n.string("Repeat mode")) {
+                        Text(L10n.string("Repeat"))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    PremiumRow(label: L10n.string("Repeat count")) {
+                        Stepper(
+                            value: $model.draft.macros[index].repeatCount,
+                            in: 1...255
+                        ) {
+                            Text("\(model.draft.macros[index].repeatCount)")
+                                .monospacedDigit()
+                                .frame(minWidth: 28)
+                        }
+                    }
+
+                    PremiumRow(
+                        label: L10n.string("Assigned to"),
+                        showsDivider: false
+                    ) {
+                        Text(
+                            button.map { L10n.format("Button %d", $0.index + 1) } ?? "—"
+                        )
+                        .foregroundStyle(Color.accentColor)
+                    }
+
+                    Divider()
+                        .padding(.vertical, Theme.Space.large)
+
+                    DeviceArtwork(model: model, maximumWidth: 190, maximumHeight: 245)
+                        .frame(maxWidth: .infinity)
+
+                    if let button {
+                        HStack {
+                            Spacer()
+                            ButtonMarker(
+                                number: button.index + 1,
+                                isHighlighted: true
+                            )
+                            Text(L10n.format("Button %d", button.index + 1))
+                                .font(.callout)
+                            Spacer()
+                        }
+                        .padding(.top, Theme.Space.medium)
+                    }
+
+                    Spacer()
+                }
+            }
+        } else {
+            EmptyView()
+        }
+    }
+
+    private func macroSlot(_ button: DeviceSettings.ButtonAssignment) -> Int {
+        (button.parameter >> 8) & 0xFF
+    }
+
+    private func ensureMacro(slot: Int) {
+        guard !model.draft.macros.contains(where: { $0.slot == slot }) else { return }
+        model.draft.macros.append(
+            DeviceSettings.MacroBinding(
+                slot: slot,
+                macro: PulsarMacro(
+                    name: L10n.format("Macro %d", slot + 1),
+                    steps: []
+                ),
+                repeatCount: 1
+            )
+        )
     }
 }
 
-/// Édition d'une macro : nom, répétitions, et liste d'étapes ordonnée.
-struct MacroEditor: View {
+private struct MacroTableEditor: View {
     @Binding var binding: DeviceSettings.MacroBinding
-    let buttonIndex: Int
-
     @State private var selection: PulsarMacro.Step.ID?
 
-    private var nameByteCount: Int { binding.macro.name.utf8.count }
-
     var body: some View {
-        SettingsGroup(
-            title: String(localized: "Bouton \(buttonIndex + 1)"),
-            subtitle: String(localized: "Emplacement \(binding.slot) · \(binding.macro.steps.count)/\(PulsarMacro.stepCapacity) étapes")
-        ) {
-            SettingsRow(
-                label: String(localized: "Nom"),
-                help: String(localized: "\(nameByteCount)/\(PulsarMacro.nameCapacity) octets — les accents en comptent deux.")
-            ) {
-                TextField("", text: $binding.macro.name)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 220)
-            }
+        PremiumPanel(padding: 0) {
+            VStack(spacing: 0) {
+                editorHeader
+                    .padding(Theme.Space.xlarge)
 
-            SettingsRow(
-                label: String(localized: "Répétitions"),
-                help: String(localized: "Nombre d'exécutions à chaque appui du bouton.")
-            ) {
-                Stepper(value: $binding.repeatCount, in: 1...255) {
-                    Text("\(binding.repeatCount)")
-                        .monospacedDigit()
-                        .frame(minWidth: 26)
+                Divider()
+
+                if binding.macro.steps.isEmpty {
+                    ContentUnavailableView {
+                        Label(
+                            L10n.string("No events yet"),
+                            systemImage: "list.number"
+                        )
+                    } description: {
+                        Text(
+                            L10n.string(
+                                "Add a mouse or keyboard event to build this macro."
+                            )
+                        )
+                    } actions: {
+                        addEventMenu
+                    }
+                    .frame(minHeight: 380)
+                } else {
+                    eventTable
                 }
             }
-
-            SettingsRow(label: String(localized: "Étapes"), showsDivider: false) {
-                HStack(spacing: 8) {
-                    Menu("Ajouter") {
-                        Button("Appui de touche") { append(kind: .key, action: .press, value: 4) }
-                        Button("Relâchement de touche") { append(kind: .key, action: .release, value: 4) }
-                        Divider()
-                        Button("Clic gauche") { appendClick(.left) }
-                        Button("Clic droit") { appendClick(.right) }
-                        Button("Clic molette") { appendClick(.middle) }
-                        Divider()
-                        Button("Déplacement") { append(kind: .movement, action: .none, value: 0) }
-                        Button("Molette vers le haut") { append(kind: .wheel, action: .none, value: 1) }
-                        Button("Molette vers le bas") { append(kind: .wheel, action: .none, value: 255) }
-                    }
-                    .fixedSize()
-                    .disabled(binding.macro.steps.count >= PulsarMacro.stepCapacity)
-
-                    Button("Supprimer", role: .destructive) {
-                        binding.macro.steps.removeAll { $0.id == selection }
-                        selection = nil
-                    }
-                    .disabled(selection == nil)
-                }
-            }
-        }
-        .overlay(alignment: .bottom) { EmptyView() }
-
-        if !binding.macro.steps.isEmpty {
-            stepTable
         }
     }
 
-    private var stepTable: some View {
-        Table($binding.macro.steps, selection: $selection) {
-            TableColumn("Nature") { $step in
-                Text(step.kind?.label ?? String(localized: "Inconnue (\(step.kindCode))"))
-                    .foregroundStyle(step.kind == nil ? .secondary : .primary)
-            }
-            .width(160)
+    private var editorHeader: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.large) {
+            HStack {
+                TextField("", text: $binding.macro.name)
+                    .textFieldStyle(.plain)
+                    .font(.title2.weight(.semibold))
+                    .accessibilityLabel(L10n.string("Macro name"))
 
-            TableColumn("État") { $step in
-                if step.kind?.isPointerEvent == true && step.kind != .mouseButton {
-                    Text("—").foregroundStyle(.secondary)
+                Spacer()
+
+                addEventMenu
+
+                Button(role: .destructive) {
+                    binding.macro.steps.removeAll { $0.id == selection }
+                    selection = nil
+                } label: {
+                    Label(L10n.string("Delete"), systemImage: "trash")
+                }
+                .disabled(selection == nil)
+            }
+
+            HStack(spacing: Theme.Space.medium) {
+                Label(
+                    L10n.format(
+                        "%d of %d steps",
+                        binding.macro.steps.count,
+                        PulsarMacro.stepCapacity
+                    ),
+                    systemImage: "list.number"
+                )
+                Text("·")
+                    .foregroundStyle(.tertiary)
+                Text(
+                    L10n.format(
+                        "%d of %d bytes",
+                        binding.macro.name.utf8.count,
+                        PulsarMacro.nameCapacity
+                    )
+                )
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private var addEventMenu: some View {
+        Menu {
+            Button(L10n.string("Key down")) {
+                append(kind: .key, action: .press, value: 4)
+            }
+            Button(L10n.string("Key up")) {
+                append(kind: .key, action: .release, value: 4)
+            }
+            Divider()
+            Button(L10n.string("Left click")) { appendClick(.left) }
+            Button(L10n.string("Right click")) { appendClick(.right) }
+            Button(L10n.string("Middle click")) { appendClick(.middle) }
+            Divider()
+            Button(L10n.string("Pointer movement")) {
+                append(kind: .movement, action: .none, value: 0)
+            }
+            Button(L10n.string("Wheel up")) {
+                append(kind: .wheel, action: .none, value: 1)
+            }
+            Button(L10n.string("Wheel down")) {
+                append(kind: .wheel, action: .none, value: 255)
+            }
+        } label: {
+            Label(L10n.string("Add Event"), systemImage: "plus")
+        }
+        .disabled(binding.macro.steps.count >= PulsarMacro.stepCapacity)
+    }
+
+    private var eventTable: some View {
+        Table($binding.macro.steps, selection: $selection) {
+            TableColumn(L10n.string("Event")) { $step in
+                Label(
+                    eventName(step),
+                    systemImage: step.kind == .mouseButton ? "computermouse" : "keyboard"
+                )
+            }
+            .width(min: 150, ideal: 190)
+
+            TableColumn(L10n.string("Action")) { $step in
+                if step.kind?.isPointerEvent == true, step.kind != .mouseButton {
+                    Text("—")
+                        .foregroundStyle(.secondary)
                 } else {
                     Picker("", selection: $step.action) {
-                        Text(PulsarMacro.Step.Action.press.label).tag(PulsarMacro.Step.Action.press)
-                        Text(PulsarMacro.Step.Action.release.label).tag(PulsarMacro.Step.Action.release)
+                        Text(PulsarMacro.Step.Action.press.label)
+                            .tag(PulsarMacro.Step.Action.press)
+                        Text(PulsarMacro.Step.Action.release.label)
+                            .tag(PulsarMacro.Step.Action.release)
                     }
                     .labelsHidden()
                 }
             }
-            .width(130)
+            .width(min: 120, ideal: 150)
 
-            TableColumn("Valeur") { $step in
-                if step.kind == .movement {
-                    movementFields(step: $step)
-                } else {
-                    TextField("", value: $step.value, format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .monospacedDigit()
+            TableColumn(L10n.string("Value")) { $step in
+                TextField("", value: $step.value, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .monospacedDigit()
+            }
+            .width(min: 80, ideal: 110)
+
+            TableColumn(L10n.string("Delay")) { $step in
+                HStack(spacing: Theme.Space.tight) {
+                    TextField(
+                        "",
+                        value: $step.delayMilliseconds,
+                        format: .number
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .monospacedDigit()
+                    Text("ms")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
-            .width(150)
-
-            TableColumn("Délai") { $step in
-                HStack(spacing: 4) {
-                    TextField("", value: $step.delayMilliseconds, format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .monospacedDigit()
-                    Text("ms").foregroundStyle(.secondary).font(.caption)
-                }
-            }
-            .width(110)
+            .width(min: 100, ideal: 120)
         }
-        .frame(minHeight: 180, maxHeight: 320)
+        .frame(minHeight: 420)
     }
 
-    private func movementFields(step: Binding<PulsarMacro.Step>) -> some View {
-        let offsets = MacroCodec.movement(from: step.wrappedValue.value)
-        return HStack(spacing: 4) {
-            axis("X", value: offsets.x) { newX in
-                step.wrappedValue.value = MacroCodec.movementValue(x: newX, y: offsets.y)
-            }
-            axis("Y", value: offsets.y) { newY in
-                step.wrappedValue.value = MacroCodec.movementValue(x: offsets.x, y: newY)
-            }
+    private func eventName(_ step: PulsarMacro.Step) -> String {
+        if step.kind == .mouseButton {
+            return step.action == .press
+                ? L10n.string("Mouse Down")
+                : L10n.string("Mouse Up")
         }
+        return step.kind?.label ?? L10n.format("Unknown (%d)", step.kindCode)
     }
 
-    private func axis(_ label: String, value: Int, set: @escaping (Int) -> Void) -> some View {
-        HStack(spacing: 2) {
-            Text(label).font(.caption).foregroundStyle(.secondary)
-            TextField("", value: Binding(get: { value }, set: set), format: .number)
-                .textFieldStyle(.roundedBorder)
-                .monospacedDigit()
-                .frame(width: 48)
-        }
-    }
-
-    private func append(kind: PulsarMacro.Step.Kind, action: PulsarMacro.Step.Action, value: Int) {
-        // 10 ms est le plancher accepté par le firmware pour un délai non nul.
+    private func append(
+        kind: PulsarMacro.Step.Kind,
+        action: PulsarMacro.Step.Action,
+        value: Int
+    ) {
         let delay = kind.isPointerEvent ? 0 : 10
         binding.macro.steps.append(
-            PulsarMacro.Step(kind: kind, action: action, value: value, delayMilliseconds: delay)
+            PulsarMacro.Step(
+                kind: kind,
+                action: action,
+                value: value,
+                delayMilliseconds: delay
+            )
         )
     }
 
     private func appendClick(_ button: PulsarMacro.MouseButtonMask) {
         binding.macro.steps.append(
-            PulsarMacro.Step(kind: .mouseButton, action: .press,
-                             value: button.rawValue, delayMilliseconds: 0)
+            PulsarMacro.Step(
+                kind: .mouseButton,
+                action: .press,
+                value: button.rawValue,
+                delayMilliseconds: 0
+            )
         )
         binding.macro.steps.append(
-            PulsarMacro.Step(kind: .mouseButton, action: .release,
-                             value: button.rawValue, delayMilliseconds: 0)
+            PulsarMacro.Step(
+                kind: .mouseButton,
+                action: .release,
+                value: button.rawValue,
+                delayMilliseconds: 0
+            )
         )
     }
 }

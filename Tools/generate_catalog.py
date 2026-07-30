@@ -18,8 +18,9 @@ import urllib.request
 
 SOURCE_URL = "https://bbb.pulsar.gg/cMouse/cfg.json"
 SENSOR_URL = "https://bbb.pulsar.gg/cMouse/sensor.json"
+DEVICE_NAME_URL = "https://bbb.pulsar.gg/cMouse/devicename.json"
 OUTPUT = pathlib.Path(__file__).resolve().parent.parent / "Sources/PulsarCatalog/Resources/catalog.json"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 def fetch(url, path=None):
@@ -58,7 +59,28 @@ def build_sensors(sensors):
     return result
 
 
-def build(cfg, sensors):
+def normalize_device_name(value):
+    """Aplatit le format officiel, qui utilise une chaîne ou deux lignes."""
+    parts = value if isinstance(value, list) else [value]
+    return " ".join(part.strip() for part in parts if part and part.strip())
+
+
+def build_models(device_names):
+    models = []
+    for group in device_names["deviceName"]:
+        cid = group["cid"]
+        for offset, name in enumerate(group["name"]):
+            mid = offset + 1
+            models.append({
+                "cid": cid,
+                "mid": mid,
+                "name": normalize_device_name(name),
+                "imageName": f"mouse-{cid:02X}-{mid:02X}",
+            })
+    return models
+
+
+def build(cfg, sensors, device_names):
     families = []
     seen_mids = set()
 
@@ -135,6 +157,7 @@ def build(cfg, sensors):
         "schemaVersion": SCHEMA_VERSION,
         "sourceVersion": cfg["version"],
         "sourceURL": SOURCE_URL,
+        "deviceNameSourceURL": DEVICE_NAME_URL,
         "vendorIDs": [int(v, 16) for v in cfg["vid"]],
         "mouseProductIDs": {
             "wired": sorted(int(p, 16) for p in cfg["pid"]["mouse"]["wired"]),
@@ -142,6 +165,7 @@ def build(cfg, sensors):
         },
         "sensors": build_sensors(sensors),
         "families": families,
+        "models": build_models(device_names),
     }
 
 
@@ -149,10 +173,19 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--from", dest="source", help="cfg.json local au lieu du réseau")
     parser.add_argument("--sensors", dest="sensors", help="sensor.json local au lieu du réseau")
+    parser.add_argument(
+        "--device-names",
+        dest="device_names",
+        help="devicename.json local au lieu du réseau",
+    )
     parser.add_argument("--check", action="store_true", help="compare sans réécrire")
     args = parser.parse_args()
 
-    catalog = build(fetch(SOURCE_URL, args.source), fetch(SENSOR_URL, args.sensors))
+    catalog = build(
+        fetch(SOURCE_URL, args.source),
+        fetch(SENSOR_URL, args.sensors),
+        fetch(DEVICE_NAME_URL, args.device_names),
+    )
     rendered = json.dumps(catalog, indent=2, ensure_ascii=False, sort_keys=True) + "\n"
 
     if args.check:
@@ -169,7 +202,8 @@ def main():
     OUTPUT.write_text(rendered)
     total_mids = sum(len(f["mids"]) for f in catalog["families"])
     print(f"{OUTPUT.relative_to(OUTPUT.parent.parent.parent.parent)} : "
-          f"{len(catalog['families'])} familles, {total_mids} MID, source v{catalog['sourceVersion']}")
+          f"{len(catalog['families'])} familles, {total_mids} MID, "
+          f"{len(catalog['models'])} visuels, source v{catalog['sourceVersion']}")
     return 0
 
 

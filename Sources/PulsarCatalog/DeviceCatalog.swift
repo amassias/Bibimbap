@@ -9,10 +9,12 @@ public struct DeviceCatalog: Sendable, Codable {
     public var schemaVersion: Int
     public var sourceVersion: String
     public var sourceURL: String
+    public var deviceNameSourceURL: String
     public var vendorIDs: [UInt16]
     public var mouseProductIDs: ProductIDs
     public var sensors: [String: SensorRanges]
     public var families: [DeviceFamily]
+    public var models: [DeviceModel]
 
     public struct ProductIDs: Sendable, Codable {
         public var wired: [UInt16]
@@ -42,6 +44,11 @@ public struct DeviceCatalog: Sendable, Codable {
         families.first { $0.cid == cid && $0.mids.contains(mid) }
     }
 
+    /// Nom et visuel officiels associés à l'identité lue dans le handshake.
+    public func model(cid: Int, mid: Int) -> DeviceModel? {
+        models.first { $0.cid == cid && $0.mid == mid }
+    }
+
     public func recognizes(vendorID: UInt16, productID: UInt16) -> Bool {
         vendorIDs.contains(vendorID) && mouseProductIDs.all.contains(productID)
     }
@@ -55,6 +62,19 @@ public struct DeviceCatalog: Sendable, Codable {
         if mouseProductIDs.wireless.contains(productID) { return .wireless }
         return nil
     }
+}
+
+/// Présentation d'un MID publiée par Bibimbap Web.
+///
+/// Les variantes et éditions limitées partagent parfois une même famille de réglages,
+/// mais gardent ici leur nom et leur photographie propres.
+public struct DeviceModel: Sendable, Codable, Identifiable {
+    public var cid: Int
+    public var mid: Int
+    public var name: String
+    public var imageName: String
+
+    public var id: String { "\(cid)-\(mid)" }
 }
 
 public enum CatalogConnection: String, Sendable, Codable {

@@ -1,3 +1,4 @@
+import BibimbapLocalization
 import Foundation
 
 /// Une macro enregistrée dans la souris.
@@ -63,13 +64,13 @@ public struct PulsarMacro: Equatable, Sendable, Codable {
 
             public var label: String {
                 switch self {
-                case .modifier: String(localized: "Modificateur")
-                case .key: String(localized: "Touche")
-                case .media: String(localized: "Touche multimédia")
-                case .mouseButton: String(localized: "Bouton souris")
-                case .movement: String(localized: "Déplacement")
-                case .wheel: String(localized: "Molette")
-                case .menuKey: String(localized: "Touche menu")
+                case .modifier: L10n.string( "Modificateur")
+                case .key: L10n.string( "Touche")
+                case .media: L10n.string( "Touche multimédia")
+                case .mouseButton: L10n.string( "Bouton souris")
+                case .movement: L10n.string( "Déplacement")
+                case .wheel: L10n.string( "Molette")
+                case .menuKey: L10n.string( "Touche menu")
                 }
             }
         }
@@ -102,9 +103,9 @@ public struct PulsarMacro: Equatable, Sendable, Codable {
 
             public var label: String {
                 switch self {
-                case .press: String(localized: "Appui")
-                case .release: String(localized: "Relâchement")
-                case .none: String(localized: "—")
+                case .press: L10n.string( "Appui")
+                case .release: L10n.string( "Relâchement")
+                case .none: L10n.string( "—")
                 }
             }
         }
@@ -120,11 +121,11 @@ public struct PulsarMacro: Equatable, Sendable, Codable {
 
         public var label: String {
             switch self {
-            case .left: String(localized: "Clic gauche")
-            case .right: String(localized: "Clic droit")
-            case .middle: String(localized: "Clic molette")
-            case .back: String(localized: "Précédent")
-            case .forward: String(localized: "Suivant")
+            case .left: L10n.string( "Clic gauche")
+            case .right: L10n.string( "Clic droit")
+            case .middle: L10n.string( "Clic molette")
+            case .back: L10n.string( "Précédent")
+            case .forward: L10n.string( "Suivant")
             }
         }
     }

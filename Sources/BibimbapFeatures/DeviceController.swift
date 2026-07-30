@@ -1,3 +1,4 @@
+import BibimbapLocalization
 import Foundation
 import PulsarCatalog
 import PulsarHID
@@ -271,7 +272,7 @@ public actor DeviceController {
                 let uncertain = await rollback(applied, using: session)
                 let message = (error as? LocalizedError)?.errorDescription
                     ?? String(describing: error)
-                let failure = String(localized: "\(operation.label) : \(message)")
+                let failure = L10n.format("%@ : %@", operation.label, message)
                 return WriteResult(
                     outcome: uncertain.isEmpty
                         ? .failedAndRestored(failure: failure)

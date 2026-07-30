@@ -1,4 +1,5 @@
 import AppKit
+import BibimbapLocalization
 import Observation
 import SwiftUI
 
@@ -16,6 +17,7 @@ public final class MenuBarPreferences {
     private enum Key {
         static let menuBarIcon = "menuBarIconVisible"
         static let dockIcon = "dockIconHidden"
+        static let language = L10n.defaultsKey
     }
 
     private let defaults: UserDefaults
@@ -40,11 +42,22 @@ public final class MenuBarPreferences {
         }
     }
 
+    public var language: AppLanguage {
+        didSet {
+            defaults.set(language.rawValue, forKey: Key.language)
+        }
+    }
+
+    public var locale: Locale { language.locale }
+
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         // L'icône de barre des menus est présente par défaut ; le Dock aussi.
         isMenuBarIconVisible = defaults.object(forKey: Key.menuBarIcon) as? Bool ?? true
         isDockIconHidden = defaults.object(forKey: Key.dockIcon) as? Bool ?? false
+        language = defaults.string(forKey: Key.language)
+            .flatMap(AppLanguage.init(rawValue:))
+            ?? .english
     }
 
     /// Aligne la politique d'activation sur la préférence, au lancement et à chaque bascule.

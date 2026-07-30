@@ -8,9 +8,21 @@ struct CatalogTests {
 
     @Test("Le catalogue se charge et déclare une source versionnée")
     func loads() {
-        #expect(catalog.schemaVersion == 1)
+        #expect(catalog.schemaVersion == 2)
         #expect(!catalog.sourceVersion.isEmpty)
         #expect(!catalog.families.isEmpty)
+    }
+
+    @Test("Chaque MID possède son nom et son visuel officiels")
+    func everyMIDHasPresentation() {
+        let published = Set(catalog.families.flatMap { family in
+            family.mids.map { "\(family.cid)-\($0)" }
+        })
+        let presented = Set(catalog.models.map(\.id))
+
+        #expect(presented == published)
+        #expect(catalog.models.allSatisfy { !$0.name.isEmpty && !$0.imageName.isEmpty })
+        #expect(catalog.model(cid: 87, mid: 10)?.name == "X2 CrazyLight")
     }
 
     @Test("Les deux constructeurs déclarés par cMouse sont présents")

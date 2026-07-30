@@ -1,7 +1,355 @@
 {
-  "sourceLanguage": "fr",
+  "sourceLanguage": "en",
   "version": "1.0",
   "strings": {
+    "−30°": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "−30°" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "−30°" } }
+      }
+    },
+    "30°": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "30°" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "30°" } }
+      }
+    },
+    "Afficher l'icône dans la barre des menus": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show icon in the menu bar" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Afficher l'icône dans la barre des menus" } }
+      }
+    },
+    "Ajouter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Add" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Ajouter" } }
+      }
+    },
+    "Barre des menus": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Menu Bar" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Barre des menus" } }
+      }
+    },
+    "Bibimbap": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Bibimbap" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Bibimbap" } }
+      }
+    },
+    "Bibimbap, aucune souris": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Bibimbap, no mouse" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Bibimbap, aucune souris" } }
+      }
+    },
+    "Cette valeur peut rendre la latence des clics perceptible.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This value may make click latency noticeable." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Cette valeur peut rendre la latence des clics perceptible." } }
+      }
+    },
+    "Délai": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Delay" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Délai" } }
+      }
+    },
+    "État": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "State" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "État" } }
+      }
+    },
+    "Flanc gauche": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Left side" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Flanc gauche" } }
+      }
+    },
+    "Fréquence de rapport": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Report rate" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Fréquence de rapport" } }
+      }
+    },
+    "L'application devient un accessoire : elle disparaît du Dock et du sélecteur d'applications, et se rouvre depuis la barre des menus.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The app becomes an accessory: it disappears from the Dock and app switcher, and reopens from the menu bar." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "L'application devient un accessoire : elle disparaît du Dock et du sélecteur d'applications, et se rouvre depuis la barre des menus." } }
+      }
+    },
+    "Masquer l'icône du Dock": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Hide Dock icon" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Masquer l'icône du Dock" } }
+      }
+    },
+    "Modèle non reconnu": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unknown model" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Modèle non reconnu" } }
+      }
+    },
+    "Modifications en attente dans la fenêtre": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Pending changes in the window" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Modifications en attente dans la fenêtre" } }
+      }
+    },
+    "Nature": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Type" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Nature" } }
+      }
+    },
+    "Nombre de paliers actifs": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Number of active stages" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Nombre de paliers actifs" } }
+      }
+    },
+    "Ouvrir Bibimbap": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open Bibimbap" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Ouvrir Bibimbap" } }
+      }
+    },
+    "Palier DPI": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "DPI stage" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Palier DPI" } }
+      }
+    },
+    "Palier DPI, fréquence et profil restent accessibles sans ouvrir la fenêtre.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "DPI stage, report rate, and profile remain available without opening the window." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Palier DPI, fréquence et profil restent accessibles sans ouvrir la fenêtre." } }
+      }
+    },
+    "Quitter Bibimbap": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Quit Bibimbap" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Quitter Bibimbap" } }
+      }
+    },
+    "Rechercher une souris": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Find a mouse" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Rechercher une souris" } }
+      }
+    },
+    "Requise tant que l'icône du Dock est masquée : sans elle, l'application n'aurait plus de point d'entrée.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Required while the Dock icon is hidden; without it, the app would have no entry point." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Requise tant que l'icône du Dock est masquée : sans elle, l'application n'aurait plus de point d'entrée." } }
+      }
+    },
+    "Souris endormie": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Sleeping mouse" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Souris endormie" } }
+      }
+    },
+    "Survolez une ligne pour situer le bouton sur le schéma.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Hover over a row to locate the button on the image." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Survolez une ligne pour situer le bouton sur l’image." } }
+      }
+    },
+    "Synchronise les données du capteur avec chaque rapport.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Synchronizes sensor data with each report." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Synchronise les données du capteur avec chaque rapport." } }
+      }
+    },
+    "Valeur": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Value" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Valeur" } }
+      }
+    },
+    "Additional button": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Additional button" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Bouton supplémentaire" } }
+      }
+    },
+    "Button map": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Button map" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Repérage des boutons" } }
+      }
+    },
+    "Macro button map": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Macro button map" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Boutons de macros" } }
+      }
+    },
+    "Primary click": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Primary click" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Clic principal" } }
+      }
+    },
+    "Secondary click": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Secondary click" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Clic secondaire" } }
+      }
+    },
+    "Side button 1": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Side button 1" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Bouton latéral 1" } }
+      }
+    },
+    "Side button 2": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Side button 2" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Bouton latéral 2" } }
+      }
+    },
+    "Top view of the mouse": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Top view of the mouse" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Vue de dessus de la souris" } }
+      }
+    },
+    "Wheel click": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Wheel click" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Clic molette" } }
+      }
+    },
+    "additional buttons": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "additional buttons" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "boutons supplémentaires" } }
+      }
+    },
+    "configurable buttons": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "configurable buttons" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "boutons configurables" } }
+      }
+    },
+    "configurable buttons detected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "configurable buttons detected" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "boutons configurables détectés" } }
+      }
+    },
+    "Bibimbap starts in English. This choice only changes the application.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bibimbap starts in English. This choice only changes the application."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bibimbap démarre en anglais. Ce choix ne modifie que l’application."
+          }
+        }
+      }
+    },
+    "Interface": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interface"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interface"
+          }
+        }
+      }
+    },
+    "Language": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Langue"
+          }
+        }
+      }
+    },
+    "The interface updates immediately; reconnecting the mouse is not necessary.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The interface updates immediately; reconnecting the mouse is not necessary."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’interface se met à jour immédiatement ; il n’est pas nécessaire de reconnecter la souris."
+          }
+        }
+      }
+    },
     "Actif": {
       "extractionState": "manual",
       "localizations": {
@@ -3657,6 +4005,402 @@
         }
       }
     },
+    "%@ : %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ : %2$@"
+          }
+        }
+      }
+    },
+    "%d macro(s) outside this model's slots": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d macro(s) hors des emplacements de ce modèle"
+          }
+        }
+      }
+    },
+    "%d min": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d min"
+          }
+        }
+      }
+    },
+    "%d pending changes": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d modifications en attente"
+          }
+        }
+      }
+    },
+    "%d/%d bytes — accented characters count as two.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d/%2$d octets — les accents en comptent deux."
+          }
+        }
+      }
+    },
+    "A %d-byte report is too long for this device.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un rapport de %d octets est trop long pour ce périphérique."
+          }
+        }
+      }
+    },
+    "A macro cannot exceed %d steps.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une macro ne peut pas dépasser %d étapes."
+          }
+        }
+      }
+    },
+    "A macro name must be 1 to %d bytes; “%@” uses %d.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le nom d'une macro doit tenir en 1 à %1$d octets ; « %2$@ » en fait %3$d."
+          }
+        }
+      }
+    },
+    "Above %d ms, click latency becomes noticeable.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Au-delà de %d ms, la latence des clics devient perceptible."
+          }
+        }
+      }
+    },
+    "Battery %d%%": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batterie %d %%"
+          }
+        }
+      }
+    },
+    "Battery %d%% — charging": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batterie %d %% — en charge"
+          }
+        }
+      }
+    },
+    "Bibimbap, battery %d%%": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bibimbap, batterie %d %%"
+          }
+        }
+      }
+    },
+    "Bibimbap, battery %d%%, charging": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bibimbap, batterie %d %%, en charge"
+          }
+        }
+      }
+    },
+    "Button %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bouton %d"
+          }
+        }
+      }
+    },
+    "Button %d (not available on this model)": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bouton %d (absent de ce modèle)"
+          }
+        }
+      }
+    },
+    "Debounce time cannot exceed %d ms.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le temps de rebond ne peut pas dépasser %d ms."
+          }
+        }
+      }
+    },
+    "Device opening denied (code %d).": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouverture du périphérique refusée (code %d)."
+          }
+        }
+      }
+    },
+    "HID report write failed (code %d).": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Échec d'écriture du rapport HID (code %d)."
+          }
+        }
+      }
+    },
+    "Macro %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Macro %d"
+          }
+        }
+      }
+    },
+    "Macro “%@”": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Macro « %@ »"
+          }
+        }
+      }
+    },
+    "Maximum %d Hz via %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum %1$d Hz via %2$@."
+          }
+        }
+      }
+    },
+    "Polling (%d Hz)": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polling (%d Hz)"
+          }
+        }
+      }
+    },
+    "Profile %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil %d"
+          }
+        }
+      }
+    },
+    "Slot %d — no macro saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emplacement %d — aucune macro enregistrée."
+          }
+        }
+      }
+    },
+    "Slot %d · %d/%d steps": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emplacement %1$d · %2$d/%3$d étapes"
+          }
+        }
+      }
+    },
+    "Stage %d": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palier %d"
+          }
+        }
+      }
+    },
+    "Stage %d (%@) must be a multiple of the sensor step.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le palier %1$d (%2$@) doit être un multiple du pas du capteur."
+          }
+        }
+      }
+    },
+    "Stage %d adjusted to %d DPI": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palier %1$d ramené à %2$d DPI"
+          }
+        }
+      }
+    },
+    "Stage %d color": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couleur du palier %d"
+          }
+        }
+      }
+    },
+    "Stage %d — %d DPI": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palier %1$d — %2$d DPI"
+          }
+        }
+      }
+    },
+    "Stage %d — %d × %d DPI": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palier %1$d — %2$d × %3$d DPI"
+          }
+        }
+      }
+    },
+    "Stage %d — %@ DPI": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palier %1$d — %2$@ DPI"
+          }
+        }
+      }
+    },
+    "This backup uses version %d, which this app cannot read.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette sauvegarde est en version %d, que cette application ne sait pas relire."
+          }
+        }
+      }
+    },
+    "This model supports 1 to %d DPI stages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce modèle accepte de 1 à %d paliers DPI."
+          }
+        }
+      }
+    },
+    "This model supports up to %d Hz on this connection.": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce modèle ne dépasse pas %d Hz sur cette connexion."
+          }
+        }
+      }
+    },
+    "Unknown (%d)": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inconnue (%d)"
+          }
+        }
+      }
+    },
     "—": {
       "extractionState": "manual",
       "localizations": {
@@ -3673,6 +4417,2743 @@
           }
         }
       }
-    }
+    },
+      "%d configurable buttons detected for %@.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "%d configurable buttons detected for %@."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "%d boutons configurables détectés pour %@."
+            }
+          }
+        }
+      },
+      "%d of %d bytes": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "%d of %d bytes"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "%d octets sur %d"
+            }
+          }
+        }
+      },
+      "%d of %d steps": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "%d of %d steps"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "%d étapes sur %d"
+            }
+          }
+        }
+      },
+      "%d stages": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "%d stages"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "%d paliers"
+            }
+          }
+        }
+      },
+      "127 Pulsar model images": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "127 Pulsar model images"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "127 images de modèles Pulsar"
+            }
+          }
+        }
+      },
+      "About Bibimbap": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "About Bibimbap"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "À propos de Bibimbap"
+            }
+          }
+        }
+      },
+      "Action": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Action"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Action"
+            }
+          }
+        }
+      },
+      "Active DPI": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Active DPI"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "DPI actif"
+            }
+          }
+        }
+      },
+      "Add Event": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Add Event"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Ajouter un événement"
+            }
+          }
+        }
+      },
+      "Add a mouse or keyboard event to build this macro.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Add a mouse or keyboard event to build this macro."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Ajoutez un événement de souris ou de clavier pour construire cette macro."
+            }
+          }
+        }
+      },
+      "Adjust DPI, polling rate and sensor behavior": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Adjust DPI, polling rate and sensor behavior"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Réglez les DPI, la fréquence d’interrogation et le comportement du capteur"
+            }
+          }
+        }
+      },
+      "All settings, button assignments and macros stored in the mouse will be replaced by factory defaults.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "All settings, button assignments and macros stored in the mouse will be replaced by factory defaults."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Tous les réglages, affectations de boutons et macros stockés dans la souris seront remplacés par les valeurs d’usine."
+            }
+          }
+        }
+      },
+      "Appearance": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Appearance"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Apparence"
+            }
+          }
+        }
+      },
+      "Apply": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Apply"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Appliquer"
+            }
+          }
+        }
+      },
+      "Assign another Macro action in Customize to add a hardware slot.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Assign another Macro action in Customize to add a hardware slot."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Affectez une autre action Macro dans Personnaliser pour ajouter un emplacement matériel."
+            }
+          }
+        }
+      },
+      "Assign the Macro action to a button in Customize. Its hardware slot will then appear here.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Assign the Macro action to a button in Customize. Its hardware slot will then appear here."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Affectez l’action Macro à un bouton dans Personnaliser. Son emplacement matériel apparaîtra ensuite ici."
+            }
+          }
+        }
+      },
+      "Assigned to": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Assigned to"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Affectée à"
+            }
+          }
+        }
+      },
+      "Automatically follows macOS": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Automatically follows macOS"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Suit automatiquement macOS"
+            }
+          }
+        }
+      },
+      "Back": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Back"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Précédent"
+            }
+          }
+        }
+      },
+      "Backup loaded into pending changes.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Backup loaded into pending changes."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Sauvegarde chargée dans les modifications en attente."
+            }
+          }
+        }
+      },
+      "Battery": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Battery"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Batterie"
+            }
+          }
+        }
+      },
+      "Battery data is not reported over USB.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Battery data is not reported over USB."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Les données de batterie ne sont pas transmises en USB."
+            }
+          }
+        }
+      },
+      "Bibimbap is ready": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Bibimbap is ready"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Bibimbap est prêt"
+            }
+          }
+        }
+      },
+      "Bibimbap remains available from the menu bar.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Bibimbap remains available from the menu bar."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Bibimbap reste accessible depuis la barre des menus."
+            }
+          }
+        }
+      },
+      "Brightness": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Brightness"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Luminosité"
+            }
+          }
+        }
+      },
+      "Button assignments": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Button assignments"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Affectation des boutons"
+            }
+          }
+        }
+      },
+      "Cancel": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Cancel"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Annuler"
+            }
+          }
+        }
+      },
+      "Charge and play": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Charge and play"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Charger et jouer"
+            }
+          }
+        }
+      },
+      "Connect the receiver before starting.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Connect the receiver before starting."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Branchez le récepteur avant de commencer."
+            }
+          }
+        }
+      },
+      "Connected": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Connected"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Connectée"
+            }
+          }
+        }
+      },
+      "Connection": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Connection"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Connexion"
+            }
+          }
+        }
+      },
+      "Constrains cursor movement to the axes.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Constrains cursor movement to the axes."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Contraint le déplacement du pointeur sur les axes."
+            }
+          }
+        }
+      },
+      "Create macro": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Create macro"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Créer une macro"
+            }
+          }
+        }
+      },
+      "Create, edit and assign repeatable input sequences.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Create, edit and assign repeatable input sequences."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Créez, modifiez et affectez des séquences d’entrée répétables."
+            }
+          }
+        }
+      },
+      "Current mode": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Current mode"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Mode actuel"
+            }
+          }
+        }
+      },
+      "Current setup": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Current setup"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Configuration actuelle"
+            }
+          }
+        }
+      },
+      "Customize": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Customize"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Personnaliser"
+            }
+          }
+        }
+      },
+      "Customize buttons": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Customize buttons"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Personnaliser les boutons"
+            }
+          }
+        }
+      },
+      "DPI Cycle": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "DPI Cycle"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Cycle DPI"
+            }
+          }
+        }
+      },
+      "DPI Indicator": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "DPI Indicator"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Indicateur DPI"
+            }
+          }
+        }
+      },
+      "DPI Lock": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "DPI Lock"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Verrouillage DPI"
+            }
+          }
+        }
+      },
+      "DPI Stages": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "DPI Stages"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Paliers DPI"
+            }
+          }
+        }
+      },
+      "DPI lighting": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "DPI lighting"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Éclairage DPI"
+            }
+          }
+        }
+      },
+      "Dark": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Dark"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Sombre"
+            }
+          }
+        }
+      },
+      "Debounce Time": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Debounce Time"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Temps d’anti-rebond"
+            }
+          }
+        }
+      },
+      "Delay": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Delay"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Délai"
+            }
+          }
+        }
+      },
+      "Delete": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Delete"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Supprimer"
+            }
+          }
+        }
+      },
+      "Device settings stay on this Mac. The exported report contains protocol frames but no personal data.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Device settings stay on this Mac. The exported report contains protocol frames but no personal data."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Les réglages du périphérique restent sur ce Mac. Le rapport exporté contient des trames de protocole, mais aucune donnée personnelle."
+            }
+          }
+        }
+      },
+      "Device tools": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Device tools"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Outils du périphérique"
+            }
+          }
+        }
+      },
+      "Disabled": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Disabled"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Désactivé"
+            }
+          }
+        }
+      },
+      "Disconnected": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Disconnected"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Déconnectée"
+            }
+          }
+        }
+      },
+      "Effect": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Effect"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Effet"
+            }
+          }
+        }
+      },
+      "Erases macros and custom button assignments.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Erases macros and custom button assignments."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Efface les macros et les affectations personnalisées."
+            }
+          }
+        }
+      },
+      "Event": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Event"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Événement"
+            }
+          }
+        }
+      },
+      "Excellent": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Excellent"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Excellent"
+            }
+          }
+        }
+      },
+      "Export diagnostics": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Export diagnostics"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Exporter le diagnostic"
+            }
+          }
+        }
+      },
+      "Export…": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Export…"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Exporter…"
+            }
+          }
+        }
+      },
+      "Factory reset": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Factory reset"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Réinitialisation d’usine"
+            }
+          }
+        }
+      },
+      "Fair": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Fair"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Moyen"
+            }
+          }
+        }
+      },
+      "Forward": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Forward"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Suivant"
+            }
+          }
+        }
+      },
+      "Good": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Good"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Bon"
+            }
+          }
+        }
+      },
+      "Hardware state uncertain": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Hardware state uncertain"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "État matériel incertain"
+            }
+          }
+        }
+      },
+      "Height at which the sensor stops tracking.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Height at which the sensor stops tracking."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Hauteur à laquelle le capteur cesse de suivre le mouvement."
+            }
+          }
+        }
+      },
+      "Hide Dock icon": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Hide Dock icon"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Masquer l’icône du Dock"
+            }
+          }
+        }
+      },
+      "Horizontal scroll": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Horizontal scroll"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Défilement horizontal"
+            }
+          }
+        }
+      },
+      "Ignores mechanical bounce from the switch.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Ignores mechanical bounce from the switch."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Ignore les rebonds mécaniques de l’interrupteur."
+            }
+          }
+        }
+      },
+      "Import or export a versioned JSON backup.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Import or export a versioned JSON backup."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Importez ou exportez une sauvegarde JSON versionnée."
+            }
+          }
+        }
+      },
+      "Import…": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Import…"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Importer…"
+            }
+          }
+        }
+      },
+      "Key down": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Key down"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Touche enfoncée"
+            }
+          }
+        }
+      },
+      "Key up": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Key up"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Touche relâchée"
+            }
+          }
+        }
+      },
+      "Keyboard Shortcut": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Keyboard Shortcut"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Raccourci clavier"
+            }
+          }
+        }
+      },
+      "Left Click": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Left Click"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Clic gauche"
+            }
+          }
+        }
+      },
+      "Left click": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Left click"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Clic gauche"
+            }
+          }
+        }
+      },
+      "Lift-Off Distance": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Lift-Off Distance"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Distance de décrochage"
+            }
+          }
+        }
+      },
+      "Light": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Light"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Clair"
+            }
+          }
+        }
+      },
+      "Lighting": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Lighting"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Éclairage"
+            }
+          }
+        }
+      },
+      "Loaded with unsupported settings skipped: ": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Loaded with unsupported settings skipped: "
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Chargée en ignorant les réglages non pris en charge : "
+            }
+          }
+        }
+      },
+      "Long range mode": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Long range mode"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Mode longue portée"
+            }
+          }
+        }
+      },
+      "Macro name": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Macro name"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Nom de la macro"
+            }
+          }
+        }
+      },
+      "Menu bar & startup": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Menu bar & startup"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Barre des menus et démarrage"
+            }
+          }
+        }
+      },
+      "Middle Click": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Middle Click"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Clic du milieu"
+            }
+          }
+        }
+      },
+      "Middle click": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Middle click"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Clic du milieu"
+            }
+          }
+        }
+      },
+      "Mouse Down": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Mouse Down"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Bouton de souris enfoncé"
+            }
+          }
+        }
+      },
+      "Mouse Rotation Calibration": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Mouse Rotation Calibration"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Étalonnage de la rotation"
+            }
+          }
+        }
+      },
+      "Mouse Up": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Mouse Up"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Bouton de souris relâché"
+            }
+          }
+        }
+      },
+      "Mouse button": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Mouse button"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Bouton de souris"
+            }
+          }
+        }
+      },
+      "Mouse firmware": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Mouse firmware"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Micrologiciel de la souris"
+            }
+          }
+        }
+      },
+      "Never": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Never"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Jamais"
+            }
+          }
+        }
+      },
+      "No button assigned to a macro": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "No button assigned to a macro"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Aucun bouton affecté à une macro"
+            }
+          }
+        }
+      },
+      "No events yet": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "No events yet"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Aucun événement"
+            }
+          }
+        }
+      },
+      "Not reported": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Not reported"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Non communiqué"
+            }
+          }
+        }
+      },
+      "Off": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Off"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Désactivé"
+            }
+          }
+        }
+      },
+      "Open Customize": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Open Customize"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Ouvrir Personnaliser"
+            }
+          }
+        }
+      },
+      "Overview": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Overview"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Vue d’ensemble"
+            }
+          }
+        }
+      },
+      "Pair": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Pair"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Associer"
+            }
+          }
+        }
+      },
+      "Pair device": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Pair device"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Associer le périphérique"
+            }
+          }
+        }
+      },
+      "Pair wireless receiver": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Pair wireless receiver"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Associer le récepteur sans fil"
+            }
+          }
+        }
+      },
+      "Paired": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Paired"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Associé"
+            }
+          }
+        }
+      },
+      "Pairing succeeded.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Pairing succeeded."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Association réussie."
+            }
+          }
+        }
+      },
+      "Pending Changes": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Pending Changes"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Modifications en attente"
+            }
+          }
+        }
+      },
+      "Performance mode": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Performance mode"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Mode performance"
+            }
+          }
+        }
+      },
+      "Playback": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Playback"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Lecture"
+            }
+          }
+        }
+      },
+      "Pointer movement": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Pointer movement"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Déplacement du pointeur"
+            }
+          }
+        }
+      },
+      "Polling Rate": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Polling Rate"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Fréquence d’interrogation"
+            }
+          }
+        }
+      },
+      "Polling Rate Cycle": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Polling Rate Cycle"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Cycle de fréquence"
+            }
+          }
+        }
+      },
+      "Polling capacity": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Polling capacity"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Fréquence maximale"
+            }
+          }
+        }
+      },
+      "Power & Dongle": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Power & Dongle"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Alimentation et dongle"
+            }
+          }
+        }
+      },
+      "Power behavior": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Power behavior"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Comportement énergétique"
+            }
+          }
+        }
+      },
+      "Power saving threshold": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Power saving threshold"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Seuil d’économie d’énergie"
+            }
+          }
+        }
+      },
+      "Privacy & diagnostics": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Privacy & diagnostics"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Confidentialité et diagnostic"
+            }
+          }
+        }
+      },
+      "Profile": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Profile"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Profil"
+            }
+          }
+        }
+      },
+      "Profile Cycle": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Profile Cycle"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Cycle de profil"
+            }
+          }
+        }
+      },
+      "Profile backup": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Profile backup"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Sauvegarde du profil"
+            }
+          }
+        }
+      },
+      "Pulsar mouse": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Pulsar mouse"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Souris Pulsar"
+            }
+          }
+        }
+      },
+      "Raises the sensor scan rate.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Raises the sensor scan rate."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Augmente la fréquence d’analyse du capteur."
+            }
+          }
+        }
+      },
+      "Rapid Fire": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Rapid Fire"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Tir rapide"
+            }
+          }
+        }
+      },
+      "Reading…": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Reading…"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Lecture…"
+            }
+          }
+        }
+      },
+      "Ready to pair": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Ready to pair"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Prêt pour l’association"
+            }
+          }
+        }
+      },
+      "Receiver firmware": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Receiver firmware"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Micrologiciel du récepteur"
+            }
+          }
+        }
+      },
+      "Record and assign repeatable actions": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Record and assign repeatable actions"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Enregistrez et affectez des actions répétables"
+            }
+          }
+        }
+      },
+      "Reload device": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Reload device"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Relire le périphérique"
+            }
+          }
+        }
+      },
+      "Remap the controls available on this model": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Remap the controls available on this model"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Réaffectez les commandes disponibles sur ce modèle"
+            }
+          }
+        }
+      },
+      "Repeat": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Repeat"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Répéter"
+            }
+          }
+        }
+      },
+      "Repeat count": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Repeat count"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Nombre de répétitions"
+            }
+          }
+        }
+      },
+      "Repeat mode": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Repeat mode"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Mode de répétition"
+            }
+          }
+        }
+      },
+      "Reset": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Reset"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Réinitialiser"
+            }
+          }
+        }
+      },
+      "Reset the mouse?": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Reset the mouse?"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Réinitialiser la souris ?"
+            }
+          }
+        }
+      },
+      "Reset…": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Reset…"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Réinitialiser…"
+            }
+          }
+        }
+      },
+      "Restore defaults": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Restore defaults"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Restaurer les valeurs par défaut"
+            }
+          }
+        }
+      },
+      "Revert": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Revert"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Annuler"
+            }
+          }
+        }
+      },
+      "Right Click": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Right Click"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Clic droit"
+            }
+          }
+        }
+      },
+      "Right click": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Right click"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Clic droit"
+            }
+          }
+        }
+      },
+      "Searching · %d s remaining": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Searching · %d s remaining"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Recherche · %d s restantes"
+            }
+          }
+        }
+      },
+      "Select a macro": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Select a macro"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Sélectionner une macro"
+            }
+          }
+        }
+      },
+      "Sensor & Motion": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Sensor & Motion"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Capteur et mouvement"
+            }
+          }
+        }
+      },
+      "Settings": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Settings"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Réglages"
+            }
+          }
+        }
+      },
+      "Show in menu bar": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Show in menu bar"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Afficher dans la barre des menus"
+            }
+          }
+        }
+      },
+      "Show pending change details": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Show pending change details"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Afficher le détail des modifications en attente"
+            }
+          }
+        }
+      },
+      "Sleep after": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Sleep after"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Mise en veille après"
+            }
+          }
+        }
+      },
+      "Smooths out tracking micro-vibrations.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Smooths out tracking micro-vibrations."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Lisse les micro-vibrations du suivi."
+            }
+          }
+        }
+      },
+      "Stages": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Stages"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Paliers"
+            }
+          }
+        }
+      },
+      "Support": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Support"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Assistance"
+            }
+          }
+        }
+      },
+      "Synchronizes sensor data with each report.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Synchronizes sensor data with each report."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Synchronise les données du capteur avec chaque rapport."
+            }
+          }
+        }
+      },
+      "System": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "System"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Système"
+            }
+          }
+        }
+      },
+      "This value may make click latency noticeable.": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "This value may make click latency noticeable."
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Cette valeur peut rendre la latence des clics perceptible."
+            }
+          }
+        }
+      },
+      "Tune performance": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Tune performance"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Régler les performances"
+            }
+          }
+        }
+      },
+      "Unreadable backup": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Unreadable backup"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Sauvegarde illisible"
+            }
+          }
+        }
+      },
+      "Up to %d kHz": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Up to %d kHz"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Jusqu’à %d kHz"
+            }
+          }
+        }
+      },
+      "Value": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Value"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Valeur"
+            }
+          }
+        }
+      },
+      "Version %@ · Catalog v%@": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Version %@ · Catalog v%@"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Version %@ · Catalogue v%@"
+            }
+          }
+        }
+      },
+      "Versions": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Versions"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Versions"
+            }
+          }
+        }
+      },
+      "Vertical scroll": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Vertical scroll"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Défilement vertical"
+            }
+          }
+        }
+      },
+      "Voltage": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Voltage"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Tension"
+            }
+          }
+        }
+      },
+      "Weak": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Weak"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Faible"
+            }
+          }
+        }
+      },
+      "Wheel down": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Wheel down"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Molette vers le bas"
+            }
+          }
+        }
+      },
+      "Wheel up": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Wheel up"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Molette vers le haut"
+            }
+          }
+        }
+      },
+      "Wired": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Wired"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Filaire"
+            }
+          }
+        }
+      },
+      "Wireless": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Wireless"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Sans fil"
+            }
+          }
+        }
+      },
+      "Wireless receiver": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Wireless receiver"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Récepteur sans fil"
+            }
+          }
+        }
+      },
+      "Catalog v%@": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Catalog v%@"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Catalogue v%@"
+            }
+          }
+        }
+      },
+      "Writing…": {
+        "extractionState": "manual",
+        "localizations": {
+          "en": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Writing…"
+            }
+          },
+          "fr": {
+            "stringUnit": {
+              "state": "translated",
+              "value": "Écriture…"
+            }
+          }
+        }
+      }
   }
 }

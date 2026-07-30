@@ -106,7 +106,7 @@ struct ProfileArchiveTests {
             current: snapshot.settings
         )
         #expect(result.dpiStages[0].x == 410)
-        #expect(skipped.contains { $0.contains("Palier 1") })
+        #expect(skipped.contains { $0.contains("Stage 1") })
     }
 
     @Test("Une capacité absente du modèle est écartée et nommée")
