@@ -87,17 +87,14 @@ struct BibimbapApp: App {
 private struct AppWindowContent: View {
     let model: AppModel
     @Bindable var preferences: MenuBarPreferences
-    @Environment(\.colorScheme) private var systemColorScheme
 
     var body: some View {
         RootView(model: model)
             .frame(minWidth: 980, minHeight: 700)
             .environment(\.locale, preferences.locale)
-            // Un identifiant qui inclut l'apparence force SwiftUI à retirer un ancien
-            // override explicite avant d'appliquer le mode System.
-            .preferredColorScheme(
-                preferences.appearance.resolvedColorScheme(for: systemColorScheme)
-            )
+            // En mode System, nil retire l'override explicite et laisse macOS piloter
+            // l'apparence; l'identifiant force SwiftUI à reconstruire le contenu.
+            .preferredColorScheme(preferences.preferredColorScheme)
             .id("\(preferences.language.rawValue)-\(preferences.appearance.rawValue)")
             // L'accessoire de barre des menus lance la même connexion : le garde-fou
             // évite deux balayages quand les deux scènes apparaissent au lancement.
