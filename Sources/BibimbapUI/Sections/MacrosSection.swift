@@ -7,14 +7,19 @@ import SwiftUI
 struct MacrosSection: View {
     @Bindable var model: AppModel
     @State private var selectedSlot: Int?
+    @FocusState private var isMacroLibraryFocused: Bool
 
     private var macroButtons: [DeviceSettings.ButtonAssignment] {
         model.draft.buttons.filter { $0.function == .macro }
     }
 
+    private var macroSlots: [Int] {
+        macroButtons.map(macroSlot)
+    }
+
     private var selectedMacroIndex: Int? {
-        let slot = selectedSlot ?? model.draft.macros.first?.slot
-        return model.draft.macros.firstIndex { $0.slot == slot }
+        guard let selectedSlot else { return nil }
+        return model.draft.macros.firstIndex { $0.slot == selectedSlot }
     }
 
     var body: some View {
@@ -32,8 +37,9 @@ struct MacrosSection: View {
         }
         .onAppear {
             if selectedSlot == nil,
-               let firstAvailableSlot = model.draft.macros.first?.slot
-                    ?? macroButtons.first.map(macroSlot) {
+               let firstAvailableSlot = macroSlots.first(where: { slot in
+                   model.draft.macros.contains { $0.slot == slot }
+               }) {
                 selectedSlot = firstAvailableSlot
             }
         }
@@ -105,8 +111,7 @@ struct MacrosSection: View {
                     let slot = macroSlot(button)
                     let binding = model.draft.macros.first { $0.slot == slot }
                     Button {
-                        ensureMacro(slot: slot)
-                        selectedSlot = slot
+                        selectMacro(slot: slot)
                     } label: {
                         HStack(spacing: Theme.Space.small) {
                             Circle()
@@ -123,6 +128,7 @@ struct MacrosSection: View {
                             Spacer()
                         }
                         .padding(.horizontal, Theme.Space.small)
+                        .frame(maxWidth: .infinity)
                         .frame(height: 52)
                         .background(
                             RoundedRectangle(cornerRadius: Theme.Radius.control)
@@ -141,12 +147,27 @@ struct MacrosSection: View {
                                     lineWidth: selectedSlot == slot ? 1 : 0.5
                                 )
                         )
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityAddTraits(selectedSlot == slot ? .isSelected : [])
                 }
 
                 Spacer()
             }
+        }
+        .focusable()
+        .focused($isMacroLibraryFocused)
+        .onMoveCommand { direction in
+            moveSelection(direction)
+        }
+        .onKeyPress(.upArrow) {
+            moveSelection(.up)
+            return .handled
+        }
+        .onKeyPress(.downArrow) {
+            moveSelection(.down)
+            return .handled
         }
     }
 
@@ -234,6 +255,33 @@ struct MacrosSection: View {
         (button.parameter >> 8) & 0xFF
     }
 
+    private func selectMacro(slot: Int) {
+        ensureMacro(slot: slot)
+        selectedSlot = slot
+        isMacroLibraryFocused = true
+    }
+
+    private func moveSelection(_ direction: MoveCommandDirection) {
+        let selectionDirection: MacroSelectionDirection
+        switch direction {
+        case .up:
+            selectionDirection = .previous
+        case .down:
+            selectionDirection = .next
+        default:
+            return
+        }
+
+        guard let slot = MacroSelectionNavigator.slot(
+            after: selectedSlot,
+            in: macroSlots,
+            direction: selectionDirection
+        ) else {
+            return
+        }
+        selectMacro(slot: slot)
+    }
+
     private func ensureMacro(slot: Int) {
         guard !model.draft.macros.contains(where: { $0.slot == slot }) else { return }
         model.draft.macros.append(
@@ -246,6 +294,31 @@ struct MacrosSection: View {
                 repeatCount: 1
             )
         )
+    }
+}
+
+enum MacroSelectionDirection {
+    case previous
+    case next
+}
+
+enum MacroSelectionNavigator {
+    static func slot(
+        after currentSlot: Int?,
+        in slots: [Int],
+        direction: MacroSelectionDirection
+    ) -> Int? {
+        guard !slots.isEmpty else { return nil }
+        guard let currentSlot, let currentIndex = slots.firstIndex(of: currentSlot) else {
+            return slots[0]
+        }
+
+        switch direction {
+        case .previous:
+            return slots[max(currentIndex - 1, 0)]
+        case .next:
+            return slots[min(currentIndex + 1, slots.count - 1)]
+        }
     }
 }
 
