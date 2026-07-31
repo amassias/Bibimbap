@@ -1,34 +1,48 @@
 # Bibimbap
 
-Bibimbap is a native macOS configurator for Pulsar mice, built with SwiftUI and
-Swift 6.
+A native macOS configurator for Pulsar mice — fast, direct, and built for power users.
 
-It talks directly to supported devices through `IOHIDManager`, so it does not
-depend on WebHID, a browser wrapper, or a background web service. The interface
-uses a catalog-backed image and capability set for each recognized mouse.
+Bibimbap is written in Swift 6 + SwiftUI and talks directly to supported devices through `IOHIDManager`.
+No browser bridge. No WebHID wrapper. No background web service.
 
 > [!NOTE]
-> Bibimbap is an independent personal project and is not affiliated with,
-> endorsed by, or maintained by Pulsar Gaming Gears. The protocol implementation
-> is based on documented observations in
-> [`docs/protocol.md`](docs/protocol.md).
+> Bibimbap is an independent personal project and is not affiliated with, endorsed by, or maintained by Pulsar Gaming Gears. The protocol implementation is based on documented observations in [`docs/protocol.md`](docs/protocol.md).
 
-## Highlights
+> [!IMPORTANT]
+> This project was built entirely with **Codex** and **Claude Code**.
+
+## Table of contents
+
+- [Why Bibimbap](#why-bibimbap)
+- [Features](#features)
+- [Project status](#project-status)
+- [Compatibility](#compatibility)
+- [Safety model](#safety-model)
+- [Architecture](#architecture)
+- [Requirements](#requirements)
+- [Quick start](#quick-start)
+- [Development tools](#development-tools)
+- [UI rendering](#ui-rendering)
+- [Localization](#localization)
+- [Menu bar behavior](#menu-bar-behavior)
+
+## Why Bibimbap
+
+Pulsar users on macOS often need a lightweight, native way to inspect and configure their hardware.
+Bibimbap focuses on reliability first: read from device, edit safely, write with verification, and recover clearly when something fails.
+
+## Features
 
 - Native macOS interface with automatic light and dark appearance.
-- English by default, with instant French switching in Settings.
-- Overview dashboard with connection, battery, signal, firmware, DPI, polling,
-  and active profile information.
-- Model-aware button customization: only controls available on the connected
-  mouse are shown.
-- DPI stages, polling rate, lift-off distance, debounce, sensor options, and
-  DPI lighting controls.
+- Overview dashboard with connection, battery, signal, firmware, DPI, polling, and active profile details.
+- Model-aware customization: only controls supported by the connected mouse are shown.
+- DPI stages, polling rate, lift-off distance, debounce, sensor options, and DPI lighting controls.
 - Macro editing, validation, hardware-slot assignment, and repeat behavior.
-- Wireless receiver status, pairing, battery behavior, and power settings.
-- Menu bar controls for common actions without opening the main window.
-- Versioned JSON profile backup, diagnostic export, and factory reset tools.
-- A bundled catalog covering 31 device families, 127 model identifiers, and 127
-  matching mouse images.
+- Wireless receiver status, pairing flow, battery behavior, and power settings.
+- Menu bar controls for quick actions without opening the main window.
+- Versioned JSON profile backup/import, diagnostics export, and factory reset tools.
+- English source language with complete French UI coverage and instant in-app switching.
+- Bundled catalog covering **31 device families**, **127 model identifiers**, and **127 matching images**.
 
 ## Project status
 
@@ -43,18 +57,16 @@ uses a catalog-backed image and capability set for each recognized mouse.
 | Localization | English source language with complete French UI coverage |
 | Firmware updates | Not implemented; update commands are explicitly rejected |
 
-The current test suite contains 105 tests across protocol codecs, catalog
-coverage, the simulator, profile archives, write planning, application state,
-and macro round trips.
+The current test suite contains **105 tests** across protocol codecs, catalog coverage, simulator behavior, profile archives, write planning, app state, and macro round trips.
 
 ## Compatibility
 
-Compatibility is described at three different levels:
+Compatibility is described at three levels:
 
 | Level | Scope |
 |---|---|
 | Declared by the bundled catalog | 127 model identifiers under catalog CID 87 |
-| Covered by fixtures | A real X2 CrazyLight capture, replayed by the test suite |
+| Covered by fixtures | A real X2 CrazyLight capture replayed by the test suite |
 | Validated on physical hardware | X2 CrazyLight over USB and through an 8K receiver |
 
 Hardware validation for the X2 CrazyLight:
@@ -71,24 +83,18 @@ Hardware validation for the X2 CrazyLight:
 | Independent read-back and restoration | ✅ | ✅ |
 | Polling above 1 kHz | Not applicable | Not yet hardware-validated |
 
-The X2 CrazyLight is limited to 1 kHz over USB and reaches higher polling rates
-through its receiver. The higher polling-codec branch therefore cannot be
-validated over the wired connection on this model.
+The X2 CrazyLight is limited to 1 kHz over USB and reaches higher polling rates through its receiver, so higher polling-codec paths cannot be validated over wired mode on this model.
 
 ## Safety model
 
-Bibimbap treats the device state as the source of truth:
+Bibimbap treats device state as the source of truth:
 
 - Every write is followed by an independent read-back.
-- A mismatched read-back fails the operation and rolls the batch back in reverse
-  order.
-- A failed rollback is surfaced as an uncertain hardware state instead of being
-  hidden behind a generic error.
+- A mismatched read-back fails the operation and rolls the batch back in reverse order.
+- A failed rollback is surfaced as an uncertain hardware state instead of being hidden behind a generic error.
 - Unsupported capabilities are omitted from the interface.
-- Unknown models are rejected instead of receiving guessed flash addresses or
-  limits.
-- Importing a profile only fills the pending draft; unsupported values are
-  skipped and reported.
+- Unknown models are rejected instead of using guessed flash addresses or limits.
+- Profile import only fills a pending draft; unsupported values are skipped and reported.
 - The device catalog is bundled and never downloaded or executed at runtime.
 
 ## Architecture
@@ -120,9 +126,9 @@ Design/                   Logo concepts and redesign reference screens
 - macOS 15 or later
 - Apple silicon Mac
 - Xcode with the macOS 15 SDK or later
-- A supported Pulsar mouse or receiver for hardware use
+- A supported Pulsar mouse or receiver for hardware usage
 
-## Build and test
+## Quick start
 
 Build and test the Swift package:
 
@@ -131,7 +137,7 @@ swift build
 swift test
 ```
 
-Build the macOS application:
+Build the macOS app:
 
 ```bash
 xcodebuild \
@@ -141,7 +147,7 @@ xcodebuild \
   build
 ```
 
-Run the application with a simulated X2 CrazyLight:
+Run the app with a simulated X2 CrazyLight:
 
 ```bash
 BIBIMBAP_SIMULATED=1 \
@@ -150,25 +156,21 @@ BIBIMBAP_SIMULATED=1 \
 
 ## Development tools
 
-Read a connected device without writing anything:
+Read a connected device without writing:
 
 ```bash
 swift run pulsar-probe
 ```
 
-Run the reversible hardware-write checks:
+Run reversible hardware-write checks:
 
 ```bash
 swift run pulsar-writetest
 ```
 
-The default suite covers scalar settings, a checksummed DPI block, a multi-report
-macro block, and a button function. Each test reads the original bytes, writes a
-test value, independently reads it back, restores the original bytes, and verifies
-the restoration.
+The default write-test suite covers scalar settings, a checksummed DPI block, a multi-report macro block, and a button function. Each test reads original bytes, writes a test value, reads it back independently, restores original bytes, and verifies restoration.
 
-The polling test is intentionally excluded from the default set because changing
-the report rate may renegotiate the wireless link:
+The polling test is intentionally excluded by default because changing report rate may renegotiate the wireless link:
 
 ```bash
 swift run pulsar-writetest polling
@@ -188,24 +190,19 @@ BIBIMBAP_CHECK_CATALOG=1 swift test --filter CatalogSnapshotTests
 
 ## UI rendering
 
-Generate PNG previews for every section in light and dark appearance without
-requiring physical hardware:
+Generate PNG previews for every section in light and dark mode, without physical hardware:
 
 ```bash
 swift run bibimbap-render .render
 ```
 
-The renderer uses the simulator and is intended for layout, hierarchy, density,
-and localization review. Native AppKit controls may look flatter in off-screen
-renders than they do in the running application.
+The renderer uses the simulator and is intended for layout, hierarchy, density, and localization review. Native AppKit controls may look flatter in off-screen renders than in the running app.
 
 ## Localization
 
-English is the source and fallback language. French can be selected from the
-application's Settings screen and updates immediately without reconnecting the
-mouse.
+English is the source and fallback language. French can be selected in Settings and updates immediately without reconnecting the mouse.
 
-The String Catalog is stored at:
+String Catalog location:
 
 ```text
 App/Bibimbap/Localizable.xcstrings
@@ -213,14 +210,8 @@ App/Bibimbap/Localizable.xcstrings
 
 ## Menu bar behavior
 
-The menu bar accessory provides quick access to the active DPI stage, polling
-rate, profile, battery state, and device reload.
+The menu bar accessory provides quick access to active DPI stage, polling rate, profile, battery state, and device reload.
 
-The 18 × 18 template icon encodes battery level in the mouse body itself, keeping
-its footprint stable as the charge changes. Because it is a template image, macOS
-automatically applies the correct tint for the current appearance and selection
-state.
+The 18×18 template icon encodes battery level in the mouse body itself, keeping its footprint stable as charge changes. Because it is a template image, macOS automatically applies the correct tint for appearance and selection state.
 
-The Dock icon can be hidden from Settings. Bibimbap then behaves as a menu bar
-accessory, and the application prevents both entry points from being disabled at
-the same time.
+The Dock icon can be hidden from Settings. Bibimbap then behaves as a menu bar accessory, and the app prevents both entry points from being disabled at the same time.
