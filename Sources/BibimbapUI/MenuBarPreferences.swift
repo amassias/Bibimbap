@@ -94,4 +94,12 @@ public enum AppAppearance: String, CaseIterable, Identifiable, Sendable {
         case .light: .light
         }
     }
+
+    /// Résout le mode `System` à partir de l'apparence macOS observée par la fenêtre.
+    ///
+    /// La valeur système est passée à chaque recalcul de la vue : un changement
+    /// d'apparence de macOS est donc repris sans relancer Bibimbap.
+    public func resolvedColorScheme(for systemColorScheme: ColorScheme) -> ColorScheme {
+        colorScheme ?? systemColorScheme
+    }
 }

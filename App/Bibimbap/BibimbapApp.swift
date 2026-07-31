@@ -28,14 +28,7 @@ struct BibimbapApp: App {
 
     var body: some Scene {
         Window("Bibimbap", id: "main") {
-            RootView(model: model)
-                .frame(minWidth: 980, minHeight: 700)
-                .environment(\.locale, preferences.locale)
-                .preferredColorScheme(preferences.preferredColorScheme)
-                .id(preferences.language)
-                // L'accessoire de barre des menus lance la même connexion : le garde-fou
-                // évite deux balayages quand les deux scènes apparaissent au lancement.
-                .task { if model.connection == .idle { await model.connect() } }
+            AppWindowContent(model: model, preferences: preferences)
         }
         .windowResizability(.contentSize)
         .windowStyle(.hiddenTitleBar)
@@ -86,5 +79,28 @@ struct BibimbapApp: App {
             MenuBarLabel(model: model)
         }
         .menuBarExtraStyle(.menu)
+    }
+}
+
+/// Contenu de la fenêtre principale, séparé de la scène pour observer l'apparence
+/// macOS qui entoure l'override éventuel de Bibimbap.
+private struct AppWindowContent: View {
+    let model: AppModel
+    @Bindable var preferences: MenuBarPreferences
+    @Environment(\.colorScheme) private var systemColorScheme
+
+    var body: some View {
+        RootView(model: model)
+            .frame(minWidth: 980, minHeight: 700)
+            .environment(\.locale, preferences.locale)
+            // Un identifiant qui inclut l'apparence force SwiftUI à retirer un ancien
+            // override explicite avant d'appliquer le mode System.
+            .preferredColorScheme(
+                preferences.appearance.resolvedColorScheme(for: systemColorScheme)
+            )
+            .id("\(preferences.language.rawValue)-\(preferences.appearance.rawValue)")
+            // L'accessoire de barre des menus lance la même connexion : le garde-fou
+            // évite deux balayages quand les deux scènes apparaissent au lancement.
+            .task { if model.connection == .idle { await model.connect() } }
     }
 }

@@ -68,7 +68,9 @@ public final class AppModel {
     public private(set) var validationIssues: [DraftValidator.Issue] = []
     public private(set) var isSimulated: Bool
 
-    public var section: Section = .performance
+    /// La section d'entrée est une décision de lancement, pas une préférence persistée.
+    /// La navigation reste ensuite entièrement pilotée par l'utilisateur.
+    public var section: Section = .overview
     /// Brouillon local. Rien n'atteint le matériel avant `apply()`.
     public var draft = DeviceSettings() {
         didSet { revalidate() }
