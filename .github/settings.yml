@@ -1,0 +1,14 @@
+repository:
+  description: "Native macOS app to configure Pulsar mice with direct HID communication"
+  homepage: "https://github.com/amassias/Bibimbap"
+  topics:
+    - swift
+    - swiftui
+    - macos
+    - macos-app
+    - pulsar
+    - mouse
+    - gaming-mouse
+    - hid
+    - usb
+    - desktop-app
