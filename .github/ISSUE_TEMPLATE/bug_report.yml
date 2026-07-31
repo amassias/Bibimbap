@@ -1,0 +1,48 @@
+name: Bug report
+about: Report a reproducible issue with Bibimbap
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please include as much detail as possible.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the issue and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the exact steps that trigger the issue.
+      placeholder: |
+        1. Connect device...
+        2. Open Bibimbap...
+        3. Change setting...
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Mouse model
+      description: Example: X2 CrazyLight
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware version
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "macOS 15.x"
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics or logs
+      description: Include relevant output (for example from `swift run pulsar-probe`).
+      render: shell

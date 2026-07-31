@@ -1,5 +1,7 @@
 # Bibimbap
 
+[![Swift CI](https://github.com/amassias/Bibimbap/actions/workflows/swift.yml/badge.svg)](https://github.com/amassias/Bibimbap/actions/workflows/swift.yml)
+
 A native macOS configurator for Pulsar mice — fast, direct, and built for power users.
 
 Bibimbap is written in Swift 6 + SwiftUI and talks directly to supported devices through `IOHIDManager`.
@@ -13,6 +15,13 @@ No browser bridge. No WebHID wrapper. No background web service.
 
 ## Table of contents
 
+- [At a glance](#at-a-glance)
+- [Install](#install)
+- [Usage](#usage)
+- [Supported hardware and software](#supported-hardware-and-software)
+- [Troubleshooting](#troubleshooting)
+- [Get involved](#get-involved)
+- [Screenshots](#screenshots)
 - [Why Bibimbap](#why-bibimbap)
 - [Features](#features)
 - [Project status](#project-status)
@@ -25,6 +34,69 @@ No browser bridge. No WebHID wrapper. No background web service.
 - [UI rendering](#ui-rendering)
 - [Localization](#localization)
 - [Menu bar behavior](#menu-bar-behavior)
+
+## At a glance
+
+Bibimbap is a native macOS app for Pulsar mice that lets you configure device settings directly from macOS without vendor software or web bridges.
+
+- **Native and lightweight:** SwiftUI app with direct HID communication.
+- **Safe writes:** every write path has read-back validation and rollback support.
+- **Model-aware UI:** only capabilities supported by your connected device are shown.
+
+## Install
+
+Bibimbap currently ships as source code. You can build and run it locally:
+
+```bash
+xcodebuild \
+  -project App/Bibimbap.xcodeproj \
+  -scheme Bibimbap \
+  -configuration Debug \
+  build
+```
+
+Then launch `Bibimbap.app` from Xcode's build products or from DerivedData.
+
+## Usage
+
+1. Connect a supported Pulsar mouse (USB or compatible receiver).
+2. Launch Bibimbap and select the detected device.
+3. Review current settings, edit values, then apply changes.
+4. Use profile export/import and diagnostics tools for backup and support.
+
+For command-line diagnostics:
+
+```bash
+swift run pulsar-probe
+```
+
+## Supported hardware and software
+
+- **OS:** macOS 15 or later
+- **CPU:** Apple silicon
+- **Toolchain:** Xcode with macOS 15 SDK or later
+- **Hardware support scope:** Pulsar model identifiers bundled in `PulsarCatalog` (catalog snapshot v1.3.11)
+- **Hardware validated on device:** X2 CrazyLight (USB and 8K receiver)
+
+See [Compatibility](#compatibility) for validation details and tested operations.
+
+## Troubleshooting
+
+- **No device appears:** reconnect the mouse/receiver, then relaunch Bibimbap.
+- **A write fails:** Bibimbap stops the operation, verifies state, and reports if rollback is uncertain.
+- **Unsupported options are missing:** controls are hidden when a capability is not declared for your model.
+- **Need deeper diagnostics:** run `swift run pulsar-probe` and attach the output to an issue.
+
+## Get involved
+
+- Found a bug or hardware edge case? [Open an issue](https://github.com/amassias/Bibimbap/issues/new/choose).
+- Want to contribute? Start with [CONTRIBUTING.md](CONTRIBUTING.md).
+- Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Screenshots
+
+> Screenshot section intentionally kept as a placeholder in this change set.
+> Visual assets can be added in a follow-up task.
 
 ## Why Bibimbap
 
