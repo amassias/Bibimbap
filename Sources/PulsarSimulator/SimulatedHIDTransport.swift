@@ -25,6 +25,26 @@ public actor SimulatedHIDTransport: HIDTransport {
         /// Latence ajoutée à chaque réponse.
         public var latency: Duration = .zero
 
+        /// Collections supplémentaires énumérées à côté du périphérique simulé.
+        ///
+        /// Elles ne répondent à rien : leur seul rôle est de reproduire une machine où
+        /// plusieurs souris Pulsar sont branchées en même temps.
+        public var extraCandidates: [HIDDeviceIdentifier] = []
+        /// Nombre d'interrogations « en ligne ? » répondant « le récepteur cherche encore »
+        /// avant que la souris ne se signale.
+        public var pollsBeforeOnline = 0
+        /// La souris ne se signale jamais : le récepteur répond pour lui seul.
+        public var staysOffline = false
+        /// Le périphérique n'est plus énuméré du tout.
+        public var isMissing = false
+        /// Erreur renvoyée par `discover()`, pour rejouer une permission refusée.
+        public var discoveryFailure: HIDTransportError?
+        /// Erreur renvoyée par `open()`.
+        public var openFailure: HIDTransportError?
+        /// Ouvertures qui échouent avant que le périphérique n'accepte, pour rejouer une
+        /// interface qui disparaît un instant puis revient — un rebranchement, typiquement.
+        public var transientOpenFailures = 0
+
         public init() {}
     }
 
@@ -38,6 +58,10 @@ public actor SimulatedHIDTransport: HIDTransport {
     private var isOpen = false
     private var receivedFrames = 0
     private var responseCount = 0
+    private var onlinePolls = 0
+    /// Nombre d'ouvertures réussies, pour vérifier qu'aucune session ne fuit après un échec.
+    private var openCount = 0
+    private var closeCount = 0
     private var battery = BatteryState(percentage: 78, isCharging: false, millivolts: 3980)
     private var activeProfile = 0
     private var longDistance = false
@@ -146,19 +170,42 @@ public actor SimulatedHIDTransport: HIDTransport {
 
     // MARK: HIDTransport
 
-    public func discover() async throws -> [HIDDeviceIdentifier] { [identifier] }
+    public func discover() async throws -> [HIDDeviceIdentifier] {
+        if let failure = faults.discoveryFailure { throw failure }
+        return (faults.isMissing ? [] : [identifier]) + faults.extraCandidates
+    }
 
     public func open(_ identifier: HIDDeviceIdentifier) async throws {
-        guard identifier == self.identifier else { throw HIDTransportError.deviceNotFound }
+        if let failure = faults.openFailure { throw failure }
+        if faults.transientOpenFailures > 0 {
+            faults.transientOpenFailures -= 1
+            throw HIDTransportError.deviceNotFound
+        }
+        guard !faults.isMissing, identifier == self.identifier else {
+            throw HIDTransportError.deviceNotFound
+        }
         isOpen = true
+        openCount += 1
         receivedFrames = 0
+        onlinePolls = 0
     }
 
     public func close() async {
+        if isOpen { closeCount += 1 }
         isOpen = false
         inputContinuations.values.forEach { $0.finish() }
         inputContinuations.removeAll()
     }
+
+    /// Identité du périphérique simulé, pour piloter la sélection depuis un test.
+    public func deviceIdentifier() -> HIDDeviceIdentifier { identifier }
+
+    /// Vrai si une collection est encore ouverte : c'est ce qu'un test vérifie après un
+    /// échec de connexion, pour s'assurer que rien n'est resté saisi en arrière-plan.
+    public func isCurrentlyOpen() -> Bool { isOpen }
+
+    public func openSessionCount() -> Int { openCount - closeCount }
+    public func totalOpenCount() -> Int { openCount }
 
     public func currentDevice() async -> HIDDeviceIdentifier? { isOpen ? identifier : nil }
 
@@ -236,7 +283,19 @@ public actor SimulatedHIDTransport: HIDTransport {
             return PulsarFrame(command: .pcDriverStatus)
 
         case .deviceOnline:
-            return PulsarFrame(command: .deviceOnline, payload: [1, 0, 0, 0, 0])
+            // Sans charge utile, la commande interroge l'état ; avec, elle prend ou rend
+            // le verrou d'écriture. Seule l'interrogation doit subir le délai simulé.
+            guard frame.effectiveLength == 0 else {
+                return PulsarFrame(command: .deviceOnline, payload: [1, 0, 0, 0, 0])
+            }
+            onlinePolls += 1
+            if onlinePolls <= faults.pollsBeforeOnline {
+                // Octet 9 à 1 : le récepteur est encore en train de joindre la souris.
+                return PulsarFrame(command: .deviceOnline, payload: [0, 0, 0, 0, 1])
+            }
+            return PulsarFrame(
+                command: .deviceOnline, payload: [faults.staysOffline ? 0 : 1, 0, 0, 0, 0]
+            )
 
         case .batteryLevel:
             return PulsarFrame(command: .batteryLevel, payload: [
@@ -350,5 +409,30 @@ public actor SimulatedHIDTransport: HIDTransport {
 
     public func setBattery(_ state: BatteryState) {
         battery = state
+    }
+
+    /// Débranche le périphérique : la collection disparaît de l'énumération, la session
+    /// ouverte est refermée et l'évènement part, exactement comme le fait IOKit.
+    public func detachDevice() async {
+        faults.isMissing = true
+        await close()
+        eventContinuations.values.forEach { $0.yield(.detached(identifier)) }
+    }
+
+    /// Rebranche le périphérique et signale son retour.
+    public func attachDevice() {
+        faults.isMissing = false
+        eventContinuations.values.forEach { $0.yield(.attached(identifier)) }
+    }
+
+    /// Change un réglage dans la flash sans passer par le protocole, comme le ferait
+    /// l'utilisateur en agissant directement sur la souris.
+    public func changeSettingOnDevice(_ value: UInt8, at address: UInt16) {
+        flash.write(ScalarSetting(address: address, value: value).encoded, at: address)
+    }
+
+    /// Rejoue un évènement déjà émis, pour vérifier que les doublons sont absorbés.
+    public func replayEvent(_ event: HIDDeviceEvent) {
+        eventContinuations.values.forEach { $0.yield(event) }
     }
 }

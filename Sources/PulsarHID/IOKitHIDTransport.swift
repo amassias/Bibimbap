@@ -23,7 +23,7 @@ public actor IOKitHIDTransport: HIDTransport {
     }
 
     public func discover() async throws -> [HIDDeviceIdentifier] {
-        backend.enumerateDevices()
+        try backend.enumerateDevices()
     }
 
     public func open(_ identifier: HIDDeviceIdentifier) async throws {
@@ -65,6 +65,8 @@ final class IOKitHIDBackend: @unchecked Sendable {
 
     private var thread: Thread?
     private var runLoop: CFRunLoop?
+    /// Résultat de `IOHIDManagerOpen`, retenu pour être rapporté au lieu d'être ignoré.
+    private var managerOpenStatus: IOReturn = kIOReturnSuccess
     private var openedDevice: IOHIDDevice?
     private var openedIdentifier: HIDDeviceIdentifier?
     private var inputBuffer: UnsafeMutablePointer<UInt8>?
@@ -95,7 +97,10 @@ final class IOKitHIDBackend: @unchecked Sendable {
             self.lock.withLock { self.runLoop = current }
 
             IOHIDManagerScheduleWithRunLoop(self.manager, current, CFRunLoopMode.defaultMode.rawValue)
-            IOHIDManagerOpen(self.manager, IOOptionBits(kIOHIDOptionsTypeNone))
+            // Jamais `kIOHIDOptionsTypeSeizeDevice` : saisir la souris la rendrait
+            // inutilisable pour macOS et pour tout autre logiciel pendant la configuration.
+            let openStatus = IOHIDManagerOpen(self.manager, IOOptionBits(kIOHIDOptionsTypeNone))
+            self.lock.withLock { self.managerOpenStatus = openStatus }
 
             let context = Unmanaged.passUnretained(self).toOpaque()
             IOHIDManagerRegisterDeviceMatchingCallback(self.manager, deviceMatchedCallback, context)
@@ -137,14 +142,28 @@ final class IOKitHIDBackend: @unchecked Sendable {
 
     // MARK: Énumération
 
-    func enumerateDevices() -> [HIDDeviceIdentifier] {
-        onHIDThread { [self] in
+    func enumerateDevices() throws -> [HIDDeviceIdentifier] {
+        try throwIfManagerIsClosed()
+        return onHIDThread { [self] in
             guard let set = IOHIDManagerCopyDevices(manager) as? Set<IOHIDDevice> else { return [] }
             return set
                 .compactMap(Self.identifier(for:))
                 .filter { vendorIDs.isEmpty || vendorIDs.contains($0.vendorID) }
-                .sorted { ($0.vendorID, $0.productID, $0.usagePage) < ($1.vendorID, $1.productID, $1.usagePage) }
+                .sorted {
+                    ($0.vendorID, $0.productID, $0.usagePage, $0.locationID)
+                        < ($1.vendorID, $1.productID, $1.usagePage, $1.locationID)
+                }
         }
+    }
+
+    /// Un service HID fermé n'énumère rien : le dire vaut mieux que rendre une liste vide,
+    /// qui se lirait comme « aucune souris branchée ».
+    private func throwIfManagerIsClosed() throws {
+        let status = lock.withLock { managerOpenStatus }
+        guard status != kIOReturnSuccess else { return }
+        throw status == kIOReturnNotPermitted
+            ? HIDTransportError.permissionDenied
+            : HIDTransportError.managerOpenFailed(status)
     }
 
     static func identifier(for device: IOHIDDevice) -> HIDDeviceIdentifier? {
@@ -179,6 +198,7 @@ final class IOKitHIDBackend: @unchecked Sendable {
     // MARK: Ouverture / fermeture
 
     func open(_ identifier: HIDDeviceIdentifier) throws {
+        try throwIfManagerIsClosed()
         let result: Result<Void, HIDTransportError> = onHIDThread { [self] in
             closeLocked()
             guard let device = device(matching: identifier) else {
@@ -193,12 +213,13 @@ final class IOKitHIDBackend: @unchecked Sendable {
             let access = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
             if access != kIOHIDAccessTypeGranted,
                !IOHIDRequestAccess(kIOHIDRequestTypeListenEvent) {
-                return .failure(.openFailed(kIOReturnNotPermitted))
+                return .failure(.permissionDenied)
             }
 
+            // Ouverture non exclusive, pour que la souris continue de servir de souris.
             let status = IOHIDDeviceOpen(device, IOOptionBits(kIOHIDOptionsTypeNone))
             guard status == kIOReturnSuccess else {
-                return .failure(.openFailed(status))
+                return .failure(status == kIOReturnNotPermitted ? .permissionDenied : .openFailed(status))
             }
 
             let size = max(identifier.maxInputReportSize, 1)

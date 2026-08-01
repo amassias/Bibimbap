@@ -41,6 +41,7 @@ struct ConnectionProgressView: View {
         case .scanning: L10n.string( "Recherche d'un périphérique…")
         case .connecting: L10n.string( "Connexion…")
         case .reading: L10n.string( "Lecture des réglages…")
+        case .selectingDevice: L10n.string( "Choix du périphérique…")
         case .writing: L10n.string( "Écriture en cours…")
         default: L10n.string( "Préparation…")
         }
@@ -69,9 +70,10 @@ struct NoDeviceView: View {
             Text("Branchez une souris Pulsar en USB, ou connectez son récepteur 2,4 GHz.")
         } actions: {
             Button("Rechercher à nouveau") {
-                Task { await model.connect() }
+                Task { await model.retryConnection() }
             }
             .buttonStyle(.borderedProminent)
+            OtherCandidateButton(model: model)
         }
     }
 }
@@ -90,9 +92,10 @@ struct OfflineView: View {
             Text("Le récepteur répond, mais la souris ne se signale pas. Vérifiez qu'elle est allumée, chargée et à portée, puis réessayez.")
         } actions: {
             Button("Réessayer") {
-                Task { await model.connect() }
+                Task { await model.retryConnection() }
             }
             .buttonStyle(.borderedProminent)
+            OtherCandidateButton(model: model)
         }
     }
 }
@@ -111,8 +114,9 @@ struct UnrecognisedDeviceView: View {
             Text("Ce modèle répond au protocole Pulsar (CID \(cid), MID \(mid)) mais ne figure pas dans le catalogue embarqué. Aucun réglage ne sera proposé, faute de connaître ses limites.")
         } actions: {
             Button("Réessayer") {
-                Task { await model.connect() }
+                Task { await model.retryConnection() }
             }
+            OtherCandidateButton(model: model)
         }
     }
 }
@@ -128,9 +132,27 @@ struct FailureView: View {
             Text(message)
         } actions: {
             Button("Reconnecter") {
-                Task { await model.connect() }
+                Task { await model.retryConnection() }
             }
             .buttonStyle(.borderedProminent)
+            OtherCandidateButton(model: model)
+        }
+    }
+}
+
+/// Retour à la liste lorsqu'un candidat a échoué et que d'autres restent disponibles.
+///
+/// L'application n'enchaîne jamais toute seule sur le périphérique suivant : ce serait
+/// ouvrir un autre matériel que celui que l'utilisateur avait désigné.
+struct OtherCandidateButton: View {
+    @Bindable var model: AppModel
+
+    var body: some View {
+        if model.availableCandidates.count > 1 {
+            Button(L10n.string("Choisir un autre périphérique")) {
+                model.showDeviceSelection()
+            }
+            .buttonStyle(.link)
         }
     }
 }

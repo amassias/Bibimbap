@@ -7287,6 +7287,686 @@
             }
           }
         }
+      },
+    "Accès HID refusé" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HID access denied"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accès HID refusé"
+          }
+        }
       }
+    },
+    "Actualiser" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiser"
+          }
+        }
+      }
+    },
+    "Adopter les réglages relus" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adopt the settings read back"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adopter les réglages relus"
+          }
+        }
+      }
+    },
+    "Aucun périphérique connecté." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No device connected."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun périphérique connecté."
+          }
+        }
+      }
+    },
+    "Aucune interface de configuration Pulsar n'est présente." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Pulsar configuration interface is present."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune interface de configuration Pulsar n'est présente."
+          }
+        }
+      }
+    },
+    "Autre" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autre"
+          }
+        }
+      }
+    },
+    "Avant" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Before"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avant"
+          }
+        }
+      }
+    },
+    "Bibimbap doit être autorisé dans Réglages Système › Confidentialité et sécurité › Surveillance de l'entrée, puis relancé." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bibimbap must be allowed in System Settings › Privacy & Security › Input Monitoring, then relaunched."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bibimbap doit être autorisé dans Réglages Système › Confidentialité et sécurité › Surveillance de l'entrée, puis relancé."
+          }
+        }
+      }
+    },
+    "Bluetooth" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bluetooth"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bluetooth"
+          }
+        }
+      }
+    },
+    "Choisir un autre périphérique" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose another device"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir un autre périphérique"
+          }
+        }
+      }
+    },
+    "Choisir un périphérique" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a device"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir un périphérique"
+          }
+        }
+      }
+    },
+    "Choix du périphérique…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choosing a device…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choix du périphérique…"
+          }
+        }
+      }
+    },
+    "Connect to %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se connecter à %@"
+          }
+        }
+      }
+    },
+    "Connecter" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecter"
+          }
+        }
+      }
+    },
+    "Conserver mon brouillon" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep my draft"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conserver mon brouillon"
+          }
+        }
+      }
+    },
+    "L'interface a disparu pendant la connexion." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The interface disappeared while connecting."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'interface a disparu pendant la connexion."
+          }
+        }
+      }
+    },
+    "L'interface s'est ouverte, mais aucune réponse n'est arrivée. Bougez ou cliquez la souris pour la réveiller, puis réessayez." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The interface opened, but no answer arrived. Move or click the mouse to wake it, then try again."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'interface s'est ouverte, mais aucune réponse n'est arrivée. Bougez ou cliquez la souris pour la réveiller, puis réessayez."
+          }
+        }
+      }
+    },
+    "Le périphérique n'a pas répondu au dialogue d'identification." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The device did not answer the identification handshake."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le périphérique n'a pas répondu au dialogue d'identification."
+          }
+        }
+      }
+    },
+    "Le périphérique s'est reconnecté pendant que des modifications attendaient." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The device reconnected while changes were pending."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le périphérique s'est reconnecté pendant que des modifications attendaient."
+          }
+        }
+      }
+    },
+    "Le récepteur répond, mais la souris ne se signale pas." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The receiver answers, but the mouse does not report in."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le récepteur répond, mais la souris ne se signale pas."
+          }
+        }
+      }
+    },
+    "Les réglages ont changé sur la souris pendant que des modifications attendaient." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings changed on the mouse while changes were pending."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les réglages ont changé sur la souris pendant que des modifications attendaient."
+          }
+        }
+      }
+    },
+    "Location %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emplacement %@"
+          }
+        }
+      }
+    },
+    "Masquer le détail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide details"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer le détail"
+          }
+        }
+      }
+    },
+    "Model CID %d / MID %d is not in the bundled catalog." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model CID %d / MID %d is not in the bundled catalog."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le modèle CID %d / MID %d ne figure pas dans le catalogue embarqué."
+          }
+        }
+      }
+    },
+    "Modifications non appliquées à trancher" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pending changes to resolve"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifications non appliquées à trancher"
+          }
+        }
+      }
+    },
+    "Ouvrir les réglages de Surveillance de l'entrée" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Input Monitoring settings"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les réglages de Surveillance de l'entrée"
+          }
+        }
+      }
+    },
+    "Pas de réponse du périphérique" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No response from the device"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas de réponse du périphérique"
+          }
+        }
+      }
+    },
+    "Plusieurs interfaces de configuration Pulsar répondent. Aucune n'est ouverte tant que vous n'avez pas choisi." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Several Pulsar configuration interfaces answer. None is opened until you choose."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plusieurs interfaces de configuration Pulsar répondent. Aucune n'est ouverte tant que vous n'avez pas choisi."
+          }
+        }
+      }
+    },
+    "Plusieurs périphériques détectés" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Several devices detected"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plusieurs périphériques détectés"
+          }
+        }
+      }
+    },
+    "Périphérique Pulsar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pulsar device"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Périphérique Pulsar"
+          }
+        }
+      }
+    },
+    "Reconnecting… (attempt %d of 5)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnecting… (attempt %d of 5)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reconnexion… (tentative %d sur 5)"
+          }
+        }
+      }
+    },
+    "Réglage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Setting"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réglage"
+          }
+        }
+      }
+    },
+    "Sur la souris" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On the mouse"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sur la souris"
+          }
+        }
+      }
+    },
+    "The HID service could not be opened (code %d)." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The HID service could not be opened (code %d)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le service HID n'a pas pu être ouvert (code %d)."
+          }
+        }
+      }
+    },
+    "Une écriture a été interrompue. Relisez le périphérique avant toute nouvelle application ; rien ne sera réécrit automatiquement." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A write was interrupted. Read the device back before applying anything else; nothing will be rewritten automatically."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une écriture a été interrompue. Relisez le périphérique avant toute nouvelle application ; rien ne sera réécrit automatiquement."
+          }
+        }
+      }
+    },
+    "Voir le détail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show details"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir le détail"
+          }
+        }
+      }
+    },
+    "Vos modifications non appliquées sont conservées." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your unapplied changes are preserved."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vos modifications non appliquées sont conservées."
+          }
+        }
+      }
+    },
+    "Votre brouillon" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your draft"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre brouillon"
+          }
+        }
+      }
+    },
+    "macOS refuse l'accès aux rapports HID. Autorisez Bibimbap dans Réglages Système › Confidentialité et sécurité › Surveillance de l'entrée." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS is denying access to HID reports. Allow Bibimbap in System Settings › Privacy & Security › Input Monitoring."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "macOS refuse l'accès aux rapports HID. Autorisez Bibimbap dans Réglages Système › Confidentialité et sécurité › Surveillance de l'entrée."
+          }
+        }
+      }
+    },
+    "%d local change(s), %d read back from the device, %d in conflict." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d local change(s), %d read back from the device, %d in conflict."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d modification(s) locale(s), %d relue(s) du périphérique, %d en conflit."
+          }
+        }
+      }
+    }
   }
 }

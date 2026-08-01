@@ -43,6 +43,7 @@ let package = Package(
             dependencies: ["PulsarProtocol"],
             resources: [.process("Fixtures")]
         ),
+        .testTarget(name: "PulsarHIDTests", dependencies: ["PulsarHID"]),
         .testTarget(name: "PulsarCatalogTests", dependencies: ["PulsarCatalog"]),
         .testTarget(name: "PulsarSimulatorTests", dependencies: ["PulsarSimulator"]),
         .testTarget(name: "BibimbapFeaturesTests", dependencies: ["BibimbapFeatures"]),

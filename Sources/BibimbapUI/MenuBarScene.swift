@@ -82,6 +82,10 @@ public struct MenuBarMenu: View {
     private var disconnectedLabel: String {
         switch model.connection {
         case .scanning, .connecting, .reading: L10n.string( "Recherche d'un périphérique…")
+        case .selectingDevice: L10n.string( "Plusieurs périphériques détectés")
+        case .reconnecting(let attempt): L10n.format("Reconnecting… (attempt %d of 5)", attempt)
+        case .permissionDenied: L10n.string( "Accès HID refusé")
+        case .handshakeTimedOut: L10n.string( "Pas de réponse du périphérique")
         case .offline: L10n.string( "Souris endormie")
         case .unrecognised: L10n.string( "Modèle non reconnu")
         case .failed(let reason): reason
@@ -181,11 +185,20 @@ public struct MenuBarMenu: View {
             .disabled(!model.canApply)
         }
 
+        // La fenêtre et ce menu peuvent déclencher la même reconnexion en même temps :
+        // `retryConnection` partage la tâche en vol plutôt que d'en ouvrir une seconde.
+        if model.connection == .selectingDevice {
+            Button(L10n.string( "Choisir un périphérique")) {
+                openWindow(id: "main")
+                NSApp.activate(ignoringOtherApps: true)
+            }
+        }
+
         Button(model.snapshot == nil
             ? L10n.string( "Rechercher une souris")
             : L10n.string( "Relire le périphérique")
         ) {
-            Task { model.snapshot == nil ? await model.connect() : await model.reload() }
+            Task { model.snapshot == nil ? await model.retryConnection() : await model.reload() }
         }
         .disabled(model.connection.isBusy)
     }
