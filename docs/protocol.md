@@ -7,8 +7,11 @@ HID de la X2 CrazyLight branchée en USB.
 Aucun code du site n'est repris. Ce document décrit le format observé ; l'implémentation Swift
 (`PulsarProtocol`) est écrite à partir de ces notes et validée par les fixtures de `Tests/`.
 
-**État de validation.** Le format ci-dessous a été confronté au matériel le 2026-07-26 sur une
-X2 CrazyLight (CID 87, MID 10, firmware v3.05), dans deux configurations :
+**État de validation.** Le format ci-dessous contient un relevé matériel historique daté du
+2026-07-26 sur une X2 CrazyLight (CID 87, MID 10, firmware v3.05), dans deux configurations.
+Ce relevé est conservé comme preuve documentaire; il n'a pas été rejoué par la CI ni par le
+travail de distribution BIB-017/BIB-018. Les niveaux de preuve et les limites sont détaillés
+dans [`docs/validation-matrix.md`](validation-matrix.md).
 
 - **USB filaire**, en lecture seule (`swift run pulsar-probe`). Handshake, version, batterie,
   profil actif, mode longue portée, lecture de `0x0000..0x0100`, checksums scalaires,
@@ -31,7 +34,7 @@ de bloc scalaire et de bloc composé, l'empaquetage DPI (bits hauts et code d'ex
 découpage d'une écriture sur plusieurs trames, l'acceptation d'une fonction de bouton
 réécrite, la prise de verrou, le cycle écriture-relecture et la restauration.
 
-Reste non validé sur matériel : le **polling au-delà de 1 kHz**. C'est le dernier codec
+Reste non validé sur matériel : le **polling au-delà de 1 kHz sans fil**. C'est le dernier codec
 dont la formule n'a jamais été confrontée au firmware. L'essai existe
 (`swift run pulsar-writetest polling`) mais n'est pas lancé par défaut : changer la
 cadence de rapport peut faire renégocier la liaison sans fil, et une coupure entre

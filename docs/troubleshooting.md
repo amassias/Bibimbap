@@ -97,7 +97,10 @@ suites ciblées ci-dessus se terminent normalement et doivent être utilisées p
 
 ### Manuelle, sur l'application Release signée
 
-Cette partie ne peut pas être automatisée et n'est pas encore effectuée.
+Cette partie ne peut pas être automatisée par GitHub Actions et n'est pas couverte par un
+build vert. Elle constitue la validation physique des flux de connexion P0, distincte du
+fixture X2 CrazyLight et du relevé historique d'opérations du protocole. Ne la marquez
+comme effectuée qu'après présence du matériel et conservation du rapport de diagnostic.
 
 1. Réinitialiser temporairement l'autorisation Surveillance de l'entrée
    (`tccutil reset ListenEvent gg.pulsar.bibimbap`) et vérifier que le message de permission
