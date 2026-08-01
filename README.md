@@ -22,7 +22,7 @@ The app does not use a browser bridge, WebHID, or a background web service. Devi
 
 ### Install the app
 
-Download the latest `.dmg` file from [GitHub Releases](https://github.com/amassias/Bibimbap/releases/latest).
+Download the latest `.dmg` file from [GitHub Releases](https://github.com/amassias/Bibimbap/releases/latest). The verification steps are in the [download guide](docs/download.md).
 
 1. Open `Bibimbap-<version>.dmg`.
 2. Drag `Bibimbap.app` into the `Applications` folder shown in the window.
@@ -122,7 +122,7 @@ Bibimbap uses the connected device as the source of truth.
 - **Catalog snapshot:** v1.3.11
 - **Physical validation:** X2 CrazyLight over USB and through an 8K receiver
 
-The catalog covers more models than the current hardware tests. The X2 CrazyLight is the device used for the full hardware validation described in [`docs/protocol.md`](docs/protocol.md).
+The catalog covers more models than the current hardware tests. The X2 CrazyLight is the device used for the full hardware validation described in [`docs/protocol.md`](docs/protocol.md). The evidence levels and known limits are listed in the [validation matrix](docs/validation-matrix.md).
 
 ## Installation
 

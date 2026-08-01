@@ -75,7 +75,7 @@ catalog = json.loads((root / "Sources/PulsarCatalog/Resources/catalog.json").rea
 families = catalog["families"]
 model_count = sum(len(family["mids"]) for family in families)
 sensor_names = {family["sensor"]["type"] for family in families}
-assert catalog["schemaVersion"] == 2, catalog["schemaVersion"]
+assert catalog["schemaVersion"] == 3, catalog["schemaVersion"]
 assert catalog["sourceVersion"] == "1.3.11", catalog["sourceVersion"]
 assert len(families) == 31, len(families)
 assert model_count == 127, model_count
