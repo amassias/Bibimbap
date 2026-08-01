@@ -8,7 +8,7 @@ struct CatalogTests {
 
     @Test("Le catalogue se charge et déclare une source versionnée")
     func loads() {
-        #expect(catalog.schemaVersion == 2)
+        #expect(catalog.schemaVersion == 3)
         #expect(!catalog.sourceVersion.isEmpty)
         #expect(!catalog.families.isEmpty)
     }
@@ -58,6 +58,95 @@ struct CatalogTests {
             #expect(family.dpi.maximum > 0)
             #expect(family.debounce.maximum >= family.debounce.default)
         }
+    }
+
+    @Test("Chaque bouton porte un rang d'affichage distinct, de 0 à N-1")
+    func buttonsCarryAContiguousDisplayOrder() {
+        for family in catalog.families {
+            let orders = family.orderedButtons.map(\.order)
+            #expect(orders == Array(0..<family.buttons.count),
+                    "CID \(family.cid) MID \(family.mids) : \(orders)")
+            // L'ordre officiel ne suit pas l'index firmware, et n'a pas à le suivre.
+            #expect(Set(family.firmwareButtonIndices).count == family.buttons.count)
+        }
+    }
+
+    @Test("Le rang d'affichage est repris de cfg.json, pas recalculé depuis l'index")
+    func displayOrderComesFromTheSource() throws {
+        // Le MID 111 est le seul à déclarer des index discontinus : 0, 1, 2, 6, 4, 3.
+        let family = try #require(catalog.family(cid: 87, mid: 111))
+        #expect(family.orderedButtons.map(\.index) == [0, 1, 2, 6, 4, 3])
+        #expect(family.displayNumber(firmwareIndex: 6) == 4)
+        #expect(family.displayNumber(firmwareIndex: 3) == 6)
+        #expect(family.displayNumber(firmwareIndex: 5) == nil)
+        #expect(family.firmwareButtonIndices == [0, 1, 2, 3, 4, 6])
+
+        // Le MID 10 en est proche mais reste contigu : 0, 1, 2, 5, 4, 3.
+        let contiguous = try #require(catalog.family(cid: 87, mid: 10))
+        #expect(contiguous.orderedButtons.map(\.index) == [0, 1, 2, 5, 4, 3])
+        #expect(contiguous.displayNumber(firmwareIndex: 5) == 4)
+    }
+
+    @Test("Les positions et lignes officielles sont chargées pour chaque bouton")
+    func geometryIsLoaded() throws {
+        for family in catalog.families {
+            for button in family.orderedButtons {
+                let geometry = try #require(
+                    button.geometry,
+                    "CID \(family.cid) MID \(family.mids) bouton \(button.index)"
+                )
+                // La ligne de rappel est le seul élément qui désigne le bouton :
+                // une géométrie réduite à `top`/`left` ne suffirait pas.
+                #expect(geometry.line != .init(x1: 0, y1: 0, x2: 0, y2: 0))
+
+                let marker = geometry.normalizedMarker
+                #expect(marker.x > 0 && marker.x < 1,
+                        "CID \(family.cid) bouton \(button.index) : x = \(marker.x)")
+                #expect(marker.y > 0 && marker.y < 1,
+                        "CID \(family.cid) bouton \(button.index) : y = \(marker.y)")
+            }
+        }
+    }
+
+    @Test("Les repères des clics principal et secondaire encadrent l'axe de la souris")
+    func markersAreCalibratedAgainstTheArtwork() throws {
+        for family in catalog.families {
+            guard let primary = family.buttons.first(where: { $0.role == .primaryClick })?.geometry,
+                  let secondary = family.buttons.first(where: { $0.role == .secondaryClick })?.geometry
+            else {
+                Issue.record("CID \(family.cid) MID \(family.mids) : clics principaux absents")
+                continue
+            }
+            let first = primary.normalizedMarker
+            let second = secondary.normalizedMarker
+
+            // Les deux clics tombent de part et d'autre de l'axe et à la même hauteur.
+            // Lequel est à gauche dépend du modèle : les variantes gauchères inversent
+            // les deux, ce qui est précisément ce que la géométrie du catalogue porte et
+            // qu'une position codée en dur ne saurait pas rendre.
+            #expect(min(first.x, second.x) < 0.5, "CID \(family.cid) MID \(family.mids)")
+            #expect(max(first.x, second.x) > 0.5, "CID \(family.cid) MID \(family.mids)")
+            #expect(abs(first.y - second.y) < 0.01, "CID \(family.cid) MID \(family.mids)")
+            #expect(abs((first.x + second.x) / 2 - 0.5) < 0.02,
+                    "CID \(family.cid) MID \(family.mids)")
+        }
+    }
+
+    @Test("Les variantes gauchères inversent bien les deux clics principaux")
+    func leftHandedModelsMirrorTheirMainClicks() throws {
+        let rightHanded = try #require(catalog.family(cid: 87, mid: 10))
+        let leftHanded = try #require(catalog.family(cid: 87, mid: 21))
+
+        let rightPrimary = try #require(
+            rightHanded.buttons.first { $0.role == .primaryClick }?.geometry?.normalizedMarker
+        )
+        let leftPrimary = try #require(
+            leftHanded.buttons.first { $0.role == .primaryClick }?.geometry?.normalizedMarker
+        )
+
+        #expect(rightPrimary.x < 0.5)
+        #expect(leftPrimary.x > 0.5)
+        #expect(abs(rightPrimary.x + leftPrimary.x - 1) < 0.02)
     }
 
     @Test("Les paliers par défaut tiennent dans la plage du capteur")

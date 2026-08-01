@@ -129,7 +129,7 @@ Bibimbap focuses on reliability first: read from device, edit safely, write with
 | Localization | English source language with complete French UI coverage |
 | Firmware updates | Not implemented; update commands are explicitly rejected |
 
-The current test suite contains **105 tests** across protocol codecs, catalog coverage, simulator behavior, profile archives, write planning, app state, and macro round trips.
+The current test suite contains **133 tests** across protocol codecs, catalog coverage, button numbering and geometry, simulator behavior, profile archives, write planning, app state, and macro round trips.
 
 ## Compatibility
 

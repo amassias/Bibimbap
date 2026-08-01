@@ -141,7 +141,21 @@ public final class AppModel {
     public var deviceImageName: String? { deviceModel?.imageName }
 
     public var buttonProfiles: [ButtonProfile] {
-        snapshot?.family.buttons ?? []
+        snapshot?.family.orderedButtons ?? []
+    }
+
+    /// Les commandes du modèle connecté, dans l'ordre officiel et numérotées de 1 à N.
+    ///
+    /// Source unique des lignes d'affectation et des repères de la carte : les deux ne
+    /// peuvent pas diverger. Vide tant qu'aucun modèle reconnu n'est branché.
+    public var buttonPresentations: [ButtonPresentation] {
+        guard let family = snapshot?.family else { return [] }
+        return ButtonPresentation.list(family: family, settings: draft)
+    }
+
+    /// Position dans `draft.buttons` de l'affectation portant cet index firmware.
+    public func draftButtonPosition(firmwareIndex: Int) -> Int? {
+        draft.buttons.firstIndex { $0.index == firmwareIndex }
     }
 
     public var canApply: Bool {

@@ -132,12 +132,15 @@ if let codec = DPICodec(family: family, catalog: catalog) {
     print("  Capteur \(family.sensor.type) absent de la table de plages.")
 }
 
-print("\nBoutons :")
-for button in family.buttons {
+// Numéro visible puis index firmware : les deux diffèrent sur les modèles dont les
+// index sont discontinus, et le diagnostic doit permettre de rapprocher l'écran de la flash.
+print("\nBoutons (numéro affiché · index firmware) :")
+for button in family.orderedButtons {
     let block = image.slice(at: FlashMap.keyFunction(button: button.index), count: 4)
     let function = PulsarKeyFunction(rawValue: block.first ?? 0).map(String.init(describing:)) ?? "?"
     let parameter = (Int(block.count > 1 ? block[1] : 0) << 8) | Int(block.count > 2 ? block[2] : 0)
-    print(String(format: "  %d  %@   %@  0x%04X", button.index, hex(block), function, parameter))
+    print(String(format: "  %d · %d  %@   %@  0x%04X",
+                 button.order + 1, button.index, hex(block), function, parameter))
 }
 
 print("\nVidage brut 0x00–0x100 :")

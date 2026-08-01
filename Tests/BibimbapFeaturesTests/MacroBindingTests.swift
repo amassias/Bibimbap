@@ -28,10 +28,12 @@ struct MacroBindingTests {
         let (_, controller, snapshot) = try await connected()
 
         var draft = snapshot.settings
-        // Le bouton 3 porte déjà une macro dans les réglages d'usine du catalogue.
+        // L'emplacement de macro porte l'index firmware du bouton, pas sa position dans
+        // la liste affichée : l'affectation se fait donc par index.
         let slot = 3
-        draft.buttons[slot].function = .macro
-        draft.buttons[slot].parameter = (slot << 8) | 2
+        let position = try #require(draft.buttons.firstIndex { $0.index == slot })
+        draft.buttons[position].function = .macro
+        draft.buttons[position].parameter = (slot << 8) | 2
         draft.macros = [
             DeviceSettings.MacroBinding(slot: slot, macro: sampleMacro(), repeatCount: 2)
         ]
@@ -56,17 +58,17 @@ struct MacroBindingTests {
         let (_, controller, snapshot) = try await connected()
 
         var draft = snapshot.settings
-        draft.buttons[3].function = .macro
-        draft.buttons[3].parameter = (3 << 8) | 1
+        let position = try #require(draft.buttons.firstIndex { $0.index == 3 })
+        draft.buttons[position].function = .macro
+        draft.buttons[position].parameter = (3 << 8) | 1
         draft.macros = [DeviceSettings.MacroBinding(slot: 3, macro: sampleMacro(), repeatCount: 1)]
 
         let plan = WritePlanner(family: snapshot.family, catalog: .embedded)
             .plan(from: snapshot.settings, to: draft)
         let ids = plan.operations.map(\.id)
-        if let macroIndex = ids.firstIndex(of: "macro.3"),
-           let buttonIndex = ids.firstIndex(of: "button.3") {
-            #expect(macroIndex < buttonIndex)
-        }
+        let macroIndex = try #require(ids.firstIndex(of: "macro.3"))
+        let buttonIndex = try #require(ids.firstIndex(of: "button.3"))
+        #expect(macroIndex < buttonIndex)
         await controller.disconnect()
     }
 
