@@ -1,69 +1,41 @@
-# Bibimbap
+<div align="center">
+  <img src="./App/Bibimbap/Assets.xcassets/AppIcon.appiconset/icon-512.png" alt="Bibimbap icon" width="96">
+  <h1>Bibimbap</h1>
+  <p>Configure a supported Pulsar mouse from macOS.</p>
+  <p>
+    <a href="https://github.com/amassias/Bibimbap/actions/workflows/swift.yml"><img src="https://github.com/amassias/Bibimbap/actions/workflows/swift.yml/badge.svg" alt="Swift CI"></a>
+    <img src="https://img.shields.io/badge/macOS-15%2B-111111?logo=apple" alt="macOS 15 or later">
+    <img src="https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white" alt="Swift 6">
+  </p>
+</div>
 
-[![Swift CI](https://github.com/amassias/Bibimbap/actions/workflows/swift.yml/badge.svg)](https://github.com/amassias/Bibimbap/actions/workflows/swift.yml)
+---
 
-A native macOS configurator for Pulsar mice — fast, direct, and built for power users.
+Bibimbap is a native macOS app for supported Pulsar mice. It reads the device state through `IOHIDManager`, shows the controls available for the connected model, and writes changes back to the mouse or receiver.
 
-Bibimbap is written in Swift 6 + SwiftUI and talks directly to supported devices through `IOHIDManager`.
-No browser bridge. No WebHID wrapper. No background web service.
+The app does not use a browser bridge, WebHID, or a background web service. Device settings stay on the Mac.
 
 > [!NOTE]
-> Bibimbap is an independent personal project and is not affiliated with, endorsed by, or maintained by Pulsar Gaming Gears. The protocol implementation is based on documented observations in [`docs/protocol.md`](docs/protocol.md).
+> Bibimbap is an independent project. It is not affiliated with, endorsed by, or maintained by Pulsar Gaming Gears. The protocol notes are in [`docs/protocol.md`](docs/protocol.md).
 
-> [!IMPORTANT]
-> This project was built entirely with **Codex** and **Claude Code**.
+## Quick start
 
-## Table of contents
+### Install the app
 
-- [At a glance](#at-a-glance)
-- [Download](#download)
-- [Install](#install)
-- [Usage](#usage)
-- [Supported hardware and software](#supported-hardware-and-software)
-- [Troubleshooting](#troubleshooting)
-- [Get involved](#get-involved)
-- [Screenshots](#screenshots)
-- [Why Bibimbap](#why-bibimbap)
-- [Features](#features)
-- [Project status](#project-status)
-- [Compatibility](#compatibility)
-- [Validation matrix](#validation-matrix)
-- [Distribution](#distribution)
-- [Safety model](#safety-model)
-- [Architecture](#architecture)
-- [Requirements](#requirements)
-- [Quick start](#quick-start)
-- [Development tools](#development-tools)
-- [UI rendering](#ui-rendering)
-- [Localization](#localization)
-- [Menu bar behavior](#menu-bar-behavior)
+Download the latest `.dmg` file from [GitHub Releases](https://github.com/amassias/Bibimbap/releases/latest).
 
-## At a glance
+1. Open `Bibimbap-<version>.dmg`.
+2. Drag `Bibimbap.app` into the `Applications` folder shown in the window.
+3. Open Bibimbap from `Applications`.
 
-Bibimbap is a native macOS app for Pulsar mice that lets you configure device settings directly from macOS without vendor software or web bridges.
+The DMG contains the application and nothing else is required to run it.
 
-- **Native and lightweight:** SwiftUI app with direct HID communication.
-- **Safe writes:** every write path has read-back validation and rollback support.
-- **Model-aware UI:** only capabilities supported by your connected device are shown.
-- **Installable releases:** versioned ZIP and DMG artifacts are produced by GitHub Actions.
+The current packaged build is [`dist/Bibimbap-0.1.0.dmg`](dist/Bibimbap-0.1.0.dmg). Its SHA-256 checksum is in [`dist/Bibimbap-0.1.0.dmg.sha256`](dist/Bibimbap-0.1.0.dmg.sha256).
 
-## Download
+> [!NOTE]
+> Free builds are not notarized. If macOS blocks the first launch, Control-click Bibimbap, choose **Open**, and confirm once. Only use builds downloaded from the official release page.
 
-The canonical download page is the [latest GitHub Release](https://github.com/amassias/Bibimbap/releases/latest).
-Each tag release contains a versioned ZIP, DMG, manifest and `SHA256SUMS` file. The
-[download page](docs/download.md) explains how to verify and install an asset.
-
-## Install
-
-For normal use, download the versioned ZIP or DMG from the
-[GitHub Releases page](https://github.com/amassias/Bibimbap/releases/latest), verify
-`SHA256SUMS`, copy `Bibimbap.app` to `/Applications`, and follow the HID permission
-steps in [`docs/distribution.md`](docs/distribution.md). Xcode is not needed to install
-a release. Unsigned workflow artifacts are explicitly labelled in their manifest and
-may require the macOS right-click **Open** flow; they are not equivalent to a
-notarized release.
-
-For development, build and run locally:
+### Build from source
 
 ```bash
 xcodebuild \
@@ -73,271 +45,207 @@ xcodebuild \
   build
 ```
 
-Then launch `Bibimbap.app` from Xcode's build products or from DerivedData.
+## Recent changes
+
+<details>
+<summary>Open the current feature list</summary>
+
+- The Overview page shows the connection, battery, signal, firmware, DPI, polling rate, and active profile.
+- The interface follows Light, Dark, or System appearance settings.
+- Button assignments and macros use the capabilities reported by the connected model.
+- Macro editing includes validation, repeat modes, and hardware-slot assignment.
+- Power and receiver settings include battery behavior, receiver lighting, and pairing.
+- Settings includes English and French UI selection, profile backup, and diagnostics export.
+
+</details>
+
+## Screenshots
+
+These screenshots show the current application with a connected X2 CrazyLight.
+
+<table>
+  <tr>
+    <td width="50%"><img src="./docs/images/overview.png" alt="Bibimbap Overview"></td>
+    <td width="50%"><img src="./docs/images/customize.png" alt="Bibimbap Customize"></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="./docs/images/performance.png" alt="Bibimbap Performance"></td>
+    <td width="50%"><img src="./docs/images/macros.png" alt="Bibimbap Macros"></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="./docs/images/power.png" alt="Bibimbap Power and receiver"></td>
+    <td width="50%"><img src="./docs/images/settings.png" alt="Bibimbap Settings"></td>
+  </tr>
+</table>
+
+## Table of contents
+
+- [Features](#features)
+- [How it works](#how-it-works)
+- [Supported hardware](#supported-hardware)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Safety and privacy](#safety-and-privacy)
+- [Project status](#project-status)
+- [Troubleshooting](#troubleshooting)
+- [Development](#development)
+- [Localization](#localization)
+
+## Features
+
+- Native SwiftUI interface for macOS.
+- Overview page with the current device state.
+- DPI stages, polling rate, lift-off distance, debounce, sensor options, and DPI lighting.
+- Button remapping for mouse actions, DPI cycling, macros, and other supported functions.
+- Macro creation, editing, validation, repeat behavior, and hardware-slot assignment.
+- Wireless receiver status, pairing, battery behavior, receiver lighting, and power settings.
+- Versioned JSON profile backup and import.
+- Local diagnostics export with protocol frames and no personal data.
+- Device catalog with 31 families, 127 model identifiers, and matching artwork.
+
+## How it works
+
+Bibimbap uses the connected device as the source of truth.
+
+1. It discovers the mouse or receiver through macOS HID services.
+2. It reads the device state and identifies the model capabilities.
+3. It displays the settings available for that model.
+4. It keeps edits in a local pending state until you choose **Apply**.
+5. It writes the required protocol frames.
+6. It reads the state back and reports a mismatch instead of hiding it.
+
+## Supported hardware
+
+- **Operating system:** macOS 15 or later
+- **Supported Macs:** Apple silicon
+- **Hardware scope:** Pulsar model identifiers included in `PulsarCatalog`
+- **Catalog snapshot:** v1.3.11
+- **Physical validation:** X2 CrazyLight over USB and through an 8K receiver
+
+The catalog covers more models than the current hardware tests. The X2 CrazyLight is the device used for the full hardware validation described in [`docs/protocol.md`](docs/protocol.md).
+
+## Installation
+
+### From a DMG
+
+Each release is distributed as a disk image:
+
+```text
+Bibimbap-0.1.0.dmg
+└── Bibimbap.app
+```
+
+Open the DMG, drag the app to `Applications`, eject the mounted disk, and launch the app from its installed location.
+
+### Build locally
+
+You need macOS 15 or later, Xcode with the macOS 15 SDK, and a supported Pulsar mouse or receiver for hardware features.
+
+```bash
+xcodebuild \
+  -project App/Bibimbap.xcodeproj \
+  -scheme Bibimbap \
+  -configuration Debug \
+  build
+```
 
 ## Usage
 
-1. Connect a supported Pulsar mouse (USB or compatible receiver).
+1. Connect a supported Pulsar mouse or receiver.
 2. Launch Bibimbap and select the detected device.
-3. Review current settings, edit values, then apply changes.
-4. Use profile export/import and diagnostics tools for backup and support.
+3. Check the current state in **Overview**.
+4. Change settings in **Customize**, **Performance**, **Macros**, or **Power and receiver**.
+5. Review the pending changes and choose **Apply**.
 
-For command-line diagnostics:
+For a read-only hardware report:
 
 ```bash
 swift run pulsar-probe
 ```
 
-## Supported hardware and software
-
-- **OS:** macOS 15 or later
-- **CPU:** Apple silicon
-- **Release installation:** no Xcode required
-- **Development toolchain:** Xcode with macOS 15 SDK or later
-- **Hardware support scope:** Pulsar model identifiers bundled in `PulsarCatalog` (catalog snapshot v1.3.11)
-- **Physical evidence retained in the repository:** X2 CrazyLight over USB and an 8K receiver; this is historical evidence, not a validation performed by CI.
-
-See [Compatibility](#compatibility) and the [validation matrix](docs/validation-matrix.md) for the evidence level, tested operations and limits.
-
-## Troubleshooting
-
-- **HID access denied:** allow Bibimbap in System Settings › Privacy & Security › Input Monitoring, then relaunch. Bibimbap will not retry on its own — macOS stops re-prompting once a denial is recorded.
-- **No device appears:** reconnect the mouse/receiver, then use Search again.
-- **Several devices are listed:** Bibimbap never picks one for you. Choose the target by name, transport, VID/PID, and location; nothing is opened until you do.
-- **The mouse was unplugged mid-edit:** your draft is kept. Bibimbap reconnects (5 attempts over ~10 s), reads the device back, and asks you to choose between your draft and the settings read back. Neither choice writes anything.
-- **A write fails:** Bibimbap stops the operation, verifies state, and reports if rollback is uncertain. A write interrupted by a disconnect keeps the hardware state marked uncertain until you read the device back explicitly.
-- **Unsupported options are missing:** controls are hidden when a capability is not declared for your model.
-- **Need deeper diagnostics:** export a diagnostic report from Settings — it starts with the connection journal, which is the only useful part when a failure happens before any frame is exchanged. For read-only probing, run `swift run pulsar-probe` and attach the output to an issue.
-
-Full detail, including the manual validation procedure: [`docs/troubleshooting.md`](docs/troubleshooting.md).
-
-## Get involved
-
-- Found a bug or hardware edge case? [Open an issue](https://github.com/amassias/Bibimbap/issues/new/choose).
-- Want to contribute? Start with [CONTRIBUTING.md](CONTRIBUTING.md).
-- Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
-
-## Screenshots
-
-> Screenshot section intentionally kept as a placeholder in this change set.
-> Visual assets can be added in a follow-up task.
-
-## Why Bibimbap
-
-Pulsar users on macOS often need a lightweight, native way to inspect and configure their hardware.
-Bibimbap focuses on reliability first: read from device, edit safely, write with verification, and recover clearly when something fails.
-
-## Features
-
-- Native macOS interface with automatic light and dark appearance.
-- Overview dashboard with connection, battery, signal, firmware, DPI, polling, and active profile details.
-- Model-aware customization: only controls supported by the connected mouse are shown.
-- DPI stages, polling rate, lift-off distance, debounce, sensor options, and DPI lighting controls.
-- Macro editing, validation, hardware-slot assignment, and repeat behavior.
-- Wireless receiver status, pairing flow, battery behavior, and power settings.
-- Menu bar controls for quick actions without opening the main window.
-- Versioned JSON profile backup/import, diagnostics export, and factory reset tools.
-- English source language with complete French UI coverage and instant in-app switching.
-- Bundled catalog covering **31 device families**, **127 model identifiers**, and **127 matching images**.
-
-## Project status
-
-| Layer | Status |
-|---|---|
-| HID transport (`PulsarHID`) | Automated coverage; physical connection validation is tracked separately |
-| Protocol (`PulsarProtocol`) | Codec and fixture coverage; historical physical records are listed separately |
-| Device catalog (`PulsarCatalog`) | 31 families and 127 models from catalog snapshot v1.3.11 |
-| Simulator (`PulsarSimulator`) | Nominal path plus injected failure scenarios |
-| Application (`BibimbapFeatures` + `BibimbapUI`) | Complete configuration UI, pairing, backups, and diagnostics |
-| Macros | Read, write, edit, validate, and simulator end-to-end coverage |
-| Localization | English source language with complete French UI coverage |
-| Firmware updates | Not implemented; update commands are explicitly rejected |
-
-The current test suite contains **133 tests** across protocol codecs, catalog coverage, button numbering and geometry, simulator behavior, profile archives, write planning, app state, and macro round trips.
-
-## Compatibility
-
-Compatibility is described at three levels:
-
-| Level | Scope |
-|---|---|
-| Declared by the bundled catalog | 127 model identifiers under catalog CID 87 |
-| Covered by fixtures | A real X2 CrazyLight capture replayed by the test suite |
-| Physical evidence retained in the repository | X2 CrazyLight over USB and through an 8K receiver; not executed by CI |
-
-The retained physical record for the X2 CrazyLight is documented in
-[`docs/validation-matrix.md`](docs/validation-matrix.md) and
-[`docs/protocol.md`](docs/protocol.md). It must not be read as a new hardware run by
-this package or by GitHub Actions:
-
-| Operation | USB | 8K receiver |
-|---|---:|---:|
-| Handshake, firmware, battery, and profile | ✅ | ✅ |
-| Settings-region read | ✅ | ✅ |
-| DPI, color, and button decoding | ✅ | ✅ |
-| Scalar setting write | ✅ | ✅ |
-| Checksummed compound-block write | ✅ | ✅ |
-| Multi-report macro write | ✅ | ✅ |
-| Button-function write | ✅ | ✅ |
-| Independent read-back and restoration | ✅ | ✅ |
-| Polling above 1 kHz | Not applicable | Not yet physically validated |
-
-The X2 CrazyLight is limited to 1 kHz over USB and reaches higher polling rates through its receiver, so higher polling-codec paths cannot be validated over wired mode on this model.
-
-## Validation matrix
-
-The full BIB-018 matrix distinguishes catalog declarations, simulator paths, retained
-fixtures and physical validation. It also records sensors (`pulsar x1`, `3950`,
-`3955`), transports, firmware evidence, operations and the explicit wireless polling
-limit above 1 kHz: [`docs/validation-matrix.md`](docs/validation-matrix.md).
-
-## Distribution
-
-The BIB-017 packaging contract covers versioning, ZIP/DMG generation, optional
-Developer ID signing, optional notarization, checksums, GitHub Release publication and
-Input Monitoring instructions: [`docs/distribution.md`](docs/distribution.md).
-
-## Safety model
-
-Bibimbap treats device state as the source of truth:
-
-- Every write is followed by an independent read-back.
-- A mismatched read-back fails the operation and rolls the batch back in reverse order.
-- A failed rollback is surfaced as an uncertain hardware state instead of being hidden behind a generic error.
-- Unsupported capabilities are omitted from the interface.
-- Unknown models are rejected instead of using guessed flash addresses or limits.
-- Profile import only fills a pending draft; unsupported values are skipped and reported.
-- The device catalog is bundled and never downloaded or executed at runtime.
-
-## Architecture
-
-```text
-Package.swift
-Sources/
-  BibimbapLocalization/   In-app language selection and localization helpers
-  BibimbapFeatures/       Observable state, drafts, validation, and write plans
-  BibimbapUI/             SwiftUI shell, sections, theme, and device artwork
-  PulsarCatalog/          Versioned device capabilities and model metadata
-  PulsarHID/              HID discovery, opening, and report transport
-  PulsarProtocol/         Frames, checksums, flash map, codecs, and sessions
-  PulsarSimulator/        Simulated device and injected failure paths
-  bibimbap-render/        Off-screen light/dark UI renderer
-  pulsar-probe/           Read-only hardware diagnostics
-  pulsar-writetest/       Explicit reversible hardware-write checks
-scripts/                  Reproducible distribution and metadata validation scripts
-App/
-  Bibimbap.xcodeproj      macOS application target
-  Bibimbap/               App entry point, assets, entitlements, and strings
-Tests/                    Protocol, catalog, simulator, feature, and fixture tests
-Tools/generate_catalog.py Catalog regeneration tool
-docs/protocol.md          Observed protocol documentation
-docs/troubleshooting.md   Connection diagnosis and validation procedure
-docs/validation-matrix.md Catalog, simulator, fixture and physical evidence matrix
-docs/distribution.md      ZIP/DMG, signing, notarization and installation contract
-Design/                   Logo concepts and redesign reference screens
-```
-
-## Requirements
-
-- macOS 15 or later
-- Apple silicon Mac
-- Xcode with the macOS 15 SDK or later for development builds
-- A supported Pulsar mouse or receiver for hardware usage
-
-## Quick start
-
-Build and test the Swift package:
-
-```bash
-swift build
-swift test --filter HardwareFixtureTests
-swift test --filter CatalogTests
-swift test --filter SimulatorFaultTests
-```
-
-Build the macOS app:
-
-```bash
-xcodebuild \
-  -project App/Bibimbap.xcodeproj \
-  -scheme Bibimbap \
-  -configuration Debug \
-  build
-```
-
-Validate distribution metadata and build installable artifacts:
-
-```bash
-./scripts/validate_distribution.sh
-./scripts/package_macos.sh --version 0.1.0 --output .build/distribution --arch arm64
-./scripts/validate_distribution.sh --artifacts .build/distribution
-```
-
-Run the app with a simulated X2 CrazyLight:
+To run the app with a simulated X2 CrazyLight:
 
 ```bash
 BIBIMBAP_SIMULATED=1 \
   /path/to/Bibimbap.app/Contents/MacOS/Bibimbap
 ```
 
-## Development tools
+## Safety and privacy
 
-Read a connected device without writing:
+- Every write is followed by an independent read-back.
+- A failed read-back stops the operation and rolls the batch back in reverse order.
+- Bibimbap reports when a rollback cannot be confirmed.
+- Unsupported controls are left out of the interface.
+- Unknown models are rejected instead of using guessed addresses or limits.
+- Imported profiles only fill a pending draft. Unsupported values are skipped and reported.
+- Device settings stay on the Mac.
+- The bundled catalog is not downloaded or executed at runtime.
+
+## Project status
+
+| Area | Status |
+|---|---|
+| HID transport | Validated over USB and through an 8K receiver |
+| Protocol | Reads and writes validated on hardware |
+| Device catalog | 31 families and 127 models from snapshot v1.3.11 |
+| Simulator | Normal paths and injected failures covered |
+| Application | Configuration UI, pairing, backups, diagnostics, and localization |
+| Macros | Read, write, edit, validation, and simulator round trips |
+| Firmware updates | Not implemented; update commands are rejected |
+
+## Troubleshooting
+
+### The device does not appear
+
+Reconnect the mouse or receiver, then relaunch Bibimbap. If the device still does not appear, run the read-only probe and attach its output to an issue.
+
+### A write fails
+
+Bibimbap stops the operation and checks the device state. Export diagnostics before opening an issue.
+
+### A setting is missing
+
+The connected model may not support that setting. Check the model and firmware shown in **Overview**.
+
+### Run diagnostics
 
 ```bash
 swift run pulsar-probe
 ```
 
-Run reversible hardware-write checks:
+The probe does not write to the device. Reversible hardware checks are available separately:
 
 ```bash
 swift run pulsar-writetest
 ```
 
-The default write-test suite covers scalar settings, a checksummed DPI block, a multi-report macro block, and a button function. Each test reads original bytes, writes a test value, reads it back independently, restores original bytes, and verifies restoration.
+## Development
 
-The polling test is intentionally excluded by default because changing report rate may renegotiate the wireless link:
+Build and test the Swift package:
 
 ```bash
-swift run pulsar-writetest polling
+swift build
+swift test
 ```
 
-Regenerate the bundled device catalog:
+Regenerate the device catalog:
 
 ```bash
 python3 Tools/generate_catalog.py
 ```
 
-Compare the bundled catalog with the currently published upstream catalog:
+Compare the bundled catalog with the published upstream snapshot:
 
 ```bash
 BIBIMBAP_CHECK_CATALOG=1 swift test --filter CatalogSnapshotTests
 ```
 
-## UI rendering
-
-Generate PNG previews for every section in light and dark mode, without physical hardware:
-
-```bash
-swift run bibimbap-render .render
-```
-
-The renderer uses the simulator and is intended for layout, hierarchy, density, and localization review. Native AppKit controls may look flatter in off-screen renders than in the running app.
-
 ## Localization
 
-English is the source and fallback language. French can be selected in Settings and updates immediately without reconnecting the mouse.
+English is the source and fallback language. French is available from **Settings** and can be switched without reconnecting the mouse.
 
-String Catalog location:
+The string catalog is stored in:
 
 ```text
 App/Bibimbap/Localizable.xcstrings
 ```
-
-## Menu bar behavior
-
-The menu bar accessory provides quick access to active DPI stage, polling rate, profile, battery state, and device reload.
-
-The 18×18 template icon encodes battery level in the mouse body itself, keeping its footprint stable as charge changes. Because it is a template image, macOS automatically applies the correct tint for appearance and selection state.
-
-The Dock icon can be hidden from Settings. Bibimbap then behaves as a menu bar accessory, and the app prevents both entry points from being disabled at the same time.
