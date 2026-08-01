@@ -446,12 +446,26 @@ public actor DeviceController {
         let rotationByte = UInt8(clamping: scalar(FlashMap.angleTune, default: 0))
         settings.rotationDegrees = Int(Int8(bitPattern: rotationByte))
 
-        settings.dpiEffect.mode = DeviceSettings.DPIEffect.Mode(
-            rawValue: scalar(FlashMap.dpiEffectMode, default: 0)
-        ) ?? .off
-        settings.dpiEffect.brightness = scalar(FlashMap.dpiEffectBrightness, default: 3)
-        settings.dpiEffect.speed = scalar(FlashMap.dpiEffectSpeed, default: 5)
-        settings.dpiEffect.enabled = scalar(FlashMap.dpiEffectState, default: 1) == 1
+        let effectCodec = DPIEffectCodec()
+        let modeRaw = scalar(FlashMap.dpiEffectMode, default: 0)
+        if let mode = try? effectCodec.decode(UInt8(clamping: modeRaw), for: .mode) {
+            settings.dpiEffect.mode = DeviceSettings.DPIEffect.Mode(rawValue: mode) ?? .off
+        }
+        let brightnessRaw = scalar(
+            FlashMap.dpiEffectBrightness,
+            default: DPIEffectCodec.defaultBrightness
+        )
+        settings.dpiEffect.brightness = (try? effectCodec.decode(
+            UInt8(clamping: brightnessRaw), for: .brightness
+        )) ?? DPIEffectCodec.defaultBrightness
+        let speedRaw = scalar(FlashMap.dpiEffectSpeed, default: DPIEffectCodec.defaultSpeed)
+        settings.dpiEffect.speed = (try? effectCodec.decode(
+            UInt8(clamping: speedRaw), for: .speed
+        )) ?? DPIEffectCodec.defaultSpeed
+        let stateRaw = scalar(FlashMap.dpiEffectState, default: 1)
+        settings.dpiEffect.enabled = ((try? effectCodec.decode(
+            UInt8(clamping: stateRaw), for: .state
+        )) ?? 1) == 1
 
         if let codec {
             let width = codec.usesExtendedBlock
@@ -463,14 +477,12 @@ public actor DeviceController {
                 let block = image.slice(at: address, count: width)
                 let decoded: (x: Int, y: Int) = (try? codec.decodeStage(block))
                     ?? (x: profile.value, y: profile.value)
-                let colour = image.slice(at: FlashMap.dpiColor(stage: index), count: 3)
+                let colourBlock = image.slice(at: FlashMap.dpiColor(stage: index), count: 4)
                 stages.append(DeviceSettings.DPIStage(
                     index: index,
                     x: decoded.x,
                     y: decoded.y,
-                    color: colour.count == 3
-                        ? CatalogColor(red: Int(colour[0]), green: Int(colour[1]), blue: Int(colour[2]))
-                        : profile.color
+                    color: (try? DPIColorCodec().decode(colourBlock)) ?? profile.color
                 ))
             }
             settings.dpiStages = stages

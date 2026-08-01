@@ -121,6 +121,33 @@ struct WritePlanTests {
         #expect(changes.count == 2)
         #expect(changes.allSatisfy { $0.group == .performance })
     }
+
+    @Test("La couleur, X/Y et l'effet DPI passent par leurs codecs et portent une restauration")
+    func dpiAndLightingFieldsAreEncoded() throws {
+        var draft = baselineSettings()
+        draft.dpiStages[0].x = 800
+        draft.dpiStages[0].y = 1600
+        draft.dpiStages[0].color = CatalogColor(red: 12, green: 128, blue: 250)
+        draft.dpiEffect.mode = .breathing
+        draft.dpiEffect.speed = 8
+        draft.dpiEffect.brightness = 7
+        draft.dpiEffect.enabled = false
+
+        let operations = planner.plan(from: baselineSettings(), to: draft).operations
+        #expect(operations.map(\.id).contains("dpi.value.0"))
+        #expect(operations.map(\.id).contains("dpi.color.0"))
+        #expect(operations.first { $0.id == "light.mode" }?.payload == .scalar(2))
+        #expect(operations.first { $0.id == "light.speed" }?.payload == .scalar(8))
+        #expect(operations.first { $0.id == "light.brightness" }?.payload == .scalar(7))
+        #expect(operations.first { $0.id == "light.state" }?.payload == .scalar(0))
+        #expect(operations.allSatisfy { $0.rollback != nil })
+
+        let colorOperation = try #require(operations.first { $0.id == "dpi.color.0" })
+        #expect(colorOperation.payload == .block(try DPIColorCodec().encode(draft.dpiStages[0].color)))
+        #expect(colorOperation.rollback == .block(
+            try DPIColorCodec().encode(baselineSettings().dpiStages[0].color)
+        ))
+    }
 }
 
 @Suite("Validation du brouillon")
@@ -172,6 +199,29 @@ struct DraftValidatorTests {
         draft.dpiStages[0].x = 405
         draft.dpiStages[0].y = 405
         #expect(validator.validate(draft).contains { $0.id.hasPrefix("stage.0") && $0.isBlocking })
+    }
+
+    @Test("Les plages du capteur sont exposées et les valeurs intermédiaires sont arrondies par le même codec")
+    func capabilitiesExposeDPIRanges() {
+        #expect(capabilities.supportsDPIEditing)
+        #expect(capabilities.dpiRepresentableRanges == [
+            DPIRepresentableRange(minimum: 10, maximum: 10_000, step: 10),
+            DPIRepresentableRange(minimum: 10_050, maximum: 30_000, step: 50),
+            DPIRepresentableRange(minimum: 30_100, maximum: 32_000, step: 100),
+        ])
+        #expect(capabilities.snapDPI(10_025) == 10_000)
+        #expect(capabilities.snapDPI(10_026) == 10_050)
+    }
+
+    @Test("Une vitesse ou une couleur hors codec bloque l'application")
+    func rejectsInvalidLightingFields() {
+        var draft = baselineSettings()
+        draft.dpiEffect.speed = DPIEffectCodec.speedRange.upperBound + 1
+        draft.dpiStages[0].color = CatalogColor(red: -1, green: 0, blue: 0)
+
+        let issues = validator.validate(draft)
+        #expect(issues.contains { $0.id == "lighting.speed" && $0.isBlocking })
+        #expect(issues.contains { $0.id == "stage.0.color" && $0.isBlocking })
     }
 
     @Test("Un palier actif hors des paliers activés est refusé")

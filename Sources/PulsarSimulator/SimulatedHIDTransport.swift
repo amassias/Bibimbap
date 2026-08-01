@@ -137,6 +137,9 @@ public actor SimulatedHIDTransport: HIDTransport {
         scalar(0, at: FlashMap.angleTuneState)
         scalar(UInt8(family.power.defaultPowerSaveBattery), at: FlashMap.powerSaveBattery)
         scalar(0, at: FlashMap.dpiEffectMode)
+        scalar(UInt8(DPIEffectCodec.defaultBrightness), at: FlashMap.dpiEffectBrightness)
+        scalar(UInt8(DPIEffectCodec.defaultSpeed), at: FlashMap.dpiEffectSpeed)
+        scalar(1, at: FlashMap.dpiEffectState)
 
         if let codec = DPICodec(family: family, catalog: catalog) {
             for (index, stage) in family.dpi.stages.enumerated() {

@@ -31,6 +31,36 @@ public struct DPICodec: Sendable {
         case unsupportedSensor(String)
         case dpiOutOfRange(Int)
         case noRangeForExponent(UInt8)
+        case invalidBlockLength(expected: Int, actual: Int)
+        case checksumMismatch(expected: UInt8, actual: UInt8)
+    }
+
+    /// Une plage continue de valeurs que le capteur sait réellement représenter.
+    public struct RepresentableRange: Equatable, Sendable {
+        public var minimum: Int
+        public var maximum: Int
+        public var step: Int
+
+        public init(minimum: Int, maximum: Int, step: Int) {
+            self.minimum = minimum
+            self.maximum = maximum
+            self.step = step
+        }
+
+        public var count: Int {
+            guard maximum >= minimum, step > 0 else { return 0 }
+            return (maximum - minimum) / step + 1
+        }
+
+        public func nearest(to dpi: Int) -> Int {
+            let clamped = min(max(dpi, minimum), maximum)
+            let offset = clamped - minimum
+            let lower = minimum + (offset / step) * step
+            let upper = min(lower + step, maximum)
+            let lowerDistance = abs(clamped - lower)
+            let upperDistance = abs(upper - clamped)
+            return upperDistance < lowerDistance ? upper : lower
+        }
     }
 
     private var usesPulsarX1Scaling: Bool { sensorType == "pulsar x1" }
@@ -46,6 +76,9 @@ public struct DPICodec: Sendable {
     public func dpi(raw: Int, exponentCode: UInt8) throws -> Int {
         guard !ranges.hasLookupTable else {
             throw CodecError.unsupportedSensor(sensorType)
+        }
+        guard ranges.range(forExponentCode: exponentCode) != nil else {
+            throw CodecError.noRangeForExponent(exponentCode)
         }
         var value = (raw + 1) * baseStep
         if exponentCode & 0b10 != 0 {
@@ -81,21 +114,57 @@ public struct DPICodec: Sendable {
 
     /// Arrondit un DPI à la valeur représentable la plus proche.
     public func snap(dpi: Int) throws -> Int {
-        guard let first = ranges.ranges.first, let last = ranges.ranges.last else {
+        try snap(dpi: dpi, upTo: nil)
+    }
+
+    /// Arrondit à une valeur représentable sans dépasser le plafond du modèle.
+    public func snap(dpi: Int, upTo maximum: Int?) throws -> Int {
+        let available = representableRanges(upTo: maximum)
+        guard !available.isEmpty else {
             throw CodecError.unsupportedSensor(sensorType)
         }
-        let clamped = min(max(dpi, first.minimum), last.maximum)
-        guard let range = ranges.range(containing: clamped) else {
-            throw CodecError.dpiOutOfRange(dpi)
-        }
-        let offset = clamped - range.minimum
-        let snapped = range.minimum + Int((Double(offset) / Double(range.step)).rounded()) * range.step
-        return min(snapped, range.maximum)
+
+        let candidates = available.map { $0.nearest(to: dpi) }
+        return candidates.min { lhs, rhs in
+            let leftDistance = abs(lhs - dpi)
+            let rightDistance = abs(rhs - dpi)
+            return leftDistance == rightDistance ? lhs < rhs : leftDistance < rightDistance
+        } ?? available[0].minimum
     }
 
     /// Toutes les valeurs représentables, pour alimenter un pas de curseur cohérent.
     public var representableCount: Int {
-        ranges.ranges.reduce(0) { $0 + ($1.maximum - $1.minimum) / $1.step + 1 }
+        representableRanges.reduce(0) { $0 + $1.count }
+    }
+
+    /// Plages continues exposables à l'interface, éventuellement tronquées au plafond
+    /// déclaré par la famille de périphérique.
+    public var representableRanges: [RepresentableRange] {
+        representableRanges(upTo: nil)
+    }
+
+    public func representableRanges(upTo maximum: Int?) -> [RepresentableRange] {
+        guard !ranges.hasLookupTable else { return [] }
+        return ranges.ranges.compactMap { range in
+            guard range.step > 0 else { return nil }
+            guard let maximum else {
+                return RepresentableRange(
+                    minimum: range.minimum,
+                    maximum: range.maximum,
+                    step: range.step
+                )
+            }
+
+            guard range.minimum <= maximum else { return nil }
+            let clippedMaximum = min(range.maximum, maximum)
+            let alignedMaximum = range.minimum
+                + ((clippedMaximum - range.minimum) / range.step) * range.step
+            return RepresentableRange(
+                minimum: range.minimum,
+                maximum: alignedMaximum,
+                step: range.step
+            )
+        }
     }
 
     // MARK: Blocs de flash
@@ -141,7 +210,12 @@ public struct DPICodec: Sendable {
     public func decodeStage(_ block: [UInt8]) throws -> (x: Int, y: Int) {
         let expected = usesExtendedBlock ? 6 : 4
         guard block.count >= expected else {
-            throw CodecError.dpiOutOfRange(0)
+            throw CodecError.invalidBlockLength(expected: expected, actual: block.count)
+        }
+        let expectedChecksum = PulsarFrame.blockChecksum(over: block.prefix(expected - 1))
+        let actualChecksum = block[expected - 1]
+        guard expectedChecksum == actualChecksum else {
+            throw CodecError.checksumMismatch(expected: expectedChecksum, actual: actualChecksum)
         }
         let attributes = block[usesExtendedBlock ? 4 : 2]
         let xCode = attributes & 0b11

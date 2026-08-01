@@ -91,9 +91,12 @@ public struct DeviceSettings: Equatable, Sendable, Codable {
 
     public struct DPIEffect: Equatable, Sendable, Codable {
         public var mode: Mode = .off
-        public var brightness: Int = 3
-        public var speed: Int = 5
+        public var brightness: Int = DPIEffectCodec.defaultBrightness
+        public var speed: Int = DPIEffectCodec.defaultSpeed
         public var enabled = true
+
+        public static let brightnessRange = DPIEffectCodec.brightnessRange
+        public static let speedRange = DPIEffectCodec.speedRange
 
         public enum Mode: Int, Sendable, Codable, CaseIterable {
             case off = 0
@@ -157,6 +160,27 @@ public struct DeviceSettings: Equatable, Sendable, Codable {
     }
 }
 
+/// Plage de valeurs DPI exposable sans inventer de pas ou de valeurs intermédiaires.
+public struct DPIRepresentableRange: Equatable, Sendable {
+    public var minimum: Int
+    public var maximum: Int
+    public var step: Int
+
+    public init(minimum: Int, maximum: Int, step: Int) {
+        self.minimum = minimum
+        self.maximum = maximum
+        self.step = step
+    }
+
+    public func nearest(to dpi: Int) -> Int {
+        let clamped = min(max(dpi, minimum), maximum)
+        let offset = clamped - minimum
+        let lower = minimum + (offset / step) * step
+        let upper = min(lower + step, maximum)
+        return abs(upper - clamped) < abs(clamped - lower) ? upper : lower
+    }
+}
+
 /// Photographie complète d'un périphérique connecté.
 public struct DeviceSnapshot: Equatable, Sendable {
     public var identity: DeviceIdentity
@@ -206,6 +230,7 @@ public struct HIDConnectionSummary: Equatable, Sendable {
 public struct DeviceCapabilities: Equatable, Sendable {
     public var maximumDPI: Int
     public var minimumDPI: Int
+    public var dpiRepresentableRanges: [DPIRepresentableRange]
     public var availableReportRates: [Int]
     public var maximumStages: Int
     public var buttonCount: Int
@@ -222,6 +247,23 @@ public struct DeviceCapabilities: Equatable, Sendable {
     public var supportsSignalStrength: Bool
     public var supportsBattery: Bool
 
+    public var supportsDPIEditing: Bool { !dpiRepresentableRanges.isEmpty }
+
+    public var minimumDPIStep: Int {
+        dpiRepresentableRanges.map(\.step).min() ?? 1
+    }
+
+    /// Valeur la plus proche que le capteur et le plafond du modèle peuvent encoder.
+    public func snapDPI(_ dpi: Int) -> Int? {
+        guard !dpiRepresentableRanges.isEmpty else { return nil }
+        let candidates = dpiRepresentableRanges.map { $0.nearest(to: dpi) }
+        return candidates.min { lhs, rhs in
+            let leftDistance = abs(lhs - dpi)
+            let rightDistance = abs(rhs - dpi)
+            return leftDistance == rightDistance ? lhs < rhs : leftDistance < rightDistance
+        }
+    }
+
     public init(
         family: DeviceFamily,
         catalog: DeviceCatalog,
@@ -231,8 +273,15 @@ public struct DeviceCapabilities: Equatable, Sendable {
         supportsSignalStrength: Bool
     ) {
         let ranges = catalog.sensorRanges(for: family)
-        maximumDPI = min(family.dpi.maximum, ranges?.maximumDPI ?? family.dpi.maximum)
-        minimumDPI = ranges?.minimumDPI ?? 50
+        let codec = DPICodec(family: family, catalog: catalog)
+        dpiRepresentableRanges = codec?.representableRanges(upTo: family.dpi.maximum).map {
+            DPIRepresentableRange(minimum: $0.minimum, maximum: $0.maximum, step: $0.step)
+        } ?? []
+        maximumDPI = dpiRepresentableRanges.last?.maximum ?? min(
+            family.dpi.maximum,
+            ranges?.maximumDPI ?? family.dpi.maximum
+        )
+        minimumDPI = dpiRepresentableRanges.first?.minimum ?? ranges?.minimumDPI ?? 50
         availableReportRates = ReportRateCodec.available(
             upTo: min(family.maximumReportRate, connection.maximumReportRate)
         )

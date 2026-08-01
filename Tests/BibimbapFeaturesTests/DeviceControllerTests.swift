@@ -64,6 +64,36 @@ struct DeviceControllerTests {
         await controller.disconnect()
     }
 
+    @Test("DPI asymétrique, couleur et effet lumineux font un round-trip simulateur")
+    func dpiAndLightingRoundTrip() async throws {
+        let (_, controller) = makeController()
+        let snapshot = try await controller.connect()
+
+        var draft = snapshot.settings
+        draft.dpiStages[0].x = 800
+        draft.dpiStages[0].y = 1600
+        draft.dpiStages[0].color = CatalogColor(red: 12, green: 128, blue: 250)
+        draft.dpiEffect.mode = .breathing
+        draft.dpiEffect.speed = 8
+        draft.dpiEffect.brightness = 7
+        draft.dpiEffect.enabled = false
+
+        let plan = WritePlanner(family: snapshot.family, catalog: .embedded)
+            .plan(from: snapshot.settings, to: draft)
+        let result = try await controller.apply(plan)
+        #expect(result.outcome == .succeeded)
+
+        let refreshed = try await controller.readSnapshot()
+        #expect(refreshed.settings.dpiStages[0].x == 800)
+        #expect(refreshed.settings.dpiStages[0].y == 1600)
+        #expect(refreshed.settings.dpiStages[0].color == draft.dpiStages[0].color)
+        #expect(refreshed.settings.dpiEffect.mode == .breathing)
+        #expect(refreshed.settings.dpiEffect.speed == 8)
+        #expect(refreshed.settings.dpiEffect.brightness == 7)
+        #expect(!refreshed.settings.dpiEffect.enabled)
+        await controller.disconnect()
+    }
+
     @Test("Une écriture sans effet est détectée et le lot est restauré")
     func failedWriteIsRolledBack() async throws {
         let (transport, controller) = makeController()

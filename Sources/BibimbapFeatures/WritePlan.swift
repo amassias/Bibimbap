@@ -161,6 +161,23 @@ public struct WritePlanner: Sendable {
             ))
         }
 
+        func effectScalar(
+            _ id: String,
+            _ label: String,
+            _ address: UInt16,
+            _ field: DPIEffectCodec.Field,
+            _ new: Int,
+            _ old: Int
+        ) {
+            guard new != old,
+                  let encodedNew = try? DPIEffectCodec().encode(new, for: field),
+                  let encodedOld = try? DPIEffectCodec().encode(old, for: field) else { return }
+            operations.append(WriteOperation(
+                id: id, group: .lighting, label: label, address: address,
+                payload: .scalar(encodedNew), rollback: .scalar(encodedOld)
+            ))
+        }
+
         // 1. Paliers DPI, avant tout ce qui les référence.
         if let codec {
             for stage in draft.dpiStages {
@@ -177,14 +194,16 @@ public struct WritePlanner: Sendable {
                         rollback: .block(restore)
                     ))
                 }
-                if stage.color != previous.color {
+                if stage.color != previous.color,
+                   let block = try? DPIColorCodec().encode(stage.color),
+                   let restore = try? DPIColorCodec().encode(previous.color) {
                     operations.append(WriteOperation(
                         id: "dpi.color.\(stage.index)",
                         group: .dpi,
                         label: L10n.format("Stage %d color", stage.index + 1),
                         address: FlashMap.dpiColor(stage: stage.index),
-                        payload: .block(colourBlock(stage.color)),
-                        rollback: .block(colourBlock(previous.color))
+                        payload: .block(block),
+                        rollback: .block(restore)
                     ))
                 }
             }
@@ -234,14 +253,14 @@ public struct WritePlanner: Sendable {
         }
 
         // 3. Effet lumineux du palier.
-        scalar("light.mode", .lighting, L10n.string( "Effet DPI"),
-               FlashMap.dpiEffectMode, draft.dpiEffect.mode.rawValue, current.dpiEffect.mode.rawValue)
-        scalar("light.brightness", .lighting, L10n.string( "Luminosité"),
-               FlashMap.dpiEffectBrightness, draft.dpiEffect.brightness, current.dpiEffect.brightness)
-        scalar("light.speed", .lighting, L10n.string( "Vitesse"),
-               FlashMap.dpiEffectSpeed, draft.dpiEffect.speed, current.dpiEffect.speed)
-        scalar("light.state", .lighting, L10n.string( "Indicateur DPI"),
-               FlashMap.dpiEffectState, draft.dpiEffect.enabled ? 1 : 0, current.dpiEffect.enabled ? 1 : 0)
+        effectScalar("light.mode", L10n.string( "Effet DPI"), FlashMap.dpiEffectMode, .mode,
+                     draft.dpiEffect.mode.rawValue, current.dpiEffect.mode.rawValue)
+        effectScalar("light.brightness", L10n.string( "Luminosité"), FlashMap.dpiEffectBrightness,
+                     .brightness, draft.dpiEffect.brightness, current.dpiEffect.brightness)
+        effectScalar("light.speed", L10n.string( "Vitesse"), FlashMap.dpiEffectSpeed, .speed,
+                     draft.dpiEffect.speed, current.dpiEffect.speed)
+        effectScalar("light.state", L10n.string( "Indicateur DPI"), FlashMap.dpiEffectState, .state,
+                     draft.dpiEffect.enabled ? 1 : 0, current.dpiEffect.enabled ? 1 : 0)
 
         // 4. Macros, avant les boutons qui les référencent : un bouton ne doit jamais
         // pointer un emplacement dont le contenu n'est pas encore écrit.
@@ -342,11 +361,6 @@ public struct WritePlanner: Sendable {
         }
 
         return WritePlan(operations: operations)
-    }
-
-    private func colourBlock(_ colour: CatalogColor) -> [UInt8] {
-        let head = [UInt8(clamping: colour.red), UInt8(clamping: colour.green), UInt8(clamping: colour.blue)]
-        return head + [PulsarFrame.blockChecksum(over: head)]
     }
 
     private func buttonBlock(_ button: DeviceSettings.ButtonAssignment) -> [UInt8] {
@@ -555,14 +569,24 @@ public struct DraftValidator: Sendable {
                 isBlocking: true
             ))
         }
+        if draft.activeStage < 0 {
+            issues.append(Issue(
+                id: "stages.active.negative",
+                message: L10n.string("Le palier actif doit être positif."),
+                isBlocking: true
+            ))
+        }
         for stage in draft.dpiStages.prefix(draft.enabledStageCount) {
             for (axis, value) in [("X", stage.x), ("Y", stage.y)] {
                 guard let codec else { continue }
-                if (try? codec.snap(dpi: value)) != value {
+                let representable = value >= capabilities.minimumDPI
+                    && value <= capabilities.maximumDPI
+                    && (try? codec.snap(dpi: value, upTo: capabilities.maximumDPI)) == value
+                if !representable {
                     issues.append(Issue(
                         id: "stage.\(stage.index).\(axis)",
                         message: L10n.format(
-                            "Stage %d (%@) must be a multiple of the sensor step.",
+                            "Stage %d (%@) is not representable by this sensor (use the displayed ranges).",
                             stage.index + 1,
                             axis
                         ),
@@ -570,6 +594,25 @@ public struct DraftValidator: Sendable {
                     ))
                 }
             }
+            if (try? DPIColorCodec().encode(stage.color)) == nil {
+                issues.append(Issue(
+                    id: "stage.\(stage.index).color",
+                    message: L10n.format("Stage %d color is outside the RGB range 0–255.", stage.index + 1),
+                    isBlocking: true
+                ))
+            }
+        }
+
+        let effectCodec = DPIEffectCodec()
+        for (field, value, label) in [
+            (DPIEffectCodec.Field.brightness, draft.dpiEffect.brightness, L10n.string("brightness")),
+            (DPIEffectCodec.Field.speed, draft.dpiEffect.speed, L10n.string("speed")),
+        ] where (try? effectCodec.encode(value, for: field)) == nil {
+            issues.append(Issue(
+                id: "lighting.\(field.rawValue)",
+                message: L10n.format("The DPI lighting %@ level is outside the codec range.", label),
+                isBlocking: true
+            ))
         }
         if !capabilities.supportsRotation, draft.rotationDegrees != 0 {
             issues.append(Issue(
