@@ -25,4 +25,17 @@ public enum BibimbapApplicationActions {
     public static func openHelp() {
         NSWorkspace.shared.open(helpURL)
     }
+
+    /// Ouvre directement le volet « Surveillance de l'entrée » des Réglages Système.
+    ///
+    /// C'est la seule action qui puisse débloquer une permission refusée : l'application
+    /// ne peut pas se l'accorder elle-même, et redemander l'accès ne réaffiche plus la
+    /// fenêtre système une fois le refus enregistré.
+    @MainActor
+    public static func openInputMonitoringSettings() {
+        let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
+        )!
+        NSWorkspace.shared.open(url)
+    }
 }

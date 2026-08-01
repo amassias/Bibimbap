@@ -13,6 +13,7 @@ public actor DeviceController {
     private let catalog: DeviceCatalog
     private var session: PulsarSession?
     private var identifier: HIDDeviceIdentifier?
+    private var connectionLogEntries: [ConnectionLogEntry] = []
 
     public init(transport: any HIDTransport, catalog: DeviceCatalog = .embedded) {
         self.transport = transport
@@ -24,45 +25,253 @@ public actor DeviceController {
         case unrecognisedDevice(cid: Int, mid: Int)
         case deviceOffline
         case notConnected
+        /// macOS refuse l'accès HID : réessayer en boucle ne servirait à rien.
+        case permissionDenied
+        /// La collection visée n'est plus énumérée : câble retiré, dongle rebranché ailleurs.
+        case interfaceDisappeared
+        /// Le périphérique n'a pas répondu au dialogue d'identification.
+        case handshakeTimedOut
+        /// L'ouverture a été refusée pour une raison autre qu'une permission manquante.
+        case openFailed(code: Int32)
+        /// Tout le reste : le dialogue a eu lieu mais n'a pas abouti.
+        case communicationFailure(String)
+    }
+
+    // MARK: Journal de connexion
+
+
+    /// Trace des tentatives de connexion, distincte du journal de trames.
+    ///
+    /// Un échec avant `identify` ne produit aucune trame : sans ce journal, le rapport de
+    /// diagnostic serait vide précisément dans les cas les plus opaques (permission
+    /// refusée, ouverture refusée, interface disparue).
+    public struct ConnectionLogEntry: Sendable, Equatable {
+        public enum Phase: String, Sendable, CaseIterable {
+            case discover, permission, open, identify, online, snapshot
+        }
+
+        public enum Outcome: Equatable, Sendable {
+            case started
+            case succeeded(String)
+            case failed(String)
+        }
+
+        public var phase: Phase
+        /// Candidat concerné, `nil` tant qu'aucun n'est choisi.
+        public var candidate: String?
+        public var outcome: Outcome
+        /// Code système remonté par IOKit, lorsqu'il y en a un.
+        public var systemCode: Int32?
+        public var timestamp: Date
+
+        public var line: String {
+            let time = ISO8601DateFormatter().string(from: timestamp)
+            let result = switch outcome {
+            case .started: "…"
+            case .succeeded(let detail): detail.isEmpty ? "ok" : "ok — \(detail)"
+            case .failed(let reason): "échec — \(reason)"
+            }
+            let code = systemCode.map { " [code \($0)]" } ?? ""
+            return "\(time)  \(phase.rawValue.padding(toLength: 10, withPad: " ", startingAt: 0))"
+                + "\(candidate ?? "—")  \(result)\(code)"
+        }
+    }
+
+    public func connectionLog() -> [ConnectionLogEntry] { connectionLogEntries }
+
+    private func log(
+        _ phase: ConnectionLogEntry.Phase,
+        candidate: HIDDeviceIdentifier?,
+        _ outcome: ConnectionLogEntry.Outcome,
+        systemCode: Int32? = nil
+    ) {
+        connectionLogEntries.append(ConnectionLogEntry(
+            phase: phase,
+            candidate: candidate.map { "\($0.displayName) (\($0.vendorProductLabel), \($0.locationLabel))" },
+            outcome: outcome,
+            systemCode: systemCode,
+            timestamp: Date()
+        ))
+        if connectionLogEntries.count > 128 {
+            connectionLogEntries.removeFirst(connectionLogEntries.count - 128)
+        }
     }
 
     // MARK: Connexion
 
     /// Collections susceptibles de porter une souris Pulsar configurable.
     public func availableDevices() async throws -> [HIDDeviceIdentifier] {
-        try await transport.discover().filter {
-            $0.matchesConfigurationInterface(frameLength: PulsarFrame.length)
+        do {
+            let all = try await transport.discover()
+            let candidates = all.filter {
+                $0.matchesConfigurationInterface(frameLength: PulsarFrame.length)
+            }
+            log(.discover, candidate: nil, .succeeded(
+                "\(candidates.count) candidat(s) sur \(all.count) collection(s)"
+            ))
+            return candidates
+        } catch {
+            let mapped = Self.mapped(error)
+            log(
+                mapped == .permissionDenied ? .permission : .discover,
+                candidate: nil,
+                .failed(Self.describe(error)),
+                systemCode: Self.systemCode(error)
+            )
+            throw mapped
         }
     }
 
+    /// Ouvre un candidat et ne rend la main qu'une fois l'état complet relu.
+    ///
+    /// La séquence est stricte et volontairement séquentielle : découvrir, ouvrir, démarrer
+    /// la session, identifier, vérifier le catalogue, attendre la souris derrière son
+    /// récepteur, signaler le driver, relire. Chaque échec après l'ouverture referme la
+    /// session **et** le transport : une collection laissée ouverte en arrière-plan empêche
+    /// la tentative suivante et retient l'autorisation macOS pour rien.
     public func connect(to identifier: HIDDeviceIdentifier? = nil) async throws -> DeviceSnapshot {
+        do {
+            return try await attemptConnection(to: identifier)
+        } catch ControllerError.interfaceDisappeared {
+            // Un rebranchement en cours d'ouverture invalide l'énumération précédente.
+            // Une seule ré-énumération : au-delà, c'est une panne, pas un aléa.
+            log(.discover, candidate: identifier, .started)
+            return try await attemptConnection(rediscoveringKeyOf: identifier)
+        }
+    }
+
+    private func attemptConnection(
+        to identifier: HIDDeviceIdentifier? = nil,
+        rediscoveringKeyOf previous: HIDDeviceIdentifier? = nil
+    ) async throws -> DeviceSnapshot {
+        // 1. Découvrir.
         let target: HIDDeviceIdentifier
-        if let identifier {
+        if let previous {
+            let candidates = try await availableDevices()
+            guard let refreshed = candidates.first(where: { $0.stableKey == previous.stableKey }) else {
+                throw ControllerError.interfaceDisappeared
+            }
+            target = refreshed
+        } else if let identifier {
             target = identifier
-        } else if let first = try await availableDevices().first {
-            target = first
         } else {
-            throw ControllerError.noConfigurationInterface
+            let candidates = try await availableDevices()
+            guard let first = candidates.first else {
+                throw ControllerError.noConfigurationInterface
+            }
+            target = first
         }
 
-        try await transport.open(target)
+        // 2. Ouvrir.
+        log(.open, candidate: target, .started)
+        do {
+            try await transport.open(target)
+        } catch {
+            let mapped = Self.mapped(error)
+            log(
+                mapped == .permissionDenied ? .permission : .open,
+                candidate: target,
+                .failed(Self.describe(error)),
+                systemCode: Self.systemCode(error)
+            )
+            throw mapped
+        }
+        log(.open, candidate: target, .succeeded(""))
+
+        // 3. Démarrer la session. À partir d'ici, tout échec doit refermer.
         let session = PulsarSession(transport: transport)
         await session.start()
         self.session = session
         self.identifier = target
 
-        let identity = try await session.identify()
-        guard catalog.family(cid: identity.cid, mid: identity.mid) != nil else {
-            throw ControllerError.unrecognisedDevice(cid: identity.cid, mid: identity.mid)
+        do {
+            // 4. Identifier CID/MID.
+            log(.identify, candidate: target, .started)
+            let identity = try await session.identify()
+            log(.identify, candidate: target, .succeeded("CID \(identity.cid) / MID \(identity.mid)"))
+
+            // 5. Vérifier le catalogue.
+            guard catalog.family(cid: identity.cid, mid: identity.mid) != nil else {
+                throw ControllerError.unrecognisedDevice(cid: identity.cid, mid: identity.mid)
+            }
+
+            // 6. Derrière un dongle, le récepteur répond au handshake avant que la souris ne
+            // soit jointe. Lire la flash à ce moment-là expire sans explication utile.
+            log(.online, candidate: target, .started)
+            guard try await session.waitUntilOnline() else {
+                throw ControllerError.deviceOffline
+            }
+            log(.online, candidate: target, .succeeded(""))
+
+            // 7. Signale au périphérique qu'un logiciel prend la main.
+            try? await session.setDriverOnline(true)
+
+            // 8. Relire l'instantané complet.
+            log(.snapshot, candidate: target, .started)
+            let snapshot = try await readSnapshot()
+            log(.snapshot, candidate: target, .succeeded(snapshot.family.theme))
+            return snapshot
+        } catch {
+            let mapped = Self.mapped(error)
+            log(
+                phase(for: mapped),
+                candidate: target,
+                .failed(Self.describe(error)),
+                systemCode: Self.systemCode(error)
+            )
+            await closeAfterFailure()
+            throw mapped
         }
-        // Derrière un dongle, le récepteur répond au handshake avant que la souris ne
-        // soit jointe. Lire la flash à ce moment-là expire sans explication utile.
-        guard try await session.waitUntilOnline() else {
-            throw ControllerError.deviceOffline
+    }
+
+    private func phase(for error: ControllerError) -> ConnectionLogEntry.Phase {
+        switch error {
+        case .permissionDenied: .permission
+        case .interfaceDisappeared, .openFailed: .open
+        case .handshakeTimedOut, .unrecognisedDevice: .identify
+        case .deviceOffline: .online
+        default: .snapshot
         }
-        // Signale au périphérique qu'un logiciel prend la main.
-        try? await session.setDriverOnline(true)
-        return try await readSnapshot()
+    }
+
+    /// Referme sans dialoguer : le périphérique vient de refuser le dialogue.
+    private func closeAfterFailure() async {
+        if let session { await session.stop() }
+        session = nil
+        identifier = nil
+        await transport.close()
+    }
+
+    /// Traduit une erreur de transport ou de session en cause nommable.
+    private static func mapped(_ error: any Error) -> ControllerError {
+        if let controller = error as? ControllerError { return controller }
+        if let transport = error as? HIDTransportError {
+            return switch transport {
+            case .permissionDenied: .permissionDenied
+            case .deviceNotFound, .disconnected, .notOpen: .interfaceDisappeared
+            case .managerOpenFailed(let code), .openFailed(let code): .openFailed(code: code)
+            case .writeFailed, .reportTooLarge: .communicationFailure(describe(error))
+            }
+        }
+        if let session = error as? PulsarSession.SessionError {
+            return switch session {
+            case .timedOut, .notStarted: .handshakeTimedOut
+            default: .communicationFailure(describe(error))
+            }
+        }
+        return .communicationFailure(describe(error))
+    }
+
+    private static func describe(_ error: any Error) -> String {
+        (error as? LocalizedError)?.errorDescription ?? String(describing: error)
+    }
+
+    private static func systemCode(_ error: any Error) -> Int32? {
+        guard let transport = error as? HIDTransportError else { return nil }
+        return switch transport {
+        case .managerOpenFailed(let code), .openFailed(let code), .writeFailed(let code): code
+        default: nil
+        }
     }
 
     public func disconnect() async {
@@ -74,6 +283,20 @@ public actor DeviceController {
         identifier = nil
         await transport.close()
     }
+
+    /// Ferme la session en gardant l'énumération vivante, pour préparer une reconnexion.
+    ///
+    /// Distinct de `disconnect()` : ici le périphérique est déjà parti, il n'y a rien à lui
+    /// dire, et le flux d'évènements HID doit rester ouvert pour voir son retour.
+    public func closeForRecovery() async {
+        if let session { await session.stop() }
+        session = nil
+        identifier = nil
+        await transport.close()
+    }
+
+    /// Identité de la collection actuellement ouverte.
+    public func currentIdentifier() -> HIDDeviceIdentifier? { identifier }
 
     public func changeNotifications() async -> AsyncStream<PulsarChangeNotification> {
         guard let session else { return AsyncStream { $0.finish() } }
@@ -378,5 +601,30 @@ public actor DeviceController {
     public func diagnosticLog() async -> [PulsarSession.LoggedFrame] {
         guard let session else { return [] }
         return await session.diagnosticLog()
+    }
+}
+
+extension DeviceController.ControllerError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .noConfigurationInterface:
+            L10n.string("Aucune interface de configuration Pulsar n'est présente.")
+        case .unrecognisedDevice(let cid, let mid):
+            L10n.format("Model CID %d / MID %d is not in the bundled catalog.", cid, mid)
+        case .deviceOffline:
+            L10n.string("Le récepteur répond, mais la souris ne se signale pas.")
+        case .notConnected:
+            L10n.string("Aucun périphérique connecté.")
+        case .permissionDenied:
+            L10n.string("macOS refuse l'accès aux rapports HID. Autorisez Bibimbap dans Réglages Système › Confidentialité et sécurité › Surveillance de l'entrée.")
+        case .interfaceDisappeared:
+            L10n.string("L'interface a disparu pendant la connexion.")
+        case .handshakeTimedOut:
+            L10n.string("Le périphérique n'a pas répondu au dialogue d'identification.")
+        case .openFailed(let code):
+            L10n.format("Device opening denied (code %d).", code)
+        case .communicationFailure(let reason):
+            reason
+        }
     }
 }

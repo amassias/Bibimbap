@@ -49,6 +49,12 @@ struct AppShell: View {
                 Color.clear
             }
 
+            // Le conflit et l'état incertain ne dépendent pas de la section affichée :
+            // ils bloquent l'application des modifications partout, y compris depuis
+            // Réglages, et doivent donc rester visibles depuis Réglages.
+            UncertainHardwareBanner(model: model)
+            DraftRecoveryBanner(model: model)
+
             if model.section != .settings, model.snapshot != nil {
                 Divider()
                 PendingChangesBar(model: model)
@@ -394,6 +400,16 @@ private struct AppDetail: View {
                 switch model.connection {
                 case .idle, .scanning, .connecting, .reading:
                     ConnectionProgressView(state: model.connection)
+                case .selectingDevice:
+                    DeviceSelectionView(model: model)
+                case .reconnecting(let attempt):
+                    // Le brouillon survit à la coupure : l'écran le dit plutôt que de
+                    // laisser croire à une remise à zéro.
+                    ReconnectingView(attempt: attempt, model: model)
+                case .permissionDenied:
+                    PermissionDeniedView(model: model)
+                case .handshakeTimedOut:
+                    HandshakeTimeoutView(model: model)
                 case .noDevice:
                     NoDeviceView(model: model)
                 case .offline:

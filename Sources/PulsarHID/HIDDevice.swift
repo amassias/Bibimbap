@@ -45,6 +45,48 @@ public struct HIDDeviceIdentifier: Hashable, Sendable, Codable {
     /// Page d'usage vendor portant le canal de configuration Pulsar.
     public static let configurationUsagePage: UInt32 = 0xFF05
 
+    /// Identité stable d'un périphérique à travers un rebranchement.
+    ///
+    /// `locationID` change dès qu'on change de port USB, et les tailles de rapport annoncées
+    /// dépendent de la collection énumérée : aucune des trois ne peut servir à reconnaître
+    /// le même matériel après un débranchement. Restent le couple VID/PID, la collection
+    /// vendor visée et le transport.
+    ///
+    /// Cette clé sert uniquement à retrouver une cible, jamais à trancher : deux exemplaires
+    /// du même modèle la partagent, et le sélecteur reste alors obligatoire.
+    public var stableKey: String {
+        String(
+            format: "%04X:%04X:%04X:%04X:%@",
+            vendorID, productID, usagePage, usage, transport.rawValue
+        )
+    }
+
+    /// Nom affichable, avec repli lorsque le périphérique n'annonce rien d'utile.
+    public var displayName: String {
+        let trimmed = productName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty { return trimmed }
+        let maker = manufacturer.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !maker.isEmpty { return maker }
+        return L10n.string("Périphérique Pulsar")
+    }
+
+    /// Transport tel qu'on le montre : seul l'USB mérite d'être nommé précisément.
+    public var transportLabel: String {
+        switch transport {
+        case .usb: L10n.string("USB")
+        case .bluetooth: L10n.string("Bluetooth")
+        case .other: L10n.string("Autre")
+        }
+    }
+
+    public var vendorProductLabel: String {
+        String(format: "VID %04X · PID %04X", vendorID, productID)
+    }
+
+    public var locationLabel: String {
+        String(format: "0x%08X", locationID)
+    }
+
     /// Vrai si la collection peut porter le canal de configuration.
     ///
     /// Le report ID n'est pas lisible depuis les seules propriétés IOKit d'une collection,
@@ -92,6 +134,13 @@ public struct HIDInputReport: Hashable, Sendable {
 public enum HIDTransportError: Error, Equatable, Sendable {
     case notOpen
     case deviceNotFound
+    /// macOS refuse l'écoute des rapports : « Surveillance de l'entrée » n'est pas accordée.
+    ///
+    /// Distinct de `openFailed` parce qu'aucun réessai ne peut aboutir tant que
+    /// l'utilisateur n'a pas agi dans les Réglages Système.
+    case permissionDenied
+    /// `IOHIDManagerOpen` a échoué : rien ne sera énumérable tant que ce n'est pas résolu.
+    case managerOpenFailed(Int32)
     case openFailed(Int32)
     case writeFailed(Int32)
     case disconnected
@@ -105,6 +154,10 @@ extension HIDTransportError: LocalizedError {
             L10n.string( "Aucun périphérique ouvert.")
         case .deviceNotFound:
             L10n.string( "Périphérique introuvable.")
+        case .permissionDenied:
+            L10n.string("macOS refuse l'accès aux rapports HID. Autorisez Bibimbap dans Réglages Système › Confidentialité et sécurité › Surveillance de l'entrée.")
+        case .managerOpenFailed(let code):
+            L10n.format("The HID service could not be opened (code %d).", code)
         case .openFailed(let code):
             L10n.format("Device opening denied (code %d).", code)
         case .writeFailed(let code):

@@ -82,10 +82,15 @@ See [Compatibility](#compatibility) for validation details and tested operations
 
 ## Troubleshooting
 
-- **No device appears:** reconnect the mouse/receiver, then relaunch Bibimbap.
-- **A write fails:** Bibimbap stops the operation, verifies state, and reports if rollback is uncertain.
+- **HID access denied:** allow Bibimbap in System Settings › Privacy & Security › Input Monitoring, then relaunch. Bibimbap will not retry on its own — macOS stops re-prompting once a denial is recorded.
+- **No device appears:** reconnect the mouse/receiver, then use Search again.
+- **Several devices are listed:** Bibimbap never picks one for you. Choose the target by name, transport, VID/PID, and location; nothing is opened until you do.
+- **The mouse was unplugged mid-edit:** your draft is kept. Bibimbap reconnects (5 attempts over ~10 s), reads the device back, and asks you to choose between your draft and the settings read back. Neither choice writes anything.
+- **A write fails:** Bibimbap stops the operation, verifies state, and reports if rollback is uncertain. A write interrupted by a disconnect keeps the hardware state marked uncertain until you read the device back explicitly.
 - **Unsupported options are missing:** controls are hidden when a capability is not declared for your model.
-- **Need deeper diagnostics:** run `swift run pulsar-probe` and attach the output to an issue.
+- **Need deeper diagnostics:** export a diagnostic report from Settings — it starts with the connection journal, which is the only useful part when a failure happens before any frame is exchanged. For read-only probing, run `swift run pulsar-probe` and attach the output to an issue.
+
+Full detail, including the manual validation procedure: [`docs/troubleshooting.md`](docs/troubleshooting.md).
 
 ## Get involved
 
@@ -190,6 +195,7 @@ App/
 Tests/                    Protocol, catalog, simulator, feature, and fixture tests
 Tools/generate_catalog.py Catalog regeneration tool
 docs/protocol.md          Observed protocol documentation
+docs/troubleshooting.md   Connection diagnosis and validation procedure
 Design/                   Logo concepts and redesign reference screens
 ```
 
