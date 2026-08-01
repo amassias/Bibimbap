@@ -20,7 +20,7 @@ SOURCE_URL = "https://bbb.pulsar.gg/cMouse/cfg.json"
 SENSOR_URL = "https://bbb.pulsar.gg/cMouse/sensor.json"
 DEVICE_NAME_URL = "https://bbb.pulsar.gg/cMouse/devicename.json"
 OUTPUT = pathlib.Path(__file__).resolve().parent.parent / "Sources/PulsarCatalog/Resources/catalog.json"
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 def fetch(url, path=None):
@@ -63,6 +63,30 @@ def normalize_device_name(value):
     """Aplatit le format officiel, qui utilise une chaîne ou deux lignes."""
     parts = value if isinstance(value, list) else [value]
     return " ".join(part.strip() for part in parts if part and part.strip())
+
+
+def build_button(order, key):
+    """Une clé configurable, avec sa géométrie officielle.
+
+    `loc` est repris tel quel — [haut, gauche] du bloc d'étiquette dans la maquette
+    cMouse — et `line` est la ligne de rappel relative à ce bloc, dont l'extrémité
+    (`x2`, `y2`) désigne le bouton sur la photographie. Les deux sont conservés
+    ensemble : la position du repère ne se déduit pas de `loc` seul.
+    """
+    button = {
+        "index": key["index"],
+        "order": order,
+        "defaultType": int(key["value"][0], 16),
+        "defaultParameter": int(key["value"][1], 16),
+    }
+    location, line = key.get("loc"), key.get("line")
+    if location and line and len(location) >= 2 and len(line) >= 4:
+        button["geometry"] = {
+            "top": location[0],
+            "left": location[1],
+            "line": {"x1": line[0], "y1": line[1], "x2": line[2], "y2": line[3]},
+        }
+    return button
 
 
 def build_models(device_names):
@@ -122,13 +146,11 @@ def build(cfg, sensors, device_names):
                     ],
                 },
                 "buttons": [
-                    {
-                        "index": key["index"],
-                        "position": {"x": key["loc"][0], "y": key["loc"][1]},
-                        "defaultType": int(key["value"][0], 16),
-                        "defaultParameter": int(key["value"][1], 16),
-                    }
-                    for key in sorted(entry.get("keys", []), key=lambda k: k["index"])
+                    build_button(order, key)
+                    # L'ordre officiel des clés est celui de lecture de la carte : il
+                    # fixe la numérotation visible. Il ne suit pas l'index firmware,
+                    # qui peut être discontinu (le MID 111 déclare 0,1,2,6,4,3).
+                    for order, key in enumerate(entry.get("keys", []))
                 ],
                 "debounce": {
                     "default": entry.get("debounce", 2),

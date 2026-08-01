@@ -397,7 +397,7 @@ public struct WritePlanner: Sendable {
             operations.append(WriteOperation(
                 id: "shortcut.\(button.index)",
                 group: .buttons,
-                label: L10n.format("Keyboard shortcut — button %d", button.index + 1),
+                label: buttonLabel(firmwareIndex: button.index),
                 address: FlashMap.shortcut(slot: button.index),
                 payload: .block(block),
                 rollback: .block(restore)
@@ -430,10 +430,12 @@ public struct WritePlanner: Sendable {
             guard effectiveButton.function != .keyboardShortcut || previous.shortcut != nil else {
                 continue
             }
+            // L'identifiant et l'adresse restent sur l'index firmware ; seul le libellé
+            // reprend le numéro visible, qui n'en découle pas.
             operations.append(WriteOperation(
                 id: "button.\(button.index)",
                 group: .buttons,
-                label: L10n.format("Button %d", button.index + 1),
+                label: buttonLabel(firmwareIndex: button.index),
                 address: FlashMap.keyFunction(button: button.index),
                 payload: .block(buttonBlock(effectiveButton)),
                 rollback: .block(buttonBlock(previous))
@@ -467,6 +469,20 @@ public struct WritePlanner: Sendable {
         }
 
         return WritePlan(operations: operations)
+    }
+
+    /// Nomme un bouton par son numéro visible, ou par son index firmware si le modèle
+    /// ne le déclare pas — auquel cas inventer un numéro serait trompeur.
+    private func buttonLabel(firmwareIndex: Int) -> String {
+        guard let number = family.displayNumber(firmwareIndex: firmwareIndex) else {
+            return L10n.format("Firmware button %d", firmwareIndex)
+        }
+        return L10n.format("Button %d", number)
+    }
+
+    private func colourBlock(_ colour: CatalogColor) -> [UInt8] {
+        let head = [UInt8(clamping: colour.red), UInt8(clamping: colour.green), UInt8(clamping: colour.blue)]
+        return head + [PulsarFrame.blockChecksum(over: head)]
     }
 
     private func buttonBlock(_ button: DeviceSettings.ButtonAssignment) -> [UInt8] {

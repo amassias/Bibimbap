@@ -273,8 +273,12 @@ struct DraftValidatorTests {
     @Test("La cadence de macro est projetée dans l'octet du bouton")
     func macroRepeatBindingIsEncodedInButtonBlock() {
         var current = baselineSettings()
-        current.buttons[3].function = .macro
-        current.buttons[3].parameter = (3 << 8) | 1
+        guard let buttonPosition = current.buttons.firstIndex(where: { $0.index == 3 }) else {
+            Issue.record("Le bouton firmware 3 manque dans la famille de test")
+            return
+        }
+        current.buttons[buttonPosition].function = .macro
+        current.buttons[buttonPosition].parameter = (3 << 8) | 1
 
         var draft = current
         draft.macros = [DeviceSettings.MacroBinding(

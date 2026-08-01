@@ -9,8 +9,12 @@ struct MacrosSection: View {
     @State private var selectedSlot: Int?
     @FocusState private var isMacroLibraryFocused: Bool
 
-    private var macroButtons: [DeviceSettings.ButtonAssignment] {
-        model.draft.buttons.filter { $0.function == .macro }
+    /// Les commandes affectées à une macro, dans l'ordre officiel du modèle.
+    ///
+    /// L'emplacement matériel se lit dans le paramètre du bouton et porte l'index
+    /// firmware ; le libellé, lui, montre le numéro visible.
+    private var macroButtons: [ButtonPresentation] {
+        model.buttonPresentations.filter { $0.assignment.function == .macro }
     }
 
     private var macroSlots: [Int] {
@@ -121,7 +125,7 @@ struct MacrosSection: View {
                             VStack(alignment: .leading, spacing: Theme.Space.hairline) {
                                 Text(binding?.macro.name ?? L10n.format("Macro %d", slot + 1))
                                     .lineLimit(1)
-                                Text(L10n.format("Button %d", button.index + 1))
+                                Text(button.numberLabel)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -217,10 +221,8 @@ struct MacrosSection: View {
                         label: L10n.string("Assigned to"),
                         showsDivider: false
                     ) {
-                        Text(
-                            button.map { L10n.format("Button %d", $0.index + 1) } ?? "—"
-                        )
-                        .foregroundStyle(Color.accentColor)
+                        Text(button?.numberLabel ?? "—")
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     Divider()
@@ -233,10 +235,10 @@ struct MacrosSection: View {
                         HStack {
                             Spacer()
                             ButtonMarker(
-                                number: button.index + 1,
+                                number: button.displayNumber,
                                 isHighlighted: true
                             )
-                            Text(L10n.format("Button %d", button.index + 1))
+                            Text(button.numberLabel)
                                 .font(.callout)
                             Spacer()
                         }
@@ -251,8 +253,8 @@ struct MacrosSection: View {
         }
     }
 
-    private func macroSlot(_ button: DeviceSettings.ButtonAssignment) -> Int {
-        (button.parameter >> 8) & 0xFF
+    private func macroSlot(_ button: ButtonPresentation) -> Int {
+        (button.assignment.parameter >> 8) & 0xFF
     }
 
     private func selectMacro(slot: Int) {

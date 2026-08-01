@@ -11,7 +11,11 @@ import SwiftUI
 ///
 /// Le rendu utilise le même shell trois colonnes que l'application.
 ///
-///     swift run bibimbap-render [dossier]
+///     swift run bibimbap-render [dossier] [--mid 10,36,111]
+///
+/// `--mid` rend la même planche pour plusieurs modèles. C'est le seul moyen de vérifier
+/// de visu que la carte des boutons suit bien le modèle : cinq boutons, six boutons, ou
+/// six boutons aux index firmware discontinus.
 
 @MainActor
 func render(
@@ -95,14 +99,36 @@ struct MenuBarIconSheet: View {
     }
 }
 
+/// MID à rendre, `10` par défaut : la X2 CrazyLight du transport simulé.
+@MainActor
+func requestedMIDs() -> [Int] {
+    guard let flag = CommandLine.arguments.firstIndex(of: "--mid"),
+          CommandLine.arguments.indices.contains(flag + 1) else { return [10] }
+    let mids = CommandLine.arguments[flag + 1].split(separator: ",").compactMap { Int($0) }
+    return mids.isEmpty ? [10] : mids
+}
+
 @MainActor
 func main() async {
-    let directory = URL(fileURLWithPath: CommandLine.arguments.count > 1
+    let root = URL(fileURLWithPath: CommandLine.arguments.count > 1
+        && !CommandLine.arguments[1].hasPrefix("--")
         ? CommandLine.arguments[1]
         : "./.render")
+
+    let mids = requestedMIDs()
+    for mid in mids {
+        // Un sous-dossier par modèle dès qu'il y en a plusieurs, pour pouvoir les comparer.
+        let directory = mids.count > 1 ? root.appendingPathComponent("mid-\(mid)") : root
+        await render(mid: mid, into: directory)
+    }
+    print("\nRendus dans \(root.path)")
+}
+
+@MainActor
+func render(mid: Int, into directory: URL) async {
     try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
-    let model = AppModel.simulated()
+    let model = AppModel.simulated(mid: mid)
     await model.connect()
 
     let canvas = CGSize(width: 1440, height: 900)
@@ -150,6 +176,15 @@ func main() async {
         }
         model.revert()
 
+        // La carte des boutons, hors du shell : c'est la planche qui sert à vérifier
+        // qu'un modèle affiche exactement ses boutons, à la bonne place.
+        if render(ButtonMapHarness(model: model),
+                  named: "carte-boutons",
+                  size: CGSize(width: 800, height: 560),
+                  scheme: scheme, into: directory) {
+            print("  carte-boutons")
+        }
+
         if render(MenuBarIconSheet(),
                   named: "barre-des-menus-icone",
                   size: CGSize(width: 1180, height: 240),
@@ -159,7 +194,6 @@ func main() async {
     }
 
     await model.disconnect()
-    print("\nRendus dans \(directory.path)")
 }
 
 await main()

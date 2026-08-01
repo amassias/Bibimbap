@@ -508,7 +508,9 @@ public actor DeviceController {
             settings.dpiStages = stages
         }
 
-        settings.buttons = family.buttons.map { button in
+        // Une entrée par bouton déclaré, dans l'ordre officiel, et rien d'autre : aucun
+        // emplacement n'est ajouté pour combler un index firmware manquant.
+        settings.buttons = family.orderedButtons.map { button in
             let block = image.slice(at: FlashMap.keyFunction(button: button.index), count: 4)
             let function = PulsarKeyFunction(rawValue: block.first ?? 0)
                 ?? PulsarKeyFunction(rawValue: UInt8(button.defaultType)) ?? .disabled

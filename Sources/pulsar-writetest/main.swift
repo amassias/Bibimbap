@@ -182,8 +182,9 @@ if shouldRun("dpi"), let codec = DPICodec(family: family, catalog: catalog) {
 // MARK: - Essai 3 : écriture multi-trames
 
 if shouldRun("macro") {
-    // Un emplacement au-delà des boutons du modèle : aucun d'eux ne peut le référencer.
-    let slot = family.buttons.count
+    // Un emplacement au-delà des index firmware du modèle : aucun bouton ne peut le
+    // référencer. Compter les boutons ne suffirait pas, les index pouvant être discontinus.
+    let slot = (family.buttons.map(\.index).max() ?? -1) + 1
     let macro = PulsarMacro(name: "Essai Bibimbap", steps: [
         .init(kind: .key, action: .press, value: 4, delayMilliseconds: 15),
         .init(kind: .key, action: .release, value: 4, delayMilliseconds: 15),
@@ -213,9 +214,10 @@ if shouldRun("macro") {
 
 // MARK: - Essai 4 : sémantique d'une fonction de bouton
 
-if shouldRun("button"), let last = family.buttons.map(\.index).max() {
-    // Le dernier bouton du modèle : jamais le clic principal ni le secondaire, dont la
-    // perte pendant l'essai rendrait la machine pénible à récupérer.
+if shouldRun("button"), let target = family.orderedButtons.last {
+    // La dernière commande de la carte : jamais le clic principal ni le secondaire, dont
+    // la perte pendant l'essai rendrait la machine pénible à récupérer.
+    let last = target.index
     func describeFunction(_ bytes: [UInt8]) -> String {
         guard bytes.count >= 4 else { return "bloc trop court" }
         let function = PulsarKeyFunction(rawValue: bytes[0]).map(String.init(describing:)) ?? "inconnue (\(bytes[0]))"
@@ -226,7 +228,7 @@ if shouldRun("button"), let last = family.buttons.map(\.index).max() {
     }
 
     await runTest(
-        name: "Sémantique — fonction du bouton \(last + 1)",
+        name: "Sémantique — fonction du bouton \(target.order + 1) (index firmware \(last))",
         address: FlashMap.keyFunction(button: last),
         length: FlashMap.keyFunctionStride,
         describe: describeFunction,

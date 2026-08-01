@@ -432,7 +432,13 @@ public struct DeviceCapabilities: Equatable, Sendable {
     public var dpiRepresentableRanges: [DPIRepresentableRange]
     public var availableReportRates: [Int]
     public var maximumStages: Int
+    /// Nombre de commandes affichées, donc de numéros visibles.
     public var buttonCount: Int
+    /// Les index firmware réellement déclarés par le modèle.
+    ///
+    /// Ils ne forment pas toujours `0..<buttonCount` : un test d'appartenance doit passer
+    /// par cet ensemble, jamais par une comparaison au nombre de boutons.
+    public var firmwareButtonIndices: Set<Int>
     public var maximumDebounce: Int
     public var debounceWarningThreshold: Int
     public var supportsMotionSync: Bool
@@ -494,6 +500,7 @@ public struct DeviceCapabilities: Equatable, Sendable {
         )
         maximumStages = family.dpi.stages.count
         buttonCount = family.buttons.count
+        firmwareButtonIndices = family.firmwareButtonIndices
         maximumDebounce = family.debounce.maximum
         debounceWarningThreshold = family.debounce.warnAbove
         self.supportsMotionSync = family.sensor.supportsMotionSync

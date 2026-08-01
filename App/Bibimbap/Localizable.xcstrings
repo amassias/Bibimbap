@@ -198,13 +198,6 @@
         "fr": { "stringUnit": { "state": "translated", "value": "Valeur" } }
       }
     },
-    "Additional button": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Additional button" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Bouton supplémentaire" } }
-      }
-    },
     "Button map": {
       "extractionState": "manual",
       "localizations": {
@@ -219,32 +212,11 @@
         "fr": { "stringUnit": { "state": "translated", "value": "Boutons de macros" } }
       }
     },
-    "Primary click": {
+    "Position unavailable on the map:": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Primary click" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Clic principal" } }
-      }
-    },
-    "Secondary click": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Secondary click" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Clic secondaire" } }
-      }
-    },
-    "Side button 1": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Side button 1" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Bouton latéral 1" } }
-      }
-    },
-    "Side button 2": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Side button 2" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Bouton latéral 2" } }
+        "en": { "stringUnit": { "state": "translated", "value": "Position unavailable on the map:" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Position indisponible sur la carte :" } }
       }
     },
     "Top view of the mouse": {
@@ -252,20 +224,6 @@
       "localizations": {
         "en": { "stringUnit": { "state": "translated", "value": "Top view of the mouse" } },
         "fr": { "stringUnit": { "state": "translated", "value": "Vue de dessus de la souris" } }
-      }
-    },
-    "Wheel click": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Wheel click" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Clic molette" } }
-      }
-    },
-    "additional buttons": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "additional buttons" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "boutons supplémentaires" } }
       }
     },
     "configurable buttons": {
@@ -4159,13 +4117,24 @@
         }
       }
     },
-    "Button %d (not available on this model)": {
+    "Firmware button %d": {
       "extractionState": "manual",
       "localizations": {
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bouton %d (absent de ce modèle)"
+            "value": "Bouton firmware %d"
+          }
+        }
+      }
+    },
+    "Firmware button %d (not available on this model)": {
+      "extractionState": "manual",
+      "localizations": {
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bouton firmware %d (absent de ce modèle)"
           }
         }
       }
