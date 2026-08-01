@@ -342,6 +342,7 @@ public actor DeviceController {
             codec: codec,
             longDistance: longDistance ?? false
         )
+        settings.buttons = try await readShortcuts(for: settings.buttons, using: session)
         settings.macros = try await readMacros(for: settings.buttons, using: session)
 
         return DeviceSnapshot(
@@ -377,6 +378,24 @@ public actor DeviceController {
             ))
         }
         return bindings
+    }
+
+    /// Relit les blocs de raccourcis de tous les boutons connus.
+    ///
+    /// Une zone absente ou mal formée reste `nil` : l'interface affiche alors un état
+    /// indisponible et le validateur interdit l'écriture tant qu'une combinaison valide
+    /// n'a pas été choisie.
+    private func readShortcuts(
+        for buttons: [DeviceSettings.ButtonAssignment],
+        using session: PulsarSession
+    ) async throws -> [DeviceSettings.ButtonAssignment] {
+        var result = buttons
+        // Lire chaque emplacement permet de disposer d'une ancienne valeur restaurable
+        // même quand le bouton n'utilise pas encore la fonction clavier.
+        for index in result.indices {
+            result[index].shortcut = try await session.readShortcut(slot: result[index].index)
+        }
+        return result
     }
 
     public func capabilities(for snapshot: DeviceSnapshot) -> DeviceCapabilities {

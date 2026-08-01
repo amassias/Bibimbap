@@ -261,21 +261,66 @@ public struct WritePlanner: Sendable {
             ))
         }
 
-        // 5. Boutons.
+        // 5. Blocs de raccourci, avant la fonction qui les référence.
+        // La lecture de l'état courant renseigne ces blocs même quand le bouton n'est
+        // pas actuellement clavier : une restauration reste donc possible si le lot
+        // échoue après cette opération.
         for button in draft.buttons {
-            guard let previous = current.buttons.first(where: { $0.index == button.index }),
-                  previous != button else { continue }
+            guard button.function == .keyboardShortcut,
+                  let previous = current.buttons.first(where: { $0.index == button.index }),
+                  button.shortcut != previous.shortcut,
+                  let shortcut = button.shortcut,
+                  let block = try? ShortcutCodec.encode(shortcut),
+                  let oldShortcut = previous.shortcut,
+                  let restore = try? ShortcutCodec.encode(oldShortcut)
+            else { continue }
+            operations.append(WriteOperation(
+                id: "shortcut.\(button.index)",
+                group: .buttons,
+                label: L10n.format("Keyboard shortcut — button %d", button.index + 1),
+                address: FlashMap.shortcut(slot: button.index),
+                payload: .block(block),
+                rollback: .block(restore)
+            ))
+        }
+
+        // 6. Fonctions de boutons. Le raccourci est un champ séparé : changer seulement
+        // sa combinaison ne doit pas réécrire le bloc de fonction (et inversement).
+        for button in draft.buttons {
+            if button.function == .macro {
+                let slot = (button.parameter >> 8) & 0xFF
+                guard draft.macros.contains(where: { $0.slot == slot }) else { continue }
+            }
+            guard let previous = current.buttons.first(where: { $0.index == button.index }) else {
+                continue
+            }
+            let effectiveButton: DeviceSettings.ButtonAssignment
+            if button.function == .macro,
+               let binding = draft.macros.first(where: { $0.slot == ((button.parameter >> 8) & 0xFF) }) {
+                var adjusted = button
+                adjusted.parameter = (button.parameter & 0xFF00) | binding.repeatCount
+                effectiveButton = adjusted
+            } else {
+                effectiveButton = button
+            }
+            guard previous.function != effectiveButton.function
+                    || previous.parameter != effectiveButton.parameter else { continue }
+            // Une zone raccourci illisible n'est pas une ancienne valeur restaurable :
+            // ne rendons pas le bouton actif en prétendant pouvoir défaire ce changement.
+            guard effectiveButton.function != .keyboardShortcut || previous.shortcut != nil else {
+                continue
+            }
             operations.append(WriteOperation(
                 id: "button.\(button.index)",
                 group: .buttons,
                 label: L10n.format("Button %d", button.index + 1),
                 address: FlashMap.keyFunction(button: button.index),
-                payload: .block(buttonBlock(button)),
+                payload: .block(buttonBlock(effectiveButton)),
                 rollback: .block(buttonBlock(previous))
             ))
         }
 
-        // 6. Alimentation, en dernier : la veille peut couper le dialogue.
+        // 7. Alimentation, en dernier : la veille peut couper le dialogue.
         if draft.sleepTimeCode != current.sleepTimeCode {
             scalar("power.sleep", .power, L10n.string("Mise en veille"),
                    FlashMap.sleepTime, draft.sleepTimeCode, current.sleepTimeCode)
@@ -331,10 +376,12 @@ public struct WritePlanner: Sendable {
 public struct DraftValidator: Sendable {
     public let capabilities: DeviceCapabilities
     private let codec: DPICodec?
+    private let buttonIndices: Set<Int>
 
     public init(capabilities: DeviceCapabilities, family: DeviceFamily, catalog: DeviceCatalog) {
         self.capabilities = capabilities
         self.codec = DPICodec(family: family, catalog: catalog)
+        self.buttonIndices = Set(family.buttons.map(\.index))
     }
 
     public struct Issue: Identifiable, Equatable, Sendable {
@@ -372,7 +419,92 @@ public struct DraftValidator: Sendable {
                 isBlocking: false
             ))
         }
+
+        for button in draft.buttons {
+            guard buttonIndices.contains(button.index) else {
+                issues.append(Issue(
+                    id: "button.\(button.index).unavailable",
+                    message: L10n.format("Button %d is not available on this model.", button.index + 1),
+                    isBlocking: true
+                ))
+                continue
+            }
+
+            do {
+                try ButtonParameterCodec.validate(
+                    function: button.function,
+                    parameter: button.parameter
+                )
+            } catch {
+                issues.append(Issue(
+                    id: "button.\(button.index).parameter",
+                    message: L10n.format(
+                        "The parameter for button %d is not supported by this function.",
+                        button.index + 1
+                    ),
+                    isBlocking: true
+                ))
+            }
+
+            switch button.function {
+            case .dpiLock:
+                guard (capabilities.minimumDPI...capabilities.maximumDPI).contains(button.parameter) else {
+                    issues.append(Issue(
+                        id: "button.\(button.index).dpiLock",
+                        message: L10n.format(
+                            "DPI Lock must be between %d and %d DPI.",
+                            capabilities.minimumDPI,
+                            capabilities.maximumDPI
+                        ),
+                        isBlocking: true
+                    ))
+                    continue
+                }
+                if let codec, (try? codec.snap(dpi: button.parameter)) != button.parameter {
+                    issues.append(Issue(
+                        id: "button.\(button.index).dpiLock",
+                        message: L10n.string("DPI Lock must use a value representable by the sensor."),
+                        isBlocking: true
+                    ))
+                }
+            case .macro:
+                let slot = (button.parameter >> 8) & 0xFF
+                if slot != button.index {
+                    issues.append(Issue(
+                        id: "button.\(button.index).macroSlot",
+                        message: L10n.string("A macro button must use its own hardware slot."),
+                        isBlocking: true
+                    ))
+                }
+            case .keyboardShortcut:
+                guard let shortcut = button.shortcut, !shortcut.keys.isEmpty else {
+                    issues.append(Issue(
+                        id: "button.\(button.index).shortcut",
+                        message: L10n.string("Choose at least one supported key for this shortcut."),
+                        isBlocking: true
+                    ))
+                    continue
+                }
+                if (try? ShortcutCodec.encode(shortcut)) == nil {
+                    issues.append(Issue(
+                        id: "button.\(button.index).shortcut",
+                        message: L10n.string("This shortcut cannot be represented by the device."),
+                        isBlocking: true
+                    ))
+                }
+            default:
+                break
+            }
+        }
+
         for binding in draft.macros {
+            if !buttonIndices.contains(binding.slot) {
+                issues.append(Issue(
+                    id: "macro.\(binding.slot).slot",
+                    message: L10n.format("Macro slot %d is not available on this model.", binding.slot + 1),
+                    isBlocking: true
+                ))
+            }
             let nameBytes = binding.macro.name.utf8.count
             if nameBytes == 0 || nameBytes > PulsarMacro.nameCapacity {
                 issues.append(Issue(
@@ -390,6 +522,13 @@ public struct DraftValidator: Sendable {
                 issues.append(Issue(
                     id: "macro.\(binding.slot).steps",
                     message: L10n.format("A macro cannot exceed %d steps.", PulsarMacro.stepCapacity),
+                    isBlocking: true
+                ))
+            }
+            if (try? MacroCodec.encode(binding.macro)) == nil {
+                issues.append(Issue(
+                    id: "macro.\(binding.slot).encoding",
+                    message: L10n.string("This macro contains a value outside the device limits."),
                     isBlocking: true
                 ))
             }

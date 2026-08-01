@@ -116,13 +116,43 @@ public struct DeviceSettings: Equatable, Sendable, Codable {
         public var index: Int
         public var function: PulsarKeyFunction
         public var parameter: Int
+        /// Bloc de raccourci séparé, présent uniquement pour une fonction clavier.
+        /// `nil` signifie que la zone n'a pas pu être relue ou n'est pas affectée.
+        public var shortcut: PulsarShortcut?
 
         public var id: Int { index }
 
-        public init(index: Int, function: PulsarKeyFunction, parameter: Int) {
+        public init(
+            index: Int,
+            function: PulsarKeyFunction,
+            parameter: Int,
+            shortcut: PulsarShortcut? = nil
+        ) {
             self.index = index
             self.function = function
             self.parameter = parameter
+            self.shortcut = shortcut
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case index, function, parameter, shortcut
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            index = try container.decode(Int.self, forKey: .index)
+            function = try container.decode(PulsarKeyFunction.self, forKey: .function)
+            parameter = try container.decode(Int.self, forKey: .parameter)
+            // Les profils exportés avant BIB-010 n'ont pas cette clé.
+            shortcut = try container.decodeIfPresent(PulsarShortcut.self, forKey: .shortcut)
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(index, forKey: .index)
+            try container.encode(function, forKey: .function)
+            try container.encode(parameter, forKey: .parameter)
+            try container.encodeIfPresent(shortcut, forKey: .shortcut)
         }
     }
 }

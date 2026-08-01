@@ -182,6 +182,54 @@ struct DraftValidatorTests {
         #expect(validator.validate(draft).contains { $0.id == "stages.active" && $0.isBlocking })
     }
 
+    @Test("Un paramètre rapid-fire hors bornes est refusé")
+    func rejectsInvalidButtonParameter() {
+        var draft = baselineSettings()
+        draft.buttons[0].function = .rapidFire
+        draft.buttons[0].parameter = 9 << 8
+        #expect(validator.validate(draft).contains {
+            $0.id == "button.0.parameter" && $0.isBlocking
+        })
+    }
+
+    @Test("Un raccourci sans touche ne peut pas être écrit")
+    func rejectsEmptyShortcut() {
+        var draft = baselineSettings()
+        draft.buttons[0].function = .keyboardShortcut
+        draft.buttons[0].parameter = 0
+        draft.buttons[0].shortcut = PulsarShortcut(keys: [])
+        #expect(validator.validate(draft).contains {
+            $0.id == "button.0.shortcut" && $0.isBlocking
+        })
+    }
+
+    @Test("La cadence de macro est projetée dans l'octet du bouton")
+    func macroRepeatBindingIsEncodedInButtonBlock() {
+        var current = baselineSettings()
+        current.buttons[3].function = .macro
+        current.buttons[3].parameter = (3 << 8) | 1
+
+        var draft = current
+        draft.macros = [DeviceSettings.MacroBinding(
+            slot: 3,
+            macro: PulsarMacro(name: "Test", steps: [
+                .init(kind: .key, action: .press, value: 4, delayMilliseconds: 0),
+            ]),
+            repeatCount: 5
+        )]
+        let operation = WritePlanner(family: family, catalog: catalog)
+            .plan(from: current, to: draft).operations.first {
+            $0.id == "button.3"
+        }
+        guard case .block(let bytes) = operation?.payload else {
+            Issue.record("Le plan ne contient pas le bloc du bouton 3")
+            return
+        }
+        #expect(bytes[0] == PulsarKeyFunction.macro.rawValue)
+        #expect(bytes[1] == 3)
+        #expect(bytes[2] == 5)
+    }
+
     @Test("Les capacités reflètent le plafond de la connexion")
     func capabilitiesFollowConnection() {
         let wired = DeviceCapabilities(

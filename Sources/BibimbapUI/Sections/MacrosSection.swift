@@ -324,7 +324,7 @@ enum MacroSelectionNavigator {
 
 private struct MacroTableEditor: View {
     @Binding var binding: DeviceSettings.MacroBinding
-    @State private var selection: PulsarMacro.Step.ID?
+    @State private var selection: Set<PulsarMacro.Step.ID> = []
 
     var body: some View {
         PremiumPanel(padding: 0) {
@@ -369,13 +369,37 @@ private struct MacroTableEditor: View {
 
                 addEventMenu
 
-                Button(role: .destructive) {
-                    binding.macro.steps.removeAll { $0.id == selection }
-                    selection = nil
+                Button {
+                    selection = Set(MacroEditing.duplicate(
+                        ids: selection,
+                        in: &binding.macro.steps
+                    ))
+                } label: {
+                    Label(L10n.string("Duplicate"), systemImage: "plus.square.on.square")
+                }
+                .disabled(selection.isEmpty || binding.macro.steps.count >= PulsarMacro.stepCapacity)
+
+                Button {
+                    MacroEditing.moveUp(ids: selection, in: &binding.macro.steps)
+                } label: {
+                    Label(L10n.string("Move up"), systemImage: "arrow.up")
+                }
+                .disabled(selection.isEmpty)
+
+                Button {
+                    MacroEditing.moveDown(ids: selection, in: &binding.macro.steps)
+                } label: {
+                    Label(L10n.string("Move down"), systemImage: "arrow.down")
+                }
+                .disabled(selection.isEmpty)
+
+                Button {
+                    MacroEditing.delete(ids: selection, from: &binding.macro.steps)
+                    selection.removeAll()
                 } label: {
                     Label(L10n.string("Delete"), systemImage: "trash")
                 }
-                .disabled(selection == nil)
+                .disabled(selection.isEmpty)
             }
 
             HStack(spacing: Theme.Space.medium) {
@@ -387,15 +411,21 @@ private struct MacroTableEditor: View {
                     ),
                     systemImage: "list.number"
                 )
-                Text("·")
-                    .foregroundStyle(.tertiary)
                 Text(
                     L10n.format(
-                        "%d of %d bytes",
+                        "%d / %d bytes",
+                        MacroCodec.encodedLength(binding.macro),
+                        MacroCodec.blockLength
+                    )
+                )
+                Text(
+                    L10n.format(
+                        "Name: %d / %d bytes",
                         binding.macro.name.utf8.count,
                         PulsarMacro.nameCapacity
                     )
                 )
+                Text(L10n.format("Delays: %@", binding.macro.delaySummary))
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -404,25 +434,58 @@ private struct MacroTableEditor: View {
 
     private var addEventMenu: some View {
         Menu {
-            Button(L10n.string("Key down")) {
-                append(kind: .key, action: .press, value: 4)
+            Menu(L10n.string("Keyboard")) {
+                ForEach(PulsarInputCatalog.keyboardOptions) { option in
+                    Button(option.label) {
+                        append(option: option)
+                    }
+                }
             }
-            Button(L10n.string("Key up")) {
-                append(kind: .key, action: .release, value: 4)
+            Menu(L10n.string("Media")) {
+                ForEach(PulsarInputCatalog.mediaOptions) { option in
+                    Button(option.label) {
+                        append(option: option)
+                    }
+                }
             }
             Divider()
-            Button(L10n.string("Left click")) { appendClick(.left) }
-            Button(L10n.string("Right click")) { appendClick(.right) }
-            Button(L10n.string("Middle click")) { appendClick(.middle) }
+            Menu(L10n.string("Mouse button")) {
+                ForEach(PulsarMacro.MouseButtonMask.allCases, id: \.self) { button in
+                    Button(button.label) { appendClick(button) }
+                }
+            }
             Divider()
             Button(L10n.string("Pointer movement")) {
-                append(kind: .movement, action: .none, value: 0)
+                append(
+                    step: PulsarMacro.Step(
+                        kind: .movement,
+                        action: .none,
+                        value: 0,
+                        delayMilliseconds: 0
+                    )
+                )
             }
-            Button(L10n.string("Wheel up")) {
-                append(kind: .wheel, action: .none, value: 1)
-            }
-            Button(L10n.string("Wheel down")) {
-                append(kind: .wheel, action: .none, value: 255)
+            Menu(L10n.string("Wheel")) {
+                Button(L10n.string("Up")) {
+                    append(
+                        step: PulsarMacro.Step(
+                            kind: .wheel,
+                            action: .none,
+                            value: 1,
+                            delayMilliseconds: 0
+                        )
+                    )
+                }
+                Button(L10n.string("Down")) {
+                    append(
+                        step: PulsarMacro.Step(
+                            kind: .wheel,
+                            action: .none,
+                            value: 255,
+                            delayMilliseconds: 0
+                        )
+                    )
+                }
             }
         } label: {
             Label(L10n.string("Add Event"), systemImage: "plus")
@@ -435,10 +498,10 @@ private struct MacroTableEditor: View {
             TableColumn(L10n.string("Event")) { $step in
                 Label(
                     eventName(step),
-                    systemImage: step.kind == .mouseButton ? "computermouse" : "keyboard"
+                    systemImage: eventIcon(step)
                 )
             }
-            .width(min: 150, ideal: 190)
+            .width(min: 210, ideal: 250)
 
             TableColumn(L10n.string("Action")) { $step in
                 if step.kind?.isPointerEvent == true, step.kind != .mouseButton {
@@ -457,72 +520,188 @@ private struct MacroTableEditor: View {
             .width(min: 120, ideal: 150)
 
             TableColumn(L10n.string("Value")) { $step in
-                TextField("", value: $step.value, format: .number)
-                    .textFieldStyle(.roundedBorder)
-                    .monospacedDigit()
+                valueEditor(for: $step)
             }
-            .width(min: 80, ideal: 110)
+            .width(min: 150, ideal: 200)
 
             TableColumn(L10n.string("Delay")) { $step in
                 HStack(spacing: Theme.Space.tight) {
-                    TextField(
-                        "",
-                        value: $step.delayMilliseconds,
-                        format: .number
-                    )
+                    TextField("", value: delayBinding(for: $step), format: .number)
                     .textFieldStyle(.roundedBorder)
                     .monospacedDigit()
                     Text("ms")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    Text(delayLabel(step.delayMilliseconds))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
             }
-            .width(min: 100, ideal: 120)
+            .width(min: 150, ideal: 180)
         }
         .frame(minHeight: 420)
     }
 
     private func eventName(_ step: PulsarMacro.Step) -> String {
         if step.kind == .mouseButton {
-            return step.action == .press
-                ? L10n.string("Mouse Down")
-                : L10n.string("Mouse Up")
+            let button = PulsarMacro.MouseButtonMask(rawValue: step.value)?.label
+                ?? L10n.string("Unavailable button")
+            return L10n.format(
+                "%@ — %@",
+                step.action == .press ? L10n.string("Mouse down") : L10n.string("Mouse up"),
+                button
+            )
         }
-        return step.kind?.label ?? L10n.format("Unknown (%d)", step.kindCode)
+        if let kind = step.kind,
+           [.modifier, .key, .media, .menuKey].contains(kind) {
+            let key = PulsarShortcut.Key(kind: kind, value: step.value)
+            return PulsarInputCatalog.option(for: key)?.label
+                ?? L10n.string("Unavailable input")
+        }
+        if step.kind == .movement { return L10n.string("Pointer movement") }
+        if step.kind == .wheel { return L10n.string("Wheel") }
+        return L10n.string("Unavailable event")
     }
 
-    private func append(
-        kind: PulsarMacro.Step.Kind,
-        action: PulsarMacro.Step.Action,
-        value: Int
-    ) {
-        let delay = kind.isPointerEvent ? 0 : 10
-        binding.macro.steps.append(
-            PulsarMacro.Step(
-                kind: kind,
-                action: action,
-                value: value,
-                delayMilliseconds: delay
-            )
+    private func eventIcon(_ step: PulsarMacro.Step) -> String {
+        step.kind == .mouseButton ? "computermouse" : "keyboard"
+    }
+
+    @ViewBuilder
+    private func valueEditor(for step: Binding<PulsarMacro.Step>) -> some View {
+        switch step.wrappedValue.kind {
+        case .modifier, .key, .media, .menuKey:
+            inputPicker(for: step)
+        case .mouseButton:
+            Picker("", selection: Binding(
+                get: { step.wrappedValue.value },
+                set: { step.wrappedValue.value = $0 }
+            )) {
+                ForEach(PulsarMacro.MouseButtonMask.allCases, id: \.self) { button in
+                    Text(button.label).tag(button.rawValue)
+                }
+            }
+            .labelsHidden()
+        case .movement:
+            movementEditor(for: step)
+        case .wheel:
+            Picker("", selection: Binding(
+                get: { step.wrappedValue.value },
+                set: { step.wrappedValue.value = $0 }
+            )) {
+                Text(L10n.string("Up")).tag(1)
+                Text(L10n.string("Down")).tag(255)
+            }
+            .labelsHidden()
+        case nil:
+            Text(L10n.string("Unavailable event"))
+                .foregroundStyle(.orange)
+        }
+    }
+
+    private func inputPicker(for step: Binding<PulsarMacro.Step>) -> some View {
+        let kind = step.wrappedValue.kind ?? .key
+        let options = PulsarInputCatalog.allOptions.filter { $0.kind == kind }
+        let unavailableID = "unavailable-\(step.wrappedValue.id)"
+        return Picker("", selection: Binding(
+            get: {
+                let key = PulsarShortcut.Key(kind: kind, value: step.wrappedValue.value)
+                return PulsarInputCatalog.option(for: key)?.id ?? unavailableID
+            },
+            set: { id in
+                guard let option = options.first(where: { $0.id == id }) else { return }
+                step.wrappedValue.value = option.value
+            }
+        )) {
+            let key = PulsarShortcut.Key(kind: kind, value: step.wrappedValue.value)
+            Text(PulsarInputCatalog.label(for: key)).tag(unavailableID)
+            ForEach(options) { option in
+                Text(option.label).tag(option.id)
+            }
+        }
+        .labelsHidden()
+    }
+
+    private func movementEditor(for step: Binding<PulsarMacro.Step>) -> some View {
+        let movement = MacroCodec.movement(from: step.wrappedValue.value)
+        return HStack(spacing: Theme.Space.tight) {
+            axisField("X", value: movement.x) { value in
+                step.wrappedValue.value = MacroCodec.movementValue(x: value, y: movement.y)
+            }
+            axisField("Y", value: movement.y) { value in
+                step.wrappedValue.value = MacroCodec.movementValue(x: movement.x, y: value)
+            }
+        }
+    }
+
+    private func axisField(
+        _ label: String,
+        value: Int,
+        onChange: @escaping (Int) -> Void
+    ) -> some View {
+        HStack(spacing: 2) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            TextField("", value: Binding(
+                get: { value },
+                set: { onChange(max(-127, min(127, $0))) }
+            ), format: .number)
+            .textFieldStyle(.roundedBorder)
+            .frame(width: 48)
+            .monospacedDigit()
+        }
+    }
+
+    private func delayBinding(for step: Binding<PulsarMacro.Step>) -> Binding<Int> {
+        Binding(
+            get: { step.wrappedValue.delayMilliseconds },
+            set: { step.wrappedValue.delayMilliseconds = max(0, min(0xFFFF, $0)) }
         )
     }
 
+    private func delayLabel(_ milliseconds: Int) -> String {
+        if milliseconds < 1_000 { return L10n.format("(%d ms)", milliseconds) }
+        return String(format: "(%.1f s)", Double(milliseconds) / 1_000)
+    }
+
+    private func append(option: PulsarInputOption) {
+        append(step: PulsarMacro.Step(
+            kind: option.kind,
+            action: .press,
+            value: option.value,
+            delayMilliseconds: 10
+        ))
+    }
+
+    private func append(step: PulsarMacro.Step) {
+        let steps = [step]
+        guard MacroEditing.insert(
+            steps,
+            into: &binding.macro.steps,
+            after: selection
+        ) else { return }
+        selection = Set(steps.map(\.id))
+    }
+
     private func appendClick(_ button: PulsarMacro.MouseButtonMask) {
-        binding.macro.steps.append(
+        guard binding.macro.steps.count + 2 <= PulsarMacro.stepCapacity else { return }
+        let steps = [
             PulsarMacro.Step(
                 kind: .mouseButton,
                 action: .press,
                 value: button.rawValue,
                 delayMilliseconds: 0
-            )
-        )
-        binding.macro.steps.append(
+            ),
             PulsarMacro.Step(
                 kind: .mouseButton,
                 action: .release,
                 value: button.rawValue,
                 delayMilliseconds: 0
-            )
-        )
+            ),
+        ]
+        let inserted = steps
+        guard MacroEditing.insert(inserted, into: &binding.macro.steps, after: selection) else { return }
+        selection = Set(inserted.map(\.id))
     }
 }

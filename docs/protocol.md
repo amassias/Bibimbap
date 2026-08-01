@@ -316,8 +316,10 @@ trente-neuf trames au lieu de six.
 Bloc de 32 octets à `ShortcutKey + 32 × emplacement`. Premier octet = `2 × nombre de touches`.
 Puis, pour chaque touche dans l'ordre, `[0x80 | type, valeur & 0xFF, valeur >> 8]` (appui),
 suivi des mêmes touches en ordre inverse avec `[0x40 | type, …]` (relâchement).
-Une valeur de premier octet supérieure à 2 indique un raccourci multi-touches à relire
-au-delà des 10 premiers octets.
+Le dernier octet utilisé complète la somme à `0x55` ; le firmware place d'abord un zéro
+à cet emplacement avant de calculer ce checksum. Cinq touches au maximum tiennent dans
+les 32 octets. Une valeur de premier octet supérieure à 2 indique un raccourci
+multi-touches à relire au-delà des 10 premiers octets.
 
 ## 5. Notifications `StatusChanged`
 

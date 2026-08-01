@@ -34,6 +34,18 @@ struct ProfileArchiveTests {
         #expect(decoded.settings == snapshot.settings)
     }
 
+    @Test("Un bouton exporté avant le codec de raccourcis reste lisible")
+    func decodesLegacyButtonAssignment() throws {
+        let data = Data(#"{"index":0,"function":1,"parameter":256}"#.utf8)
+        let button = try JSONDecoder().decode(
+            DeviceSettings.ButtonAssignment.self,
+            from: data
+        )
+        #expect(button.shortcut == nil)
+        #expect(button.function == .mouseButton)
+        #expect(button.parameter == 256)
+    }
+
     @Test("Une sauvegarde d'une version future est refusée plutôt que réinterprétée")
     func rejectsFutureVersions() async throws {
         let snapshot = try await connectedSnapshot()

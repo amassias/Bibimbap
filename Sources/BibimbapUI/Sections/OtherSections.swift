@@ -1,5 +1,6 @@
 import BibimbapFeatures
 import BibimbapLocalization
+import PulsarCatalog
 import PulsarProtocol
 import SwiftUI
 
@@ -225,22 +226,36 @@ struct CustomizeSection: View {
                         detail: L10n.format("Button %d", button.index + 1),
                         showsDivider: button.index != model.draft.buttons.last?.index
                     ) {
-                        Picker("", selection: Binding(
-                            get: { button.function },
-                            set: { newFunction in
-                                button.function = newFunction
-                                button.parameter = defaultParameter(
-                                    for: newFunction,
-                                    buttonIndex: button.index
-                                )
+                        VStack(alignment: .trailing, spacing: Theme.Space.small) {
+                            Picker("", selection: Binding(
+                                get: { button.function },
+                                set: { (newFunction: PulsarKeyFunction) in
+                                    button.function = newFunction
+                                    button.parameter = defaultParameter(
+                                        for: newFunction,
+                                        buttonIndex: button.index
+                                    )
+                                    if newFunction == .keyboardShortcut,
+                                       button.shortcut == nil {
+                                        button.shortcut = PulsarShortcut(keys: [])
+                                    }
+                                    if newFunction == .macro {
+                                        ensureMacro(
+                                            slot: button.index,
+                                            repeatCount: button.parameter & 0xFF
+                                        )
+                                    }
+                                }
+                            )) {
+                                ForEach(assignableFunctions, id: \.self) { function in
+                                    Text(label(for: function)).tag(function)
+                                }
                             }
-                        )) {
-                            ForEach(assignableFunctions, id: \.self) { function in
-                                Text(label(for: function)).tag(function)
-                            }
+                            .labelsHidden()
+                            .frame(width: 190)
+
+                            parameterEditor(for: $button)
                         }
-                        .labelsHidden()
-                        .frame(width: 190)
                     }
                     .padding(.horizontal, Theme.Space.small)
                     .background(
@@ -257,14 +272,241 @@ struct CustomizeSection: View {
         }
     }
 
+    @ViewBuilder
+    private func parameterEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        switch ButtonParameterCodec.decode(
+            function: button.wrappedValue.function,
+            parameter: button.wrappedValue.parameter
+        ) {
+        case .disabled:
+            Text(L10n.string("No parameter"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        case .mouseButton:
+            mouseButtonEditor(for: button)
+        case .dpiSwitch:
+            dpiSwitchEditor(for: button)
+        case .horizontalScroll:
+            scrollEditor(for: button)
+        case .verticalScroll:
+            scrollEditor(for: button)
+        case .rapidFire:
+            rapidFireEditor(for: button)
+        case .keyboardShortcut:
+            ShortcutContextEditor(shortcut: shortcutBinding(for: button))
+        case .macro:
+            macroEditor(for: button)
+        case .reportRateSwitch:
+            fixedFunctionEditor(label: L10n.string("Cycle polling rate"))
+        case .lighting:
+            fixedFunctionEditor(label: L10n.string("Cycle lighting"))
+        case .profileSwitch:
+            fixedFunctionEditor(label: L10n.string("Cycle profile"))
+        case .dpiLock:
+            dpiLockEditor(for: button)
+        case .unknown:
+            VStack(alignment: .trailing, spacing: Theme.Space.hairline) {
+                Text(L10n.string("Unsupported parameter"))
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                Button(L10n.string("Reset to default")) {
+                    button.wrappedValue.parameter = defaultParameter(
+                        for: button.wrappedValue.function,
+                        buttonIndex: button.wrappedValue.index
+                    )
+                }
+                .buttonStyle(.link)
+                .font(.caption)
+            }
+        }
+    }
+
+    private func mouseButtonEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        Picker(L10n.string("Button"), selection: Binding(
+            get: { button.wrappedValue.parameter >> 8 },
+            set: { button.wrappedValue.parameter = $0 << 8 }
+        )) {
+            ForEach(PulsarMacro.MouseButtonMask.allCases, id: \.self) { mask in
+                Text(mask.label).tag(mask.rawValue)
+            }
+        }
+        .labelsHidden()
+        .frame(width: 190)
+    }
+
+    private func dpiSwitchEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        Picker(L10n.string("DPI action"), selection: Binding(
+            get: { button.wrappedValue.parameter },
+            set: { button.wrappedValue.parameter = $0 }
+        )) {
+            ForEach(PulsarButtonParameter.DPISwitchMode.allCases, id: \.self) { mode in
+                Text(mode.label).tag(mode.rawValue)
+            }
+        }
+        .labelsHidden()
+        .frame(width: 190)
+    }
+
+    private func scrollEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        Picker(L10n.string("Direction"), selection: Binding(
+            get: { button.wrappedValue.parameter },
+            set: { button.wrappedValue.parameter = $0 }
+        )) {
+            ForEach(PulsarButtonParameter.ScrollDirection.allCases, id: \.self) { direction in
+                Text(direction.label).tag(direction.rawValue)
+            }
+        }
+        .labelsHidden()
+        .frame(width: 190)
+    }
+
+    private func rapidFireEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        let fallbackTimes = 0
+        let fallbackInterval = 50
+        return VStack(alignment: .trailing, spacing: Theme.Space.hairline) {
+            Stepper(value: Binding(
+                get: {
+                    if case .rapidFire(let times, _) = ButtonParameterCodec.decode(
+                        function: .rapidFire,
+                        parameter: button.wrappedValue.parameter
+                    ) { return times }
+                    return fallbackTimes
+                },
+                set: { newValue in
+                    let interval = min(255, max(10, button.wrappedValue.parameter >> 8))
+                    button.wrappedValue.parameter = interval << 8 | newValue
+                }
+            ), in: 0...3) {
+                Text(L10n.string("Repeat count"))
+                    .font(.caption)
+            }
+            Stepper(value: Binding(
+                get: {
+                    if case .rapidFire(_, let interval) = ButtonParameterCodec.decode(
+                        function: .rapidFire,
+                        parameter: button.wrappedValue.parameter
+                    ) { return interval }
+                    return fallbackInterval
+                },
+                set: { newValue in
+                    let times = min(3, max(0, button.wrappedValue.parameter & 0xFF))
+                    button.wrappedValue.parameter = newValue << 8 | times
+                }
+            ), in: 10...255) {
+                Text(L10n.string("Interval (ms)"))
+                    .font(.caption)
+            }
+        }
+    }
+
+    private func dpiLockEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        let minimum = model.capabilities?.minimumDPI ?? 50
+        let maximum = model.capabilities?.maximumDPI ?? 32_000
+        let step = max(1, model.snapshot?.family.dpi.step ?? 10)
+        return Stepper(value: Binding(
+            get: { button.wrappedValue.parameter },
+            set: { value in
+                guard let family = model.snapshot?.family,
+                      let codec = DPICodec(family: family, catalog: .embedded),
+                      let snapped = try? codec.snap(dpi: value)
+                else {
+                    button.wrappedValue.parameter = value
+                    return
+                }
+                button.wrappedValue.parameter = snapped
+            }
+        ), in: minimum...maximum, step: step) {
+            Text(L10n.format("%d DPI", button.wrappedValue.parameter))
+                .font(.caption)
+                .monospacedDigit()
+        }
+    }
+
+    @ViewBuilder
+    private func macroEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        let slot = (button.wrappedValue.parameter >> 8) & 0xFF
+        if let index = model.draft.macros.firstIndex(where: { $0.slot == slot }) {
+            Stepper(value: $model.draft.macros[index].repeatCount, in: 1...255) {
+                Text(L10n.format("Repeat %d×", model.draft.macros[index].repeatCount))
+                    .font(.caption)
+                    .monospacedDigit()
+            }
+            Button(L10n.string("Open macro editor")) {
+                model.section = .macros
+            }
+            .buttonStyle(.link)
+            .font(.caption)
+        } else {
+            VStack(alignment: .trailing, spacing: Theme.Space.hairline) {
+                Text(L10n.string("No macro in this slot"))
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                Button(L10n.string("Create macro")) {
+                    ensureMacro(
+                        slot: slot,
+                        repeatCount: button.wrappedValue.parameter & 0xFF
+                    )
+                }
+                .buttonStyle(.link)
+                .font(.caption)
+            }
+        }
+    }
+
+    private func fixedFunctionEditor(label: String) -> some View {
+        Text(label)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+
+    private func shortcutBinding(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> Binding<PulsarShortcut> {
+        Binding(
+            get: { button.wrappedValue.shortcut ?? PulsarShortcut(keys: []) },
+            set: { button.wrappedValue.shortcut = $0 }
+        )
+    }
+
     private func defaultParameter(for function: PulsarKeyFunction, buttonIndex: Int) -> Int {
         switch function {
         case .macro: (buttonIndex << 8) | 1
-        case .mouseButton: 1 << (buttonIndex + 8)
-        case .dpiLock: 800
+        case .mouseButton: PulsarMacro.MouseButtonMask.left.rawValue << 8
+        case .dpiSwitch: PulsarButtonParameter.DPISwitchMode.cycle.rawValue
+        case .horizontalScroll, .verticalScroll: PulsarButtonParameter.ScrollDirection.positive.rawValue
+        case .rapidFire: 50 << 8
+        case .dpiLock: min(max(model.capabilities?.minimumDPI ?? 800, 800), model.capabilities?.maximumDPI ?? 800)
         case .disabled: 0
-        default: 0x0100
+        case .keyboardShortcut, .reportRateSwitch, .lighting, .profileSwitch: 0
         }
+    }
+
+    private func ensureMacro(slot: Int, repeatCount: Int) {
+        guard !model.draft.macros.contains(where: { $0.slot == slot }) else { return }
+        model.draft.macros.append(
+            DeviceSettings.MacroBinding(
+                slot: slot,
+                macro: PulsarMacro(
+                    name: L10n.format("Macro %d", slot + 1),
+                    steps: []
+                ),
+                repeatCount: max(1, min(255, repeatCount))
+            )
+        )
     }
 
     private var assignableFunctions: [PulsarKeyFunction] {
@@ -300,6 +542,93 @@ struct CustomizeSection: View {
         case .dpiLock: L10n.string("DPI Lock")
         case .verticalScroll: L10n.string("Vertical scroll")
         }
+    }
+}
+
+struct ShortcutContextEditor: View {
+    @Binding var shortcut: PulsarShortcut
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: Theme.Space.hairline) {
+            if shortcut.keys.isEmpty {
+                Text(L10n.string("No key selected"))
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            } else {
+                ForEach(Array(shortcut.keys.indices), id: \.self) { index in
+                    HStack(spacing: Theme.Space.tight) {
+                        inputPicker(at: index)
+                        Button {
+                            shortcut.keys.remove(at: index)
+                        } label: {
+                            Image(systemName: "minus.circle")
+                        }
+                        .buttonStyle(.borderless)
+                        .help(L10n.string("Remove input"))
+                    }
+                }
+            }
+
+            Menu {
+                Menu(L10n.string("Keyboard")) {
+                    ForEach(PulsarInputCatalog.keyboardOptions) { option in
+                        Button(option.label) { append(option) }
+                    }
+                }
+                Menu(L10n.string("Media")) {
+                    ForEach(PulsarInputCatalog.mediaOptions) { option in
+                        Button(option.label) { append(option) }
+                    }
+                }
+            } label: {
+                Label(L10n.string("Add input"), systemImage: "plus")
+                    .font(.caption)
+            }
+            .menuStyle(.borderlessButton)
+            .disabled(shortcut.keys.count >= ShortcutCodec.maxKeys)
+
+            Text(shortcut.summary)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .frame(width: 250, alignment: .trailing)
+    }
+
+    private func inputPicker(at index: Int) -> some View {
+        let unavailableID = "unavailable-\(index)"
+        return Picker("", selection: Binding(
+            get: {
+                guard shortcut.keys.indices.contains(index),
+                      let option = PulsarInputCatalog.option(for: shortcut.keys[index])
+                else { return unavailableID }
+                return option.id
+            },
+            set: { id in
+                guard let option = PulsarInputCatalog.allOptions.first(where: { $0.id == id }),
+                      shortcut.keys.indices.contains(index)
+                else { return }
+                shortcut.keys[index] = PulsarShortcut.Key(
+                    kind: option.kind,
+                    value: option.value
+                )
+            }
+        )) {
+            if shortcut.keys.indices.contains(index) {
+                let key = shortcut.keys[index]
+                Text(PulsarInputCatalog.label(for: key)).tag(unavailableID)
+            }
+            ForEach(PulsarInputCatalog.allOptions) { option in
+                Text(option.label).tag(option.id)
+            }
+        }
+        .labelsHidden()
+        .frame(width: 205)
+    }
+
+    private func append(_ option: PulsarInputOption) {
+        guard shortcut.keys.count < ShortcutCodec.maxKeys else { return }
+        shortcut.keys.append(PulsarShortcut.Key(kind: option.kind, value: option.value))
     }
 }
 
