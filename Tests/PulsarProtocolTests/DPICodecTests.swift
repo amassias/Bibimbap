@@ -27,6 +27,7 @@ struct DPICodecTests {
     func snapping() throws {
         #expect(try pulsarX1.snap(dpi: 1503) == 1500)
         #expect(try pulsarX1.snap(dpi: 1506) == 1510)
+        #expect(try pulsarX1.snap(dpi: 405) == 410)
         #expect(try pulsarX1.snap(dpi: 12_780) == 12_800)
     }
 

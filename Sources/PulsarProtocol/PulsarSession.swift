@@ -237,6 +237,10 @@ extension PulsarSession.SessionError: LocalizedError {
             L10n.string("Cette opération firmware est bloquée par le modèle de sécurité.")
         case .readbackMismatch:
             L10n.string("La relecture indépendante n'a pas confirmé la valeur écrite.")
+        case .malformedResponse:
+            L10n.string("La réponse du périphérique est mal formée.")
+        case .commandReadbackMismatch:
+            L10n.string("La relecture d'une commande n'a pas confirmé l'état écrit.")
         }
     }
 }

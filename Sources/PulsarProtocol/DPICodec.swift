@@ -59,7 +59,10 @@ public struct DPICodec: Sendable {
             let upper = min(lower + step, maximum)
             let lowerDistance = abs(clamped - lower)
             let upperDistance = abs(upper - clamped)
-            return upperDistance < lowerDistance ? upper : lower
+            // Keep the historical round-half-up behaviour used by the firmware
+            // controls: an exact midpoint must select the next representable
+            // value, not the lower one.
+            return upperDistance <= lowerDistance ? upper : lower
         }
     }
 
