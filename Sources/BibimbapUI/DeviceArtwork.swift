@@ -116,19 +116,20 @@ private final class DeviceArtworkStore {
     }
 }
 
-/// Carte du nombre exact de boutons exposés par le firmware du modèle connecté.
+/// Carte des commandes exposées par le modèle connecté.
 ///
-/// Les familles Pulsar actuelles déclarent cinq ou six emplacements : clics principaux,
-/// molette et deux ou trois commandes supplémentaires. La vue ne crée jamais de bouton
-/// absent du catalogue.
+/// La liste vient de `AppModel.buttonPresentations`, la même que celle des lignes
+/// d'affectation : autant de repères que de lignes, ni plus ni moins. Chaque repère est
+/// posé à partir de la géométrie officielle du catalogue ; un bouton sans géométrie
+/// publiée n'en reçoit pas, et la vue le dit.
 struct DeviceButtonMap: View {
     @Bindable var model: AppModel
-    let assignments: [DeviceSettings.ButtonAssignment]
+    let buttons: [ButtonPresentation]
     @Binding var highlighted: Int?
     var title = L10n.string( "Button map")
 
-    private var additionalButtonCount: Int {
-        max(0, assignments.count - 3)
+    private var buttonsWithoutGeometry: [ButtonPresentation] {
+        buttons.filter { $0.normalizedMarker == nil }
     }
 
     var body: some View {
@@ -138,71 +139,60 @@ struct DeviceButtonMap: View {
                     Text(title)
                         .font(.headline)
                     Text(
-                        "\(assignments.count) "
+                        "\(buttons.count) "
                             + L10n.string("configurable buttons detected")
-                            + " · \(additionalButtonCount) "
-                            + L10n.string("additional buttons")
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 }
 
-            GeometryReader { proxy in
-                ZStack {
-                    DeviceArtwork(
-                        model: model,
-                        maximumWidth: proxy.size.width,
-                        maximumHeight: proxy.size.height
+                canvas
+                    .frame(height: 410)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(
+                        model.deviceDisplayName + ", \(buttons.count) "
+                            + L10n.string( "configurable buttons")
                     )
 
-                    ForEach(assignments) { assignment in
+                if !buttonsWithoutGeometry.isEmpty {
+                    Text(
+                        L10n.string("Position unavailable on the map:") + " "
+                            + buttonsWithoutGeometry.map(\.numberLabel).joined(separator: ", ")
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    /// Photographie et repères partagent le même carré, donc le même cadrage.
+    ///
+    /// Les visuels officiels sont carrés : un carré centré dans l'espace disponible
+    /// coïncide exactement avec ce que `scaledToFit` affiche, et les coordonnées
+    /// normalisées du catalogue s'y appliquent directement.
+    private var canvas: some View {
+        GeometryReader { proxy in
+            let side = min(proxy.size.width, proxy.size.height)
+            ZStack {
+                DeviceArtwork(model: model, maximumWidth: side, maximumHeight: side)
+
+                ForEach(buttons) { button in
+                    if let marker = button.normalizedMarker {
                         ButtonMarker(
-                            number: assignment.index + 1,
-                            isHighlighted: highlighted == assignment.index
+                            number: button.displayNumber,
+                            isHighlighted: highlighted == button.firmwareIndex
                         )
                         .position(
-                            x: anchor(for: assignment.index).x * proxy.size.width,
-                            y: anchor(for: assignment.index).y * proxy.size.height
+                            x: marker.x * side,
+                            y: marker.y * side
                         )
-                        .help(buttonRole(assignment.index))
+                        .help(button.label)
                     }
                 }
             }
-            .frame(height: 410)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(
-                model.deviceDisplayName + ", \(assignments.count) "
-                    + L10n.string( "configurable buttons")
-            )
-            }
-        }
-    }
-
-    /// Les photographies officielles partagent un cadrage de dessus carré.
-    private func anchor(for index: Int) -> CGPoint {
-        switch index {
-        case 0: CGPoint(x: 0.39, y: 0.24)
-        case 1: CGPoint(x: 0.61, y: 0.24)
-        case 2: CGPoint(x: 0.50, y: 0.27)
-        case 3: CGPoint(x: 0.29, y: 0.43)
-        case 4: CGPoint(x: 0.29, y: 0.54)
-        case 5: CGPoint(x: 0.50, y: 0.57)
-        default:
-            // Le catalogue ne publie actuellement aucun index supérieur, mais ce repli
-            // garde une future entrée visible sans prétendre connaître sa géométrie.
-            CGPoint(x: 0.72, y: min(CGFloat(0.74), 0.40 + CGFloat(index - 5) * 0.09))
-        }
-    }
-
-    private func buttonRole(_ index: Int) -> String {
-        switch index {
-        case 0: L10n.string( "Primary click")
-        case 1: L10n.string( "Secondary click")
-        case 2: L10n.string( "Wheel click")
-        case 3: L10n.string( "Side button 1")
-        case 4: L10n.string( "Side button 2")
-        case 5: L10n.string( "Additional button")
-        default: L10n.format("Button %d", index + 1)
+            .frame(width: side, height: side)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }

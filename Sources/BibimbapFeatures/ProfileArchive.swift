@@ -145,16 +145,25 @@ public struct ProfileArchive: Codable, Equatable, Sendable {
             }
         }
 
-        // Boutons : uniquement ceux qui existent sur ce modèle.
+        // Boutons : uniquement ceux qui existent sur ce modèle. La correspondance passe
+        // par l'index firmware, jamais par la position dans la liste, qui suit l'ordre
+        // d'affichage officiel et diffère d'un modèle à l'autre.
         for saved in settings.buttons {
             guard let index = result.buttons.firstIndex(where: { $0.index == saved.index }) else {
-                skipped.append(L10n.format("Button %d (not available on this model)", saved.index + 1))
+                skipped.append(L10n.format(
+                    "Firmware button %d (not available on this model)", saved.index
+                ))
                 continue
             }
             result.buttons[index] = saved
         }
 
-        result.macros = settings.macros.filter { $0.slot < capabilities.buttonCount }
+        // Un emplacement de macro porte l'index firmware du bouton qui le référence.
+        // Comparer au nombre de boutons écarterait à tort l'emplacement 6 d'un modèle
+        // qui déclare les index 0, 1, 2, 6, 4, 3.
+        result.macros = settings.macros.filter {
+            capabilities.firmwareButtonIndices.contains($0.slot)
+        }
         let droppedMacros = settings.macros.count - result.macros.count
         if droppedMacros > 0 {
             skipped.append(L10n.format("%d macro(s) outside this model's slots", droppedMacros))

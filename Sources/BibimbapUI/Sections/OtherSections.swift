@@ -173,7 +173,7 @@ struct CustomizeSection: View {
                     title: L10n.string("Customize"),
                     subtitle: L10n.format(
                         "%d configurable buttons detected for %@.",
-                        model.draft.buttons.count,
+                        buttons.count,
                         model.deviceDisplayName
                     )
                 )
@@ -195,10 +195,13 @@ struct CustomizeSection: View {
         }
     }
 
+    /// Une seule liste alimente la carte et les lignes d'affectation.
+    private var buttons: [ButtonPresentation] { model.buttonPresentations }
+
     private var buttonMap: some View {
         DeviceButtonMap(
             model: model,
-            assignments: model.draft.buttons,
+            buttons: buttons,
             highlighted: $highlighted,
             title: L10n.string("Button map")
         )
@@ -219,48 +222,60 @@ struct CustomizeSection: View {
                 }
                 .padding(.bottom, Theme.Space.medium)
 
-                ForEach($model.draft.buttons) { $button in
-                    PremiumRow(
-                        label: buttonRole(button.index),
-                        detail: L10n.format("Button %d", button.index + 1),
-                        showsDivider: button.index != model.draft.buttons.last?.index
-                    ) {
-                        Picker("", selection: Binding(
-                            get: { button.function },
-                            set: { newFunction in
-                                button.function = newFunction
-                                button.parameter = defaultParameter(
-                                    for: newFunction,
-                                    buttonIndex: button.index
-                                )
-                            }
-                        )) {
-                            ForEach(assignableFunctions, id: \.self) { function in
-                                Text(label(for: function)).tag(function)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(width: 190)
-                    }
-                    .padding(.horizontal, Theme.Space.small)
-                    .background(
-                        RoundedRectangle(cornerRadius: Theme.Radius.control)
-                            .fill(
-                                highlighted == button.index
-                                    ? Color.accentColor.opacity(0.08)
-                                    : Color.clear
-                            )
-                    )
-                    .onHover { highlighted = $0 ? button.index : nil }
+                ForEach(buttons) { button in
+                    assignmentRow(button)
                 }
             }
         }
     }
 
-    private func defaultParameter(for function: PulsarKeyFunction, buttonIndex: Int) -> Int {
+    /// La ligne écrit dans le brouillon via l'index firmware du bouton : sa position
+    /// dans la liste suit l'ordre d'affichage et ne peut pas servir d'adresse.
+    @ViewBuilder
+    private func assignmentRow(_ button: ButtonPresentation) -> some View {
+        if let position = model.draftButtonPosition(firmwareIndex: button.firmwareIndex) {
+            PremiumRow(
+                label: button.label,
+                detail: button.numberLabel,
+                showsDivider: button.firmwareIndex != buttons.last?.firmwareIndex
+            ) {
+                Picker("", selection: Binding(
+                    get: { model.draft.buttons[position].function },
+                    set: { newFunction in
+                        model.draft.buttons[position].function = newFunction
+                        model.draft.buttons[position].parameter = defaultParameter(
+                            for: newFunction,
+                            firmwareIndex: button.firmwareIndex
+                        )
+                    }
+                )) {
+                    ForEach(assignableFunctions, id: \.self) { function in
+                        Text(label(for: function)).tag(function)
+                    }
+                }
+                .labelsHidden()
+                .frame(width: 190)
+            }
+            .padding(.horizontal, Theme.Space.small)
+            .background(
+                RoundedRectangle(cornerRadius: Theme.Radius.control)
+                    .fill(
+                        highlighted == button.firmwareIndex
+                            ? Color.accentColor.opacity(0.08)
+                            : Color.clear
+                    )
+            )
+            .onHover { highlighted = $0 ? button.firmwareIndex : nil }
+        }
+    }
+
+    /// Le paramètre par défaut d'une fonction, exprimé dans les termes du firmware :
+    /// l'emplacement de macro et le masque de bouton HID suivent l'index firmware, pas
+    /// le numéro affiché.
+    private func defaultParameter(for function: PulsarKeyFunction, firmwareIndex: Int) -> Int {
         switch function {
-        case .macro: (buttonIndex << 8) | 1
-        case .mouseButton: 1 << (buttonIndex + 8)
+        case .macro: (firmwareIndex << 8) | 1
+        case .mouseButton: 1 << (firmwareIndex + 8)
         case .dpiLock: 800
         case .disabled: 0
         default: 0x0100
@@ -271,18 +286,6 @@ struct CustomizeSection: View {
         [.mouseButton, .dpiSwitch, .dpiLock, .verticalScroll, .horizontalScroll,
          .rapidFire, .keyboardShortcut, .macro, .reportRateSwitch, .lighting,
          .profileSwitch, .disabled]
-    }
-
-    private func buttonRole(_ index: Int) -> String {
-        switch index {
-        case 0: L10n.string("Left Click")
-        case 1: L10n.string("Right Click")
-        case 2: L10n.string("Middle Click")
-        case 3: L10n.string("Back")
-        case 4: L10n.string("Forward")
-        case 5: L10n.string("DPI Cycle")
-        default: L10n.format("Button %d", index + 1)
-        }
     }
 
     private func label(for function: PulsarKeyFunction) -> String {

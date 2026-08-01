@@ -265,10 +265,12 @@ public struct WritePlanner: Sendable {
         for button in draft.buttons {
             guard let previous = current.buttons.first(where: { $0.index == button.index }),
                   previous != button else { continue }
+            // L'identifiant et l'adresse restent sur l'index firmware ; seul le libellé
+            // reprend le numéro visible, qui n'en découle pas.
             operations.append(WriteOperation(
                 id: "button.\(button.index)",
                 group: .buttons,
-                label: L10n.format("Button %d", button.index + 1),
+                label: buttonLabel(firmwareIndex: button.index),
                 address: FlashMap.keyFunction(button: button.index),
                 payload: .block(buttonBlock(button)),
                 rollback: .block(buttonBlock(previous))
@@ -297,6 +299,15 @@ public struct WritePlanner: Sendable {
         }
 
         return WritePlan(operations: operations)
+    }
+
+    /// Nomme un bouton par son numéro visible, ou par son index firmware si le modèle
+    /// ne le déclare pas — auquel cas inventer un numéro serait trompeur.
+    private func buttonLabel(firmwareIndex: Int) -> String {
+        guard let number = family.displayNumber(firmwareIndex: firmwareIndex) else {
+            return L10n.format("Firmware button %d", firmwareIndex)
+        }
+        return L10n.format("Button %d", number)
     }
 
     private func colourBlock(_ colour: CatalogColor) -> [UInt8] {
