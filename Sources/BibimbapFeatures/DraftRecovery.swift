@@ -15,6 +15,8 @@ public struct DraftRecovery: Equatable, Sendable {
         case reconnected
         /// Le périphérique a signalé un changement provoqué depuis la souris.
         case deviceReportedChange
+        /// L'utilisateur a demandé une relecture et une comparaison explicites.
+        case explicitComparison
 
         public var label: String {
             switch self {
@@ -22,6 +24,8 @@ public struct DraftRecovery: Equatable, Sendable {
                 L10n.string("Le périphérique s'est reconnecté pendant que des modifications attendaient.")
             case .deviceReportedChange:
                 L10n.string("Les réglages ont changé sur la souris pendant que des modifications attendaient.")
+            case .explicitComparison:
+                L10n.string("La relecture demandée a trouvé des différences avec votre brouillon.")
             }
         }
     }

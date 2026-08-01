@@ -237,8 +237,8 @@ extension AppModelTests {
         let recovery = model.draftRecovery!
         #expect(recovery.cause == .deviceReportedChange)
         #expect(recovery.conflicts.count == 1)
-        #expect(recovery.conflicts.first?.localValue == String(base + 2))
-        #expect(recovery.conflicts.first?.remoteValue == String(base + 4))
+        #expect(recovery.conflicts.first?.localValue == "\(base + 2) ms")
+        #expect(recovery.conflicts.first?.remoteValue == "\(base + 4) ms")
         // Tant que le conflit n'est pas tranché, rien ne peut partir vers le matériel.
         #expect(!model.canApply)
         await model.disconnect()
@@ -300,6 +300,24 @@ extension AppModelTests {
         await model.disconnect()
     }
 
+    @Test("Relire et comparer conserve le brouillon au lieu de l'écraser")
+    func explicitRereadComparesPendingDraft() async {
+        let (transport, model) = Self.makeModel()
+        await model.connect()
+        let base = model.snapshot!.settings.debounceMilliseconds
+        model.draft.debounceMilliseconds = base + 2
+        await transport.changeSettingOnDevice(UInt8(base + 4), at: FlashMap.debounceTime)
+
+        await model.rereadAndCompare()
+
+        #expect(model.draftRecovery?.cause == .explicitComparison)
+        #expect(model.draft.debounceMilliseconds == base + 2)
+        #expect(!model.canApply)
+        #expect(await transport.flashImage().slice(at: FlashMap.debounceTime, count: 1).first
+                == UInt8(base + 4))
+        await model.disconnect()
+    }
+
     // MARK: Écriture interrompue
 
     @Test("Une écriture coupée laisse un état incertain jusqu'à une relecture explicite")
@@ -324,6 +342,75 @@ extension AppModelTests {
         #expect(model.requiresExplicitReread)
         // Aucune réécriture automatique : Apply reste fermé tant qu'on n'a pas relu.
         #expect(!model.canApply)
+        await model.disconnect()
+    }
+
+    @Test("La progression compte uniquement les opérations relues")
+    func writeProgressIsPerVerifiedOperation() async {
+        let (transport, model) = Self.makeModel()
+        await model.connect()
+        let base = model.snapshot!.settings
+        model.draft.debounceMilliseconds = base.debounceMilliseconds + 2
+        model.draft.motionSync.toggle()
+
+        await model.apply()
+
+        #expect(model.connection == .connected)
+        #expect(model.writeProgress?.completed == model.writeProgress?.total)
+        #expect(model.writeProgress?.total == 2)
+        #expect(model.writeProgress?.currentOperation == nil)
+        #expect(await transport.flashImage().slice(at: FlashMap.debounceTime, count: 1).first
+                == UInt8(base.debounceMilliseconds + 2))
+        await model.disconnect()
+    }
+
+    @Test("La récupération dédiée reconnecte avant de lever l'incertitude")
+    func uncertainHardwareRecoveryReconnectsAndCompares() async {
+        let (transport, model) = Self.makeModel()
+        await model.connect()
+        let base = model.snapshot!.settings.debounceMilliseconds
+        model.draft.debounceMilliseconds = base + 2
+
+        var faults = SimulatedHIDTransport.Faults()
+        faults.disconnectAfterFrames = 1
+        await transport.setFaults(faults)
+        await model.apply()
+        #expect(model.requiresExplicitReread)
+
+        await transport.setFaults(SimulatedHIDTransport.Faults())
+        await model.recoverUncertainHardware()
+
+        #expect(model.connection == .connected)
+        #expect(!model.requiresExplicitReread)
+        // La récupération relit sans appliquer le brouillon resté en mémoire.
+        #expect(model.hasPendingChanges)
+        #expect(await transport.flashImage().slice(at: FlashMap.debounceTime, count: 1).first
+                == UInt8(base))
+        await model.disconnect()
+    }
+
+    @Test("Une incertitude conserve le brouillon si la lecture de contrôle reste possible")
+    func uncertainWriteKeepsDraftAfterReadableFailure() async {
+        let (transport, model) = Self.makeModel()
+        await model.connect()
+        let base = model.snapshot!.settings
+        model.draft.debounceMilliseconds = base.debounceMilliseconds + 2
+        model.draft.motionSync.toggle()
+
+        var faults = SimulatedHIDTransport.Faults()
+        faults.dropWritesAfterWriteOperations = 1
+        await transport.setFaults(faults)
+        await model.apply()
+
+        #expect(model.requiresExplicitReread)
+        #expect(model.hasPendingChanges)
+        #expect(model.draft.debounceMilliseconds == base.debounceMilliseconds + 2)
+        guard case .disconnectedDuringWrite(let uncertain) = model.connection else {
+            Issue.record("attendu : état matériel incertain, obtenu \(model.connection)")
+            await model.disconnect()
+            return
+        }
+        #expect(!uncertain.isEmpty)
         await model.disconnect()
     }
 }

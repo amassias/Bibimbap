@@ -9,6 +9,10 @@ import PulsarProtocol
 /// C'est ici que vit la règle centrale du projet : rien n'est réputé écrit tant que
 /// la relecture ne l'a pas confirmé, et un lot qui échoue est défait au mieux.
 public actor DeviceController {
+    /// Les modèles actuellement décrits par le protocole exposent trois emplacements
+    /// sélectionnables. On ne déduit jamais ce nombre d'un octet arbitraire relu.
+    public static let profileCount = 3
+
     private let transport: any HIDTransport
     private let catalog: DeviceCatalog
     private var session: PulsarSession?
@@ -35,6 +39,9 @@ public actor DeviceController {
         case openFailed(code: Int32)
         /// Tout le reste : le dialogue a eu lieu mais n'a pas abouti.
         case communicationFailure(String)
+        /// La commande de sélection a été acquittée mais la relecture ne confirme pas
+        /// l'emplacement demandé.
+        case profileSelectionReadbackMismatch(expected: Int, actual: Int?)
     }
 
     // MARK: Journal de connexion
@@ -321,9 +328,9 @@ public actor DeviceController {
 
         let firmware = (try? await session.readFirmwareVersion()) ?? "—"
         let dongle = identity.connectionType.isWired ? nil : try? await session.readDongleVersion()
-        let dongleLighting = identity.connectionType.isWired
+        let receiverReadback = identity.connectionType.isWired
             ? nil
-            : try? await session.readDongleLighting()
+            : await session.readReceiverSettings(dongleType: identity.dongleType)
         let battery = identity.connectionType.isWired ? nil : try? await session.readBattery()
         let signal = try? await session.readSignalStrength()
         let profile = try? await session.readActiveProfile()
@@ -342,7 +349,16 @@ public actor DeviceController {
             codec: codec,
             longDistance: longDistance ?? false
         )
+        settings.buttons = try await readShortcuts(for: settings.buttons, using: session)
+        settings.receiver = receiverReadback?.settings
         settings.macros = try await readMacros(for: settings.buttons, using: session)
+
+        let flashCapabilities = DeviceFlashCapabilities(
+            supportsFanMode: family.supportsFanMode
+                && ScalarSetting.decode(from: image, at: FlashMap.fanMode) != nil,
+            supportsSensorMode: ScalarSetting.decode(from: image, at: FlashMap.sensorMode) != nil,
+            supportsPerformanceLevel: ScalarSetting.decode(from: image, at: FlashMap.performance) != nil
+        )
 
         return DeviceSnapshot(
             identity: identity,
@@ -351,7 +367,9 @@ public actor DeviceController {
             connection: HIDConnectionSummary(connectionType: identity.connectionType),
             firmwareVersion: firmware,
             dongleVersion: dongle ?? nil,
-            dongleLighting: dongleLighting ?? nil,
+            dongleLighting: receiverReadback?.settings.rgbLighting,
+            receiverCapabilities: receiverReadback?.capabilities ?? .none,
+            flashCapabilities: flashCapabilities,
             battery: battery,
             signalStrength: signal ?? nil,
             activeProfile: profile ?? nil,
@@ -379,6 +397,24 @@ public actor DeviceController {
         return bindings
     }
 
+    /// Relit les blocs de raccourcis de tous les boutons connus.
+    ///
+    /// Une zone absente ou mal formée reste `nil` : l'interface affiche alors un état
+    /// indisponible et le validateur interdit l'écriture tant qu'une combinaison valide
+    /// n'a pas été choisie.
+    private func readShortcuts(
+        for buttons: [DeviceSettings.ButtonAssignment],
+        using session: PulsarSession
+    ) async throws -> [DeviceSettings.ButtonAssignment] {
+        var result = buttons
+        // Lire chaque emplacement permet de disposer d'une ancienne valeur restaurable
+        // même quand le bouton n'utilise pas encore la fonction clavier.
+        for index in result.indices {
+            result[index].shortcut = try await session.readShortcut(slot: result[index].index)
+        }
+        return result
+    }
+
     public func capabilities(for snapshot: DeviceSnapshot) -> DeviceCapabilities {
         DeviceCapabilities(
             family: snapshot.family,
@@ -386,7 +422,9 @@ public actor DeviceController {
             connection: snapshot.identity.connectionType,
             supportsProfiles: snapshot.activeProfile != nil,
             supportsLongDistance: snapshot.family.power.supportsLongDistance,
-            supportsSignalStrength: snapshot.signalStrength != nil
+            supportsSignalStrength: snapshot.signalStrength != nil,
+            flashCapabilities: snapshot.flashCapabilities,
+            receiver: snapshot.receiverCapabilities
         )
     }
 
@@ -416,6 +454,7 @@ public actor DeviceController {
         settings.performanceMode = scalar(FlashMap.performanceState, default: 0) == 1
         settings.performanceLevel = scalar(FlashMap.performance, default: family.sensor.defaultPerformance)
         settings.sensorMode = scalar(FlashMap.sensorMode, default: family.sensor.defaultSensorMode)
+        settings.fanMode = scalar(FlashMap.fanMode, default: 0)
         settings.sleepTimeCode = scalar(
             FlashMap.sleepTime, default: family.power.defaultSleepTimeCode
         )
@@ -427,12 +466,26 @@ public actor DeviceController {
         let rotationByte = UInt8(clamping: scalar(FlashMap.angleTune, default: 0))
         settings.rotationDegrees = Int(Int8(bitPattern: rotationByte))
 
-        settings.dpiEffect.mode = DeviceSettings.DPIEffect.Mode(
-            rawValue: scalar(FlashMap.dpiEffectMode, default: 0)
-        ) ?? .off
-        settings.dpiEffect.brightness = scalar(FlashMap.dpiEffectBrightness, default: 3)
-        settings.dpiEffect.speed = scalar(FlashMap.dpiEffectSpeed, default: 5)
-        settings.dpiEffect.enabled = scalar(FlashMap.dpiEffectState, default: 1) == 1
+        let effectCodec = DPIEffectCodec()
+        let modeRaw = scalar(FlashMap.dpiEffectMode, default: 0)
+        if let mode = try? effectCodec.decode(UInt8(clamping: modeRaw), for: .mode) {
+            settings.dpiEffect.mode = DeviceSettings.DPIEffect.Mode(rawValue: mode) ?? .off
+        }
+        let brightnessRaw = scalar(
+            FlashMap.dpiEffectBrightness,
+            default: DPIEffectCodec.defaultBrightness
+        )
+        settings.dpiEffect.brightness = (try? effectCodec.decode(
+            UInt8(clamping: brightnessRaw), for: .brightness
+        )) ?? DPIEffectCodec.defaultBrightness
+        let speedRaw = scalar(FlashMap.dpiEffectSpeed, default: DPIEffectCodec.defaultSpeed)
+        settings.dpiEffect.speed = (try? effectCodec.decode(
+            UInt8(clamping: speedRaw), for: .speed
+        )) ?? DPIEffectCodec.defaultSpeed
+        let stateRaw = scalar(FlashMap.dpiEffectState, default: 1)
+        settings.dpiEffect.enabled = ((try? effectCodec.decode(
+            UInt8(clamping: stateRaw), for: .state
+        )) ?? 1) == 1
 
         if let codec {
             let width = codec.usesExtendedBlock
@@ -444,14 +497,12 @@ public actor DeviceController {
                 let block = image.slice(at: address, count: width)
                 let decoded: (x: Int, y: Int) = (try? codec.decodeStage(block))
                     ?? (x: profile.value, y: profile.value)
-                let colour = image.slice(at: FlashMap.dpiColor(stage: index), count: 3)
+                let colourBlock = image.slice(at: FlashMap.dpiColor(stage: index), count: 4)
                 stages.append(DeviceSettings.DPIStage(
                     index: index,
                     x: decoded.x,
                     y: decoded.y,
-                    color: colour.count == 3
-                        ? CatalogColor(red: Int(colour[0]), green: Int(colour[1]), blue: Int(colour[2]))
-                        : profile.color
+                    color: (try? DPIColorCodec().decode(colourBlock)) ?? profile.color
                 ))
             }
             settings.dpiStages = stages
@@ -487,7 +538,10 @@ public actor DeviceController {
     /// 4. les opérations déjà appliquées sont défaites dans l'ordre inverse ;
     /// 5. toute restauration qui échoue est nommée dans le résultat, parce que l'état
     ///    matériel correspondant n'est alors plus connu.
-    public func apply(_ plan: WritePlan) async throws -> WriteResult {
+    public func apply(
+        _ plan: WritePlan,
+        progress: @escaping @Sendable (WriteProgress) async -> Void = { _ in }
+    ) async throws -> WriteResult {
         guard let session else { throw ControllerError.notConnected }
         guard !plan.isEmpty else { return WriteResult(outcome: .succeeded, applied: []) }
 
@@ -495,12 +549,29 @@ public actor DeviceController {
         defer { Task { try? await session.hold(false) } }
 
         var applied: [WriteOperation] = []
-        for operation in plan.operations {
+        for (index, operation) in plan.operations.enumerated() {
+            await progress(WriteProgress(
+                completed: applied.count,
+                total: plan.count,
+                currentOperation: operation.label
+            ))
             do {
                 try await perform(operation, using: session)
                 applied.append(operation)
+                await progress(WriteProgress(
+                    completed: applied.count,
+                    total: plan.count,
+                    currentOperation: index + 1 < plan.count
+                        ? plan.operations[index + 1].label
+                        : nil
+                ))
             } catch {
-                let uncertain = await rollback(applied, using: session)
+                // La commande courante peut avoir été acceptée puis avoir divergé à la
+                // relecture. On tente donc aussi son rollback avant de défaire le lot
+                // précédent ; l'absence de rollback est déclarée incertaine.
+                let currentUncertain = await rollback([operation], using: session)
+                let previousUncertain = await rollback(applied, using: session)
+                let uncertain = currentUncertain + previousUncertain
                 let message = (error as? LocalizedError)?.errorDescription
                     ?? String(describing: error)
                 let failure = L10n.format("%@ : %@", operation.label, message)
@@ -532,6 +603,79 @@ public actor DeviceController {
 
         case .command(let command, let payload):
             try await session.request(PulsarFrame(command: command, payload: payload))
+            try await verifyCommand(command, payload: payload, using: session)
+        }
+    }
+
+    /// Les commandes hors flash n'ont pas de bloc checksum à relire : leur getter
+    /// correspondant est donc obligatoire avant de considérer l'opération appliquée.
+    private func verifyCommand(
+        _ command: PulsarCommand,
+        payload: [UInt8],
+        using session: PulsarSession
+    ) async throws {
+        switch command {
+        case .set4KDongleRGB:
+            guard payload.count == 10,
+                  let actual = try await session.readDongleLighting(),
+                  actual == DongleLightingState(mode: payload[0], colors: Array(payload.dropFirst()))
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        case .setPulsarDongleLightParam:
+            guard payload.count == 7,
+                  let actual = try await session.readReceiverEffect(),
+                  actual == ReceiverLightEffect(
+                    mode: Int(payload[0]),
+                    color: CatalogColor(
+                        red: Int(payload[1]), green: Int(payload[2]), blue: Int(payload[3])
+                    ),
+                    speed: Int(payload[4]),
+                    brightness: Int(payload[5]),
+                    duration: Int(payload[6])
+                  )
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        case .setPulsarDongleDPILightParam:
+            guard let expected = payload.first,
+                  let actual = try await session.readReceiverDPILight(),
+                  actual == (expected == 1)
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        case .setPulsarDongleKeyFunction:
+            guard let expected = payload.first,
+                  let actual = try await session.readReceiverButtonMode(kind: .keyFunction),
+                  actual == Int(expected)
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        case .setPulsarDongleOButtonCurrentMode:
+            guard let expected = payload.first,
+                  let actual = try await session.readReceiverButtonMode(kind: .oButton),
+                  actual == Int(expected)
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        case .setPulsarDongleOButtonFunction:
+            guard payload.count == 8,
+                  let actual = try await session.readReceiverButtonFunction(index: Int(payload[0])),
+                  actual == ReceiverButtonFunction(
+                    index: Int(payload[0]),
+                    mode: Int(payload[1]),
+                    color: CatalogColor(
+                        red: Int(payload[2]), green: Int(payload[3]), blue: Int(payload[4])
+                    ),
+                    speed: Int(payload[5]),
+                    brightness: Int(payload[6]),
+                    duration: Int(payload[7])
+                  )
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        case .setLongRangeMode:
+            guard let expected = payload.first,
+                  let actual = try await session.readLongDistanceMode(),
+                  actual == (expected == 1)
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        default:
+            throw PulsarSession.SessionError.malformedResponse(command)
         }
     }
 
@@ -561,7 +705,25 @@ public actor DeviceController {
 
     public func setActiveProfile(_ profile: Int) async throws {
         guard let session else { throw ControllerError.notConnected }
+        guard (0..<Self.profileCount).contains(profile) else {
+            throw ControllerError.profileSelectionReadbackMismatch(expected: profile, actual: nil)
+        }
         try await session.setActiveProfile(profile)
+        let confirmed = try await session.readActiveProfile()
+        guard confirmed == profile else {
+            throw ControllerError.profileSelectionReadbackMismatch(
+                expected: profile,
+                actual: confirmed
+            )
+        }
+    }
+
+    /// Sélectionne un emplacement, confirme le choix par une lecture indépendante, puis
+    /// relit son instantané complet. La lecture est nécessaire même si la commande a été
+    /// acquittée : l'interface ne doit jamais afficher un profil supposé.
+    public func readProfile(_ profile: Int) async throws -> DeviceSnapshot {
+        try await setActiveProfile(profile)
+        return try await readSnapshot()
     }
 
     /// Bascule l'éclairage du récepteur en conservant les couleurs actuellement stockées.
@@ -574,9 +736,14 @@ public actor DeviceController {
         let target = current.setting(enabled: enabled)
         try await session.setDongleLighting(target)
 
-        guard let confirmed = try await session.readDongleLighting(),
-              confirmed.isEnabled == enabled else {
-            throw PulsarSession.SessionError.unsupported(.set4KDongleRGB)
+        guard let confirmed = try await session.readDongleLighting(), confirmed == target else {
+            // Même cette action ponctuelle conserve le contrat de restauration si le
+            // setter a répondu mais que sa relecture diverge.
+            try? await session.setDongleLighting(current)
+            guard let restored = try? await session.readDongleLighting(), restored == current else {
+                throw PulsarSession.SessionError.commandReadbackMismatch(.set4KDongleRGB)
+            }
+            throw PulsarSession.SessionError.commandReadbackMismatch(.set4KDongleRGB)
         }
         return try await readSnapshot()
     }
@@ -623,6 +790,12 @@ extension DeviceController.ControllerError: LocalizedError {
             L10n.string("Le périphérique n'a pas répondu au dialogue d'identification.")
         case .openFailed(let code):
             L10n.format("Device opening denied (code %d).", code)
+        case .profileSelectionReadbackMismatch(let expected, let actual):
+            L10n.format(
+                "Le profil demandé (%d) n'a pas été confirmé par la relecture (reçu %@).",
+                expected + 1,
+                actual.map { String($0 + 1) } ?? "—"
+            )
         case .communicationFailure(let reason):
             reason
         }

@@ -50,7 +50,7 @@ public struct PulsarMacro: Equatable, Sendable, Codable {
         }
 
         /// Nature de l'étape, codée sur les quatre bits de poids faible.
-        public enum Kind: Int, Sendable, Codable, CaseIterable {
+        public enum Kind: Int, Sendable, Codable, CaseIterable, Hashable {
             case modifier = 0
             case key = 1
             case media = 2
@@ -80,7 +80,7 @@ public struct PulsarMacro: Equatable, Sendable, Codable {
         /// L'encodage matériel est inversé par rapport à l'intuition : un appui s'écrit
         /// `2` et un relâchement `1`. Se tromper produit une macro qui relâche avant
         /// d'appuyer, sans qu'aucun checksum ne s'en aperçoive.
-        public enum Action: Int, Sendable, Codable, CaseIterable {
+        public enum Action: Int, Sendable, Codable, CaseIterable, Hashable {
             case press = 0
             case release = 1
             case none = 2
@@ -112,7 +112,7 @@ public struct PulsarMacro: Equatable, Sendable, Codable {
     }
 
     /// Masques de boutons utilisés par les étapes de type « bouton souris ».
-    public enum MouseButtonMask: Int, Sendable, CaseIterable {
+    public enum MouseButtonMask: Int, Sendable, CaseIterable, Hashable {
         case left = 1
         case right = 2
         case middle = 4
@@ -157,9 +157,16 @@ public enum MacroCodec {
     public static let stepLength = 5
 
     public enum CodecError: Error, Equatable, Sendable {
+        case nameEmpty
         case nameTooLong(bytes: Int)
         case tooManySteps(Int)
+        case invalidStep(index: Int)
         case malformedBlock
+    }
+
+    /// Nombre d'octets réellement écrits pour une macro donnée, checksum compris.
+    public static func encodedLength(_ macro: PulsarMacro) -> Int {
+        stepsOffset + stepLength * macro.steps.count + 1
     }
 
     /// Étendue à lire pour récupérer le nom d'une macro : d'abord dix octets, puis le
@@ -190,6 +197,12 @@ public enum MacroCodec {
             return nil
         }
 
+        let encodedLength = Self.encodedLength(forStepCount: Int(stepCount))
+        let encodedBlock = image.slice(at: base, count: encodedLength)
+        guard encodedBlock.count == encodedLength, verify(encodedBlock) else {
+            return nil
+        }
+
         let nameBytes = image.slice(at: base + UInt16(nameOffset), count: Int(nameLength))
         guard let name = String(bytes: nameBytes, encoding: .utf8) else { return nil }
 
@@ -216,6 +229,7 @@ public enum MacroCodec {
     /// macro plus courte n'y laisse pas les restes de la précédente.
     public static func encode(_ macro: PulsarMacro) throws -> [UInt8] {
         let nameBytes = Array(macro.name.utf8)
+        guard !nameBytes.isEmpty else { throw CodecError.nameEmpty }
         guard nameBytes.count <= PulsarMacro.nameCapacity else {
             throw CodecError.nameTooLong(bytes: nameBytes.count)
         }
@@ -232,6 +246,12 @@ public enum MacroCodec {
         block[stepCountOffset] = UInt8(macro.steps.count)
 
         for (index, step) in macro.steps.enumerated() {
+            guard (0...15).contains(step.kindCode),
+                  (0...0xFFFF).contains(step.value),
+                  (0...0xFFFF).contains(step.delayMilliseconds)
+            else {
+                throw CodecError.invalidStep(index: index)
+            }
             let offset = stepsOffset + stepLength * index
             block[offset] = (step.action.encoded << 6) | UInt8(step.kindCode & 0x0F)
             block[offset + 1] = UInt8(truncatingIfNeeded: step.value)
@@ -240,9 +260,12 @@ public enum MacroCodec {
             block[offset + 4] = UInt8(truncatingIfNeeded: step.delayMilliseconds)
         }
 
-        // Le checksum couvre le compteur d'étapes et les étapes, pas le nom.
+        // Le firmware soustrait également le nombre d'étapes après avoir calculé le
+        // complément de la somme. Cette seconde correction est propre aux macros : le
+        // checksum des autres blocs reste celui de `PulsarFrame.blockChecksum`.
         let covered = block[stepCountOffset..<(block.count - 1)]
         block[block.count - 1] = PulsarFrame.blockChecksum(over: covered)
+            &- UInt8(macro.steps.count)
         return block
     }
 
@@ -263,9 +286,23 @@ public enum MacroCodec {
 
     /// Vrai si le checksum du bloc concorde.
     public static func verify(_ block: [UInt8]) -> Bool {
-        guard block.count > stepsOffset else { return false }
+        guard block.count > stepsOffset,
+              let stepCount = block[safe: stepCountOffset],
+              stepCount <= UInt8(PulsarMacro.stepCapacity),
+              block.count == encodedLength(forStepCount: Int(stepCount))
+        else { return false }
         let covered = block[stepCountOffset..<(block.count - 1)]
-        return PulsarFrame.blockChecksum(over: covered) == block[block.count - 1]
+        return PulsarFrame.blockChecksum(over: covered) &- stepCount == block[block.count - 1]
+    }
+
+    private static func encodedLength(forStepCount count: Int) -> Int {
+        stepsOffset + stepLength * count + 1
+    }
+}
+
+private extension Array where Element == UInt8 {
+    subscript(safe index: Int) -> UInt8? {
+        indices.contains(index) ? self[index] : nil
     }
 }
 

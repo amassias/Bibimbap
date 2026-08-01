@@ -45,6 +45,11 @@ struct DraftRecoveryBanner: View {
                     Button(L10n.string("Adopter les réglages relus")) {
                         model.adoptRemoteAfterRecovery()
                     }
+
+                    Button(L10n.string("Relire et comparer")) {
+                        Task { await model.rereadAndCompare() }
+                    }
+                    .disabled(model.connection.isBusy)
                 }
                 .padding(.horizontal, Theme.Space.page)
                 .padding(.vertical, Theme.Space.medium)
@@ -125,8 +130,8 @@ struct UncertainHardwareBanner: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: Theme.Space.large)
-                Button(L10n.string("Relire le périphérique")) {
-                    Task { await model.reload() }
+                Button(L10n.string("Relire et comparer")) {
+                    Task { await model.recoverUncertainHardware() }
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(model.connection.isBusy)

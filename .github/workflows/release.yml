@@ -1,0 +1,175 @@
+name: macOS distribution
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semver-like version to embed for a manual package build'
+        required: true
+        default: '0.1.0'
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: macos-distribution-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    name: Build and package Bibimbap
+    runs-on: macos-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out the tagged source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        env:
+          MANUAL_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="$MANUAL_VERSION"
+          fi
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+
+      - name: Validate source and documentation metadata
+        run: ./scripts/validate_distribution.sh
+
+      - name: Build Swift package and deterministic validation suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          swift build -c release
+          # The complete Swift Testing process is known to hang at termination in
+          # this checkout. These focused suites cover the fixture, catalogue and
+          # simulator evidence used by the distribution matrix.
+          swift test --filter HardwareFixtureTests
+          swift test --filter CatalogTests
+          swift test --filter SimulatorFaultTests
+
+      - name: Import Developer ID certificate when configured
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$MACOS_CERTIFICATE_P12_BASE64$MACOS_CERTIFICATE_PASSWORD$MACOS_KEYCHAIN_PASSWORD" ]]; then
+            echo 'No Developer ID certificate secrets supplied; the package will be explicitly unsigned.'
+            exit 0
+          fi
+          if [[ -z "$MACOS_CERTIFICATE_P12_BASE64" || -z "$MACOS_CERTIFICATE_PASSWORD" || -z "$MACOS_KEYCHAIN_PASSWORD" ]]; then
+            echo 'Developer ID certificate configuration is incomplete.' >&2
+            exit 1
+          fi
+
+          certificate_path="$RUNNER_TEMP/bibimbap-distribution.p12"
+          keychain_path="$RUNNER_TEMP/bibimbap-signing.keychain-db"
+          printf '%s' "$MACOS_CERTIFICATE_P12_BASE64" | base64 -D > "$certificate_path"
+          security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" "$keychain_path"
+          security import "$certificate_path" \
+            -k "$keychain_path" \
+            -P "$MACOS_CERTIFICATE_PASSWORD" \
+            -A \
+            -t cert \
+            -f pkcs12
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s \
+            -k "$MACOS_KEYCHAIN_PASSWORD" \
+            "$keychain_path"
+          security list-keychains -d user -s "$keychain_path" login.keychain-db
+          security default-keychain -s "$keychain_path"
+
+          identity="$(security find-identity -v -p codesigning "$keychain_path" | \
+            sed -n 's/.*"\(Developer ID Application:.*\)"/\1/p')"
+          identity="${identity%%$'\n'*}"
+          if [[ -z "$identity" ]]; then
+            echo 'The imported keychain has no Developer ID Application identity.' >&2
+            exit 1
+          fi
+          printf 'BIBIMBAP_SIGNING_IDENTITY=%s\n' "$identity" >> "$GITHUB_ENV"
+
+      - name: Prepare App Store Connect notarization key when configured
+        shell: bash
+        env:
+          APPLE_NOTARY_KEY_BASE64: ${{ secrets.APPLE_NOTARY_KEY_BASE64 }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$APPLE_NOTARY_KEY_BASE64$APPLE_NOTARY_KEY_ID$APPLE_NOTARY_ISSUER_ID" ]]; then
+            echo 'No notarization credentials supplied; notarization will be recorded as not-requested.'
+            exit 0
+          fi
+          if [[ -z "$APPLE_NOTARY_KEY_BASE64" || -z "$APPLE_NOTARY_KEY_ID" || -z "$APPLE_NOTARY_ISSUER_ID" ]]; then
+            echo 'Notarization configuration is incomplete.' >&2
+            exit 1
+          fi
+          key_path="$RUNNER_TEMP/bibimbap-notary-key.p8"
+          printf '%s' "$APPLE_NOTARY_KEY_BASE64" | base64 -D > "$key_path"
+          printf 'BIBIMBAP_NOTARY_KEY_PATH=%s\n' "$key_path" >> "$GITHUB_ENV"
+
+      - name: Build ZIP and DMG
+        shell: bash
+        env:
+          BIBIMBAP_VERSION: ${{ steps.version.outputs.version }}
+          BIBIMBAP_OUTPUT_DIR: ${{ runner.temp }}/bibimbap-distribution
+          BIBIMBAP_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          BIBIMBAP_NOTARY_ISSUER: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          ./scripts/package_macos.sh \
+            --version "$BIBIMBAP_VERSION" \
+            --output "$BIBIMBAP_OUTPUT_DIR" \
+            --arch arm64
+          ./scripts/validate_distribution.sh --artifacts "$BIBIMBAP_OUTPUT_DIR"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bibimbap-${{ steps.version.outputs.version }}-arm64
+          path: ${{ runner.temp }}/bibimbap-distribution
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish versioned GitHub Release
+        if: github.ref_type == 'tag'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          tag="$GITHUB_REF_NAME"
+          notes_file="docs/releases/$RELEASE_VERSION.md"
+          if [[ ! -f "$notes_file" ]]; then
+            notes_file="$RUNNER_TEMP/release-notes.md"
+            {
+              printf '# Bibimbap %s\n\n' "$RELEASE_VERSION"
+              printf 'Generated from commit `%s`. See the distribution manifest and SHA-256 checksums attached to this release.\n' "$GITHUB_SHA"
+            } > "$notes_file"
+          fi
+          gh release create "$tag" \
+            --verify-tag \
+            --target "$GITHUB_SHA" \
+            --title "Bibimbap $RELEASE_VERSION" \
+            --notes-file "$notes_file" \
+            "$RUNNER_TEMP"/bibimbap-distribution/*

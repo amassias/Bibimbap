@@ -171,6 +171,16 @@ champ mort ne peut créer un état différent entre l'écran et le matériel.
 réglages vers un autre profil, importer avec aperçu des changements et exporter le
 profil sélectionné plutôt qu'un état ambigu.
 
+**Fait :** le profil actif est relu et affiché avec son slot et l'emplacement HID; deux
+slots peuvent être relus, comparés puis restaurés sur l'actif d'origine; la copie vers un
+autre slot passe par un aperçu puis le plan d'écriture P0; les imports sont prévisualisés
+avant de remplir le brouillon; les exports JSON contiennent le slot, le transport et
+l'emplacement matériel quand ils sont connus. Les changements de profil sont confirmés
+par une relecture indépendante et les erreurs de restauration restent incertaines.
+
+→ *Reste : validation sur les modèles physiques de référence; aucune validation physique
+n'a été effectuée dans ce changement.*
+
 **Terminé quand :** l'utilisateur peut sauvegarder, prévisualiser et appliquer un profil
 en sachant exactement quel emplacement matériel sera modifié.
 
@@ -181,6 +191,15 @@ en sachant exactement quel emplacement matériel sera modifié.
 (`800 → 1600 DPI`, `1 kHz → 4 kHz`), afficher la progression par opération, fournir
 "Relire et comparer", "Exporter le diagnostic" et une récupération dédiée pour un état
 matériel incertain.
+
+**Fait :** les diffusions de changements et conflits utilisent des valeurs utilisateur
+(DPI, Hz, ms, activation et libellés de fonctions), chaque opération affiche sa progression
+après relecture, le diagnostic inclut l'actif matériel et les modifications lisibles, et
+les actions « Relire et comparer », « Exporter le diagnostic » et la récupération dédiée
+restent disponibles depuis les emplacements appropriés. Une écriture interrompue ne peut
+pas être relancée avant une relecture complète.
+
+→ *Reste : validation physique des messages et de la récupération sur le matériel réel.*
 
 **Terminé quand :** avant et après une écriture, l'utilisateur comprend ce qui sera
 modifié, ce qui a réussi et ce qui doit être vérifié.
@@ -256,4 +275,3 @@ de commande de mise à jour au matériel.
 3. **BIB-010 → BIB-012** : fermer les trous les plus visibles dans Customize, Macros et DPI.
 4. **BIB-015, BIB-018 et BIB-017** : profils, validation matérielle et distribution.
 5. **BIB-013, BIB-014 puis P2** : compléter les capacités et polir l'expérience.
-

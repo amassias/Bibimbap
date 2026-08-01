@@ -95,6 +95,27 @@ struct MacroCodecTests {
         }
     }
 
+    @Test("La limite d'étapes reste dans la capacité octets du bloc")
+    func encodedLengthTracksStepLimit() throws {
+        let macro = PulsarMacro(
+            name: "Limite",
+            steps: Array(repeating: .init(kind: .key, action: .press, value: 4, delayMilliseconds: 0), count: 70)
+        )
+        let block = try MacroCodec.encode(macro)
+        #expect(block.count == MacroCodec.blockLength - 1)
+        #expect(MacroCodec.encodedLength(macro) == block.count)
+        #expect(MacroCodec.verify(block))
+    }
+
+    @Test("Une valeur qui serait tronquée est refusée")
+    func rejectsValuesThatWouldBeTruncated() {
+        #expect(throws: MacroCodec.CodecError.self) {
+            try MacroCodec.encode(PulsarMacro(name: "T", steps: [
+                .init(kind: .key, action: .press, value: 0x1_0000, delayMilliseconds: 0),
+            ]))
+        }
+    }
+
     @Test("Un nom accentué survit à l'aller-retour UTF-8")
     func handlesAccentedNames() throws {
         let macro = PulsarMacro(name: "Séquence éclair", steps: [

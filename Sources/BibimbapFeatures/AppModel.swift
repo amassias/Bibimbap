@@ -7,10 +7,60 @@ import PulsarHID
 import PulsarProtocol
 import PulsarSimulator
 
+/// Aperçu local d'un import de profil. Tant que cet objet existe, aucune donnée n'a été
+/// envoyée au périphérique et le brouillon visible n'a pas changé.
+public struct ProfileImportPreview: Equatable, Sendable {
+    public var archive: ProfileArchive
+    public var targetProfile: Int?
+    public var changes: [PendingChange]
+    public var skipped: [String]
+    public var settings: DeviceSettings
+
+    public init(
+        archive: ProfileArchive,
+        targetProfile: Int?,
+        changes: [PendingChange],
+        skipped: [String],
+        settings: DeviceSettings
+    ) {
+        self.archive = archive
+        self.targetProfile = targetProfile
+        self.changes = changes
+        self.skipped = skipped
+        self.settings = settings
+    }
+}
+
+/// Aperçu local d'une copie inter-profils. Le plan n'est appliqué qu'après l'action
+/// explicite de confirmation ; la comparaison peut donc être consultée sans écriture.
+public struct ProfileCopyPreview: Equatable, Sendable {
+    public var sourceProfile: Int
+    public var targetProfile: Int
+    public var source: ProfileArchive
+    public var target: ProfileArchive
+    public var changes: [PendingChange]
+
+    public init(
+        sourceProfile: Int,
+        targetProfile: Int,
+        source: ProfileArchive,
+        target: ProfileArchive,
+        changes: [PendingChange]
+    ) {
+        self.sourceProfile = sourceProfile
+        self.targetProfile = targetProfile
+        self.source = source
+        self.target = target
+        self.changes = changes
+    }
+}
+
 /// État de l'application, observé par les vues.
 @MainActor
 @Observable
 public final class AppModel {
+    public static let profileCount = DeviceController.profileCount
+
     public enum ConnectionState: Equatable, Sendable {
         case idle
         case scanning
@@ -77,6 +127,8 @@ public final class AppModel {
     public private(set) var snapshot: DeviceSnapshot?
     public private(set) var capabilities: DeviceCapabilities?
     public private(set) var lastResult: WriteResult?
+    /// Progression de l'opération courante, dont le compteur n'avance qu'après relecture.
+    public private(set) var writeProgress: WriteProgress?
     public private(set) var validationIssues: [DraftValidator.Issue] = []
     public private(set) var isSimulated: Bool
 
@@ -88,6 +140,13 @@ public final class AppModel {
     public private(set) var draftRecovery: DraftRecovery?
     /// Vrai tant qu'une écriture interrompue n'a pas été suivie d'une relecture explicite.
     public private(set) var requiresExplicitReread = false
+    /// Prévisualisations locales, jamais appliquées implicitement.
+    public private(set) var profileImportPreview: ProfileImportPreview?
+    public private(set) var profileCopyPreview: ProfileCopyPreview?
+    public private(set) var profileComparison: ProfileComparison?
+    /// Emplacement HID de la cible choisie, distinct de la clé stable qui ignore le port.
+    public private(set) var hardwareLocation: String?
+    public private(set) var hardwareTransport: String?
 
     /// La section d'entrée est une décision de lancement, pas une préférence persistée.
     /// La navigation reste ensuite entièrement pilotée par l'utilisateur.
@@ -103,6 +162,9 @@ public final class AppModel {
     /// état du matériel alors que le brouillon, lui, se compare toujours à ce qu'il a
     /// quitté. Sans cette base, un conflit ressemblerait à une modification de l'utilisateur.
     private var draftBase: DeviceSettings?
+    /// Dernière lecture connue de chaque profil, utilisée uniquement pour l'affichage ;
+    /// toute opération d'application relit le matériel avant d'écrire.
+    private var knownProfileArchives: [Int: ProfileArchive] = [:]
 
     private let controller: DeviceController
     private let catalog: DeviceCatalog
@@ -168,7 +230,11 @@ public final class AppModel {
 
     public var pendingChanges: [PendingChange] {
         guard let snapshot else { return [] }
-        return WritePlanner(family: snapshot.family, catalog: catalog)
+        return WritePlanner(
+            family: snapshot.family,
+            catalog: catalog,
+            capabilities: capabilities
+        )
             .changes(from: draftBase ?? snapshot.settings, to: draft)
     }
 
@@ -208,6 +274,48 @@ public final class AppModel {
         draft.buttons.firstIndex { $0.index == firmwareIndex }
     }
 
+    /// Emplacement matériel réellement relu, jamais déduit du nom de fichier.
+    public var activeProfileIndex: Int? { snapshot?.activeProfile }
+
+    public var activeProfileLabel: String {
+        guard let activeProfileIndex else { return L10n.string("Profil non indiqué") }
+        return L10n.format("Profil %d", activeProfileIndex + 1)
+    }
+
+    public var activeHardwareLocationLabel: String {
+        var parts = [deviceDisplayName]
+        if let hardwareTransport, !hardwareTransport.isEmpty {
+            parts.append(hardwareTransport)
+        }
+        if let hardwareLocation, !hardwareLocation.isEmpty {
+            parts.append(L10n.format("emplacement %@", hardwareLocation))
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    public var supportedProfileIndices: [Int] {
+        capabilities?.supportsProfiles == true
+            ? Array(0..<Self.profileCount)
+            : []
+    }
+
+    public var knownProfileSlots: [Int] {
+        knownProfileArchives.keys.sorted()
+    }
+
+    public func knownProfileArchive(at index: Int) -> ProfileArchive? {
+        knownProfileArchives[index]
+    }
+
+    public var canChangeProfile: Bool {
+        snapshot?.activeProfile != nil
+            && connection == .connected
+            && !connection.isBusy
+            && !hasPendingChanges
+            && draftRecovery == nil
+            && !requiresExplicitReread
+    }
+
     /// Rien ne part vers le matériel tant qu'un conflit n'est pas tranché, et tant qu'une
     /// écriture interrompue n'a pas été suivie d'une relecture demandée explicitement.
     public var canApply: Bool {
@@ -222,7 +330,8 @@ public final class AppModel {
     public var availableSections: [Section] {
         guard let capabilities else { return [.overview, .settings] }
         var sections: [Section] = [.overview, .customize, .performance, .macros]
-        if capabilities.supportsBattery || capabilities.supportsLongDistance || capabilities.supportsFanMode {
+        if capabilities.supportsBattery || capabilities.supportsLongDistance
+            || capabilities.supportsFanMode || capabilities.receiver != .none {
             sections.append(.power)
         }
         sections.append(.settings)
@@ -318,6 +427,8 @@ public final class AppModel {
             let snapshot = try await controller.connect(to: candidate)
             connection = .reading
             selectedStableKey = candidate.stableKey
+            hardwareLocation = candidate.locationLabel
+            hardwareTransport = candidate.transportLabel
             adopt(snapshot)
             hasLiveSession = true
             connection = .connected
@@ -365,6 +476,13 @@ public final class AppModel {
         draftBase = nil
         draftRecovery = nil
         requiresExplicitReread = false
+        profileImportPreview = nil
+        profileCopyPreview = nil
+        profileComparison = nil
+        writeProgress = nil
+        hardwareLocation = nil
+        hardwareTransport = nil
+        knownProfileArchives = [:]
         availableCandidates = []
         draft = DeviceSettings()
         connection = .idle
@@ -382,20 +500,35 @@ public final class AppModel {
     /// Valide, écrit, relit.
     public func apply() async {
         guard let snapshot, canApply else { return }
-        let plan = WritePlanner(family: snapshot.family, catalog: catalog)
+        let plan = WritePlanner(
+            family: snapshot.family,
+            catalog: catalog,
+            capabilities: capabilities
+        )
             .plan(from: snapshot.settings, to: draft)
         guard !plan.isEmpty else { return }
 
+        writeProgress = WriteProgress(
+            completed: 0,
+            total: plan.count,
+            currentOperation: plan.operations.first?.label
+        )
         connection = .writing(progress: 0)
         do {
-            let result = try await controller.apply(plan)
+            let result = try await controller.apply(plan) { [weak self] progress in
+                await self?.receiveWriteProgress(progress)
+            }
             lastResult = result
             let refreshed = try await controller.readSnapshot()
-            adopt(refreshed)
             if case .failedAndUncertain(_, let uncertain) = result.outcome {
+                // Une lecture de contrôle ne tranche pas l'incertitude créée par le lot :
+                // elle rafraîchit l'instantané, mais le brouillon reste nécessaire pour
+                // comparer explicitement ce que le matériel porte désormais.
+                adoptKeepingDraft(refreshed)
                 connection = .disconnectedDuringWrite(uncertain: uncertain)
                 requiresExplicitReread = true
             } else {
+                adopt(refreshed)
                 connection = .connected
             }
         } catch {
@@ -413,6 +546,11 @@ public final class AppModel {
         }
     }
 
+    private func receiveWriteProgress(_ progress: WriteProgress) {
+        writeProgress = progress
+        connection = .writing(progress: progress.fraction)
+    }
+
     /// Applique une modification ponctuelle, décidée hors de la fenêtre.
     ///
     /// Le menu de la barre des menus écrit sans passer par le brouillon visible. Deux
@@ -428,8 +566,17 @@ public final class AppModel {
         await apply()
     }
 
-    /// Relecture demandée explicitement : c'est elle qui lève un état matériel incertain.
+    /// Relecture simple quand aucun brouillon n'attend. Avec un brouillon, l'action
+    /// devient automatiquement « relire et comparer » pour ne jamais l'écraser.
     public func reload() async {
+        if requiresExplicitReread {
+            await recoverUncertainHardware()
+            return
+        }
+        if hasPendingChanges {
+            await rereadAndCompare()
+            return
+        }
         guard snapshot != nil else { return }
         connection = .reading
         do {
@@ -437,6 +584,81 @@ public final class AppModel {
             requiresExplicitReread = false
             connection = .connected
         } catch {
+            if requiresExplicitReread {
+                await reconnectAndRecoverUncertainHardware()
+            } else {
+                report(error)
+            }
+        }
+    }
+
+    /// Relit le périphérique puis compare la lecture à la base du brouillon. Cette action
+    /// est toujours sans écriture ; elle est aussi le seul chemin de récupération d'un
+    /// état matériel incertain.
+    public func rereadAndCompare() async {
+        guard snapshot != nil, !connection.isBusy else { return }
+        connection = .reading
+        do {
+            let refreshed = try await controller.readSnapshot()
+            requiresExplicitReread = false
+            if hasPendingChanges {
+                await reconcile(with: refreshed, cause: .explicitComparison)
+            } else {
+                adopt(refreshed)
+                connection = .connected
+            }
+        } catch {
+            if requiresExplicitReread {
+                await reconnectAndRecoverUncertainHardware()
+            } else {
+                report(error)
+            }
+        }
+    }
+
+    /// Récupération dédiée après une écriture interrompue. Aucun plan n'est recalculé et
+    /// aucune valeur du brouillon n'est envoyée automatiquement.
+    public func recoverUncertainHardware() async {
+        guard requiresExplicitReread else { return }
+        if hasLiveSession {
+            await rereadAndCompare()
+        } else {
+            await reconnectAndRecoverUncertainHardware()
+        }
+    }
+
+    private func reconnectAndRecoverUncertainHardware() async {
+        guard !connection.isBusy || connection == .reading else { return }
+        await controller.closeForRecovery()
+        hasLiveSession = false
+        connection = .reconnecting(attempt: 1)
+        do {
+            let candidates = try await controller.availableDevices()
+            availableCandidates = candidates
+            let matching = selectedStableKey.map { key in
+                candidates.filter { $0.stableKey == key }
+            } ?? candidates
+            guard matching.count == 1, let target = matching.first else {
+                connection = matching.count > 1 ? .selectingDevice : .offline
+                return
+            }
+            let refreshed = try await controller.connect(to: target)
+            selectedStableKey = target.stableKey
+            hardwareLocation = target.locationLabel
+            hardwareTransport = target.transportLabel
+            hasLiveSession = true
+            requiresExplicitReread = false
+            await observeDevice()
+            if hasPendingChanges {
+                await reconcile(with: refreshed, cause: .explicitComparison)
+            } else {
+                adopt(refreshed)
+                connection = .connected
+            }
+        } catch {
+            // L'incertitude reste volontairement visible : aucun essai de réécriture ne
+            // peut être lancé tant qu'une lecture complète n'a pas réussi.
+            requiresExplicitReread = true
             report(error)
         }
     }
@@ -453,23 +675,32 @@ public final class AppModel {
     }
 
     public func selectProfile(_ profile: Int) async {
+        guard (0..<Self.profileCount).contains(profile), canChangeProfile else { return }
+        guard profile != snapshot?.activeProfile else { return }
+        let original = snapshot?.activeProfile
+        connection = .reading
         do {
-            try await controller.setActiveProfile(profile)
-            await reload()
+            let selected = try await controller.readProfile(profile)
+            adopt(selected)
+            profileComparison = nil
+            profileCopyPreview = nil
+            connection = .connected
         } catch {
-            connection = .failed(message(for: error))
+            if let original {
+                await failProfileOperation(error, restoring: original)
+            } else {
+                report(error)
+            }
         }
     }
 
     public func setDongleLightEnabled(_ enabled: Bool) async {
-        guard snapshot?.dongleLighting != nil, !connection.isBusy else { return }
-        connection = .writing(progress: 0)
-        do {
-            adopt(try await controller.setDongleLightEnabled(enabled))
-            connection = .connected
-        } catch {
-            connection = .failed(message(for: error))
-        }
+        guard !connection.isBusy, var receiver = draft.receiver,
+              var lighting = receiver.rgbLighting else { return }
+        lighting = lighting.setting(enabled: enabled)
+        receiver.rgbLighting = lighting
+        draft.receiver = receiver
+        await apply()
     }
 
     // MARK: Appairage
@@ -536,10 +767,254 @@ public final class AppModel {
 
     // MARK: Sauvegardes
 
-    /// Exporte les réglages relus, dans un format versionné et relisible.
+    /// Exporte le profil actif relu, dans un format versionné et relisible. L'archive
+    /// porte explicitement son emplacement matériel pour qu'un fichier ne soit jamais
+    /// confondu avec un autre profil.
     public func exportProfile() -> ProfileArchive? {
-        guard let snapshot else { return nil }
-        return ProfileArchive(snapshot: snapshot)
+        guard let snapshot, connection == .connected, !requiresExplicitReread else { return nil }
+        return profileArchive(for: snapshot)
+    }
+
+    /// Prépare un import sans rien écrire ni modifier le brouillon courant.
+    public func previewProfileImport(_ archive: ProfileArchive) -> ProfileImportPreview? {
+        guard let snapshot, let capabilities else { return nil }
+
+        let targetProfile = snapshot.activeProfile
+        let mismatch = archive.cid != snapshot.identity.cid || archive.mid != snapshot.identity.mid
+        let settings: DeviceSettings
+        var skipped: [String]
+        if mismatch {
+            // Un autre modèle peut partager des champs de même nom avec des limites
+            // différentes. On affiche l'écart mais on ne fabrique aucun plan d'écriture.
+            settings = snapshot.settings
+            skipped = [L10n.format(
+                "Archive from CID %d / MID %d does not match this device (CID %d / MID %d).",
+                archive.cid, archive.mid, snapshot.identity.cid, snapshot.identity.mid
+            )]
+        } else {
+            let fitted = archive.settings(
+                fittingFamily: snapshot.family,
+                capabilities: capabilities,
+                catalog: catalog,
+                current: snapshot.settings
+            )
+            settings = fitted.settings
+            skipped = fitted.skipped
+        }
+
+        let changes = WritePlanner(family: snapshot.family, catalog: catalog)
+            .changes(from: snapshot.settings, to: settings)
+        let preview = ProfileImportPreview(
+            archive: archive,
+            targetProfile: targetProfile,
+            changes: changes,
+            skipped: skipped,
+            settings: settings
+        )
+        profileImportPreview = preview
+        return preview
+    }
+
+    /// Confirme le prévisualiseur d'import en remplissant le brouillon. Même ici, aucune
+    /// écriture n'est lancée : l'utilisateur doit encore passer par Apply et sa relecture.
+    public func confirmProfileImportPreview() {
+        guard let preview = profileImportPreview, draftRecovery == nil else { return }
+        draft = preview.settings
+        profileImportPreview = nil
+    }
+
+    public func dismissProfileImportPreview() {
+        profileImportPreview = nil
+    }
+
+    /// Compatibilité avec l'API précédente : l'appelant explicite confirme immédiatement
+    /// l'aperçu, mais le matériel reste inchangé jusqu'à `apply()`.
+    @discardableResult
+    public func importProfile(_ archive: ProfileArchive) -> [String] {
+        guard let preview = previewProfileImport(archive) else { return [] }
+        confirmProfileImportPreview()
+        return preview.skipped
+    }
+
+    // MARK: Profils matériels
+
+    /// Relit deux emplacements et restaure le profil actif d'origine. Les commandes de
+    /// sélection sont confirmées par relecture ; les réglages ne sont jamais écrits.
+    public func compareProfiles(_ left: Int, _ right: Int) async -> ProfileComparison? {
+        guard canReadProfiles, left != right,
+              (0..<Self.profileCount).contains(left),
+              (0..<Self.profileCount).contains(right),
+              let original = snapshot?.activeProfile else { return nil }
+
+        profileComparison = nil
+        connection = .reading
+        do {
+            let current = try await controller.readSnapshot()
+            let leftSnapshot = left == original
+                ? current
+                : try await controller.readProfile(left)
+            let rightSnapshot = right == left
+                ? leftSnapshot
+                : try await controller.readProfile(right)
+            let restored = right == original
+                ? rightSnapshot
+                : try await controller.readProfile(original)
+
+            let comparison = profileArchive(for: leftSnapshot)
+                .comparison(with: profileArchive(for: rightSnapshot))
+            adopt(restored)
+            profileComparison = comparison
+            connection = .connected
+            return comparison
+        } catch {
+            await failProfileOperation(error, restoring: original)
+            return nil
+        }
+    }
+
+    /// Prévisualise la copie du profil actif vers `target` en relisant la cible puis en
+    /// restaurant l'actif d'origine. Tant que l'aperçu est affiché, aucune écriture de
+    /// réglage n'est exécutée.
+    public func previewProfileCopy(to target: Int) async -> ProfileCopyPreview? {
+        guard canReadProfiles,
+              (0..<Self.profileCount).contains(target),
+              let original = snapshot?.activeProfile,
+              target != original else { return nil }
+
+        profileCopyPreview = nil
+        connection = .reading
+        do {
+            let sourceSnapshot = try await controller.readSnapshot()
+            let targetSnapshot = try await controller.readProfile(target)
+            let restored = try await controller.readProfile(original)
+            let source = profileArchive(for: sourceSnapshot)
+            let targetArchive = profileArchive(for: targetSnapshot)
+            let changes = WritePlanner(family: sourceSnapshot.family, catalog: catalog)
+                .changes(from: targetSnapshot.settings, to: sourceSnapshot.settings)
+            let preview = ProfileCopyPreview(
+                sourceProfile: original,
+                targetProfile: target,
+                source: source,
+                target: targetArchive,
+                changes: changes
+            )
+            adopt(restored)
+            profileCopyPreview = preview
+            connection = .connected
+            return preview
+        } catch {
+            await failProfileOperation(error, restoring: original)
+            return nil
+        }
+    }
+
+    /// Applique la copie après une action explicite. Le profil source et la cible sont
+    /// relus juste avant le plan afin qu'un aperçu ancien ne puisse écrire sur une base
+    /// devenue obsolète.
+    public func applyProfileCopyPreview() async {
+        guard let preview = profileCopyPreview else { return }
+        await copyProfile(to: preview.targetProfile)
+    }
+
+    public func discardProfileCopyPreview() {
+        profileCopyPreview = nil
+    }
+
+    public func copyProfile(to target: Int) async {
+        guard canReadProfiles,
+              (0..<Self.profileCount).contains(target),
+              let original = snapshot?.activeProfile,
+              target != original else { return }
+
+        profileCopyPreview = nil
+        connection = .reading
+        do {
+            let sourceSnapshot = try await controller.readSnapshot()
+            let targetSnapshot = try await controller.readProfile(target)
+            let plan = WritePlanner(family: sourceSnapshot.family, catalog: catalog)
+                .plan(from: targetSnapshot.settings, to: sourceSnapshot.settings)
+
+            if plan.isEmpty {
+                let restored = try await controller.readProfile(original)
+                adopt(restored)
+                lastResult = WriteResult(outcome: .succeeded, applied: [])
+                connection = .connected
+                return
+            }
+
+            writeProgress = WriteProgress(
+                completed: 0,
+                total: plan.count,
+                currentOperation: plan.operations.first?.label
+            )
+            connection = .writing(progress: 0)
+            let result = try await controller.apply(plan) { [weak self] progress in
+                await self?.receiveWriteProgress(progress)
+            }
+            lastResult = result
+
+            if result.isUncertain {
+                requiresExplicitReread = true
+                connection = .disconnectedDuringWrite(
+                    uncertain: resultUncertainLabels(result, fallback: plan.operations.map(\.label))
+                )
+                return
+            }
+
+            // La relecture de la cible confirme le résultat avant de revenir à la source.
+            _ = try await controller.readSnapshot()
+            let restored = try await controller.readProfile(original)
+            adopt(restored)
+            connection = .connected
+        } catch {
+            await failProfileOperation(error, restoring: original)
+        }
+    }
+
+    private var canReadProfiles: Bool {
+        snapshot?.activeProfile != nil
+            && capabilities?.supportsProfiles == true
+            && connection == .connected
+            && !connection.isBusy
+            && !hasPendingChanges
+            && draftRecovery == nil
+            && !requiresExplicitReread
+    }
+
+    private func profileArchive(for snapshot: DeviceSnapshot) -> ProfileArchive {
+        ProfileArchive(
+            snapshot: snapshot,
+            profileSlot: snapshot.activeProfile,
+            hardwareLocation: hardwareLocation,
+            hardwareTransport: hardwareTransport
+        )
+    }
+
+    private func resultUncertainLabels(_ result: WriteResult, fallback: [String]) -> [String] {
+        if case .failedAndUncertain(_, let uncertain) = result.outcome, !uncertain.isEmpty {
+            return uncertain
+        }
+        return fallback
+    }
+
+    private func failProfileOperation(_ error: any Error, restoring original: Int) async {
+        do {
+            let restored = try await controller.readProfile(original)
+            adopt(restored)
+            report(error)
+        } catch {
+            // On ne sait plus quel emplacement est actif ni si une sélection a abouti.
+            // La récupération dédiée exigera une relecture explicite avant toute action.
+            requiresExplicitReread = true
+            lastResult = WriteResult(
+                outcome: .failedAndUncertain(
+                    failure: message(for: error),
+                    uncertain: [L10n.string("Profil actif")]
+                ),
+                applied: []
+            )
+            connection = .disconnectedDuringWrite(uncertain: [L10n.string("Profil actif")])
+        }
     }
 
     /// Charge une sauvegarde dans le brouillon, sans rien écrire.
@@ -547,18 +1022,6 @@ public final class AppModel {
     /// Les réglages qu'un modèle ne sait pas représenter sont écartés plutôt qu'appliqués
     /// de force : restaurer une sauvegarde de X2 sur un autre capteur ne doit pas produire
     /// des paliers DPI impossibles.
-    public func importProfile(_ archive: ProfileArchive) -> [String] {
-        guard let snapshot, let capabilities else { return [] }
-        let (settings, skipped) = archive.settings(
-            fittingFamily: snapshot.family,
-            capabilities: capabilities,
-            catalog: catalog,
-            current: snapshot.settings
-        )
-        draft = settings
-        return skipped
-    }
-
     public func diagnosticReport() async -> String {
         var lines: [String] = [
             "Bibimbap — rapport de diagnostic",
@@ -574,7 +1037,43 @@ public final class AppModel {
                 "Connexion : \(snapshot.connection.label) (max \(snapshot.connection.maximumReportRate) Hz)",
                 "Firmware : \(snapshot.firmwareVersion)",
                 "Capteur : \(snapshot.family.sensor.type)",
+                "Profil actif : \(activeProfileLabel)",
+                "Emplacement matériel : \(activeHardwareLocationLabel)",
             ]
+        }
+        if let writeProgress {
+            lines += [
+                "",
+                "Progression d'écriture : \(writeProgress.completed)/\(writeProgress.total)",
+                "Opération : \(writeProgress.currentOperation ?? "terminée")",
+            ]
+        }
+        if !pendingChanges.isEmpty {
+            lines += ["", "Modifications en attente :"]
+            lines += pendingChanges.map {
+                "  \($0.label) : \($0.before) → \($0.after)"
+            }
+        }
+        if let profileImportPreview {
+            lines += ["", "Aperçu d'import (sans écriture) :"]
+            lines += profileImportPreview.changes.map {
+                "  \($0.label) : \($0.before) → \($0.after)"
+            }
+            if !profileImportPreview.skipped.isEmpty {
+                lines += profileImportPreview.skipped.map { "  Ignoré : \($0)" }
+            }
+        }
+        if let profileCopyPreview {
+            lines += [
+                "",
+                "Aperçu de copie (sans écriture) : \(profileCopyPreview.sourceProfile + 1) → \(profileCopyPreview.targetProfile + 1)",
+            ]
+            lines += profileCopyPreview.changes.map {
+                "  \($0.label) : \($0.before) → \($0.after)"
+            }
+        }
+        if requiresExplicitReread {
+            lines += ["", "Récupération requise : relecture explicite avant toute nouvelle écriture."]
         }
         // Le journal de connexion vient avant les trames : lorsque l'échec précède la
         // création de la session, c'est la seule partie du rapport qui contient quoi que
@@ -610,12 +1109,20 @@ public final class AppModel {
         self.draft = snapshot.settings
         self.draftBase = snapshot.settings
         self.draftRecovery = nil
+        profileImportPreview = nil
+        profileCopyPreview = nil
+        if let profile = snapshot.activeProfile {
+            knownProfileArchives[profile] = profileArchive(for: snapshot)
+        }
     }
 
     /// Adopte un instantané relu sans toucher au brouillon ni à sa base.
     private func adoptKeepingDraft(_ snapshot: DeviceSnapshot) {
         self.snapshot = snapshot
         self.capabilities = controllerCapabilities(for: snapshot)
+        if let profile = snapshot.activeProfile {
+            knownProfileArchives[profile] = profileArchive(for: snapshot)
+        }
         revalidate()
     }
 
@@ -626,7 +1133,9 @@ public final class AppModel {
             connection: snapshot.identity.connectionType,
             supportsProfiles: snapshot.activeProfile != nil,
             supportsLongDistance: snapshot.family.power.supportsLongDistance,
-            supportsSignalStrength: snapshot.signalStrength != nil
+            supportsSignalStrength: snapshot.signalStrength != nil,
+            flashCapabilities: snapshot.flashCapabilities,
+            receiver: snapshot.receiverCapabilities
         )
     }
 
@@ -820,6 +1329,8 @@ public final class AppModel {
             do {
                 let refreshed = try await controller.connect(to: target)
                 selectedStableKey = target.stableKey
+                hardwareLocation = target.locationLabel
+                hardwareTransport = target.transportLabel
                 hasLiveSession = true
                 await reconcile(with: refreshed, cause: .reconnected)
                 await observeDevice()
@@ -853,7 +1364,11 @@ public final class AppModel {
             return
         }
 
-        let planner = WritePlanner(family: refreshed.family, catalog: catalog)
+        let planner = WritePlanner(
+            family: refreshed.family,
+            catalog: catalog,
+            capabilities: controllerCapabilities(for: refreshed)
+        )
         let local = planner.changes(from: base, to: draft)
         guard !local.isEmpty else {
             // Aucun travail local en cours : l'état relu fait foi, comme d'habitude.

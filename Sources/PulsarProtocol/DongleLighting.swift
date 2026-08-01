@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Les neuf octets de couleur sont conservés même lorsque le mode vaut zéro afin de
 /// pouvoir rallumer le récepteur sans remplacer les couleurs choisies auparavant.
-public struct DongleLightingState: Hashable, Sendable {
+public struct DongleLightingState: Hashable, Sendable, Codable {
     public var mode: UInt8
     public var colors: [UInt8]
 
@@ -29,6 +29,7 @@ extension PulsarSession {
         guard let response = await probe(PulsarFrame(command: .get4KDongleRGBValue)) else {
             return nil
         }
+        guard response.payload.count >= 10 else { return nil }
         return DongleLightingState(
             mode: response[byte: 5],
             colors: (6...14).map { response[byte: $0] }
@@ -37,6 +38,9 @@ extension PulsarSession {
 
     /// Applique le mode en préservant les couleurs lues sur le récepteur.
     public func setDongleLighting(_ state: DongleLightingState) async throws {
+        guard state.colors.count == 9 else {
+            throw PulsarSession.SessionError.malformedResponse(.set4KDongleRGB)
+        }
         try await request(
             PulsarFrame(
                 command: .set4KDongleRGB,

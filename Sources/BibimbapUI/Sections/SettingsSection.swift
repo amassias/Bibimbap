@@ -18,6 +18,9 @@ struct SettingsSection: View {
     @State private var isImportingProfile = false
     @State private var lastImportSkipped: [String]?
     @State private var importError: String?
+    @State private var compareLeft = 0
+    @State private var compareRight = 1
+    @State private var copyTarget = 1
 
     private let catalog = DeviceCatalog.embedded
 
@@ -46,6 +49,9 @@ struct SettingsSection: View {
             privacyPanel
 
             if model.snapshot != nil {
+                if model.capabilities?.supportsProfiles == true {
+                    profileManagerPanel
+                }
                 deviceToolsPanel
             }
 
@@ -87,7 +93,7 @@ struct SettingsSection: View {
             isPresented: $isExportingProfile,
             document: ProfileDocument(archive: archive),
             contentType: .json,
-            defaultFilename: "bibimbap-profile"
+            defaultFilename: "bibimbap-profile-\((model.activeProfileIndex ?? 0) + 1)"
         ) { _ in }
         .fileImporter(
             isPresented: $isImportingProfile,
@@ -98,7 +104,12 @@ struct SettingsSection: View {
                 guard url.startAccessingSecurityScopedResource() else { return }
                 defer { url.stopAccessingSecurityScopedResource() }
                 let loaded = try ProfileArchive.decode(from: Data(contentsOf: url))
-                lastImportSkipped = model.importProfile(loaded)
+                guard model.previewProfileImport(loaded) != nil else {
+                    importError = L10n.string("Aucun périphérique compatible n'est connecté.")
+                    lastImportSkipped = nil
+                    return
+                }
+                lastImportSkipped = nil
                 importError = nil
             } catch {
                 importError = (error as? LocalizedError)?.errorDescription
@@ -297,27 +308,259 @@ struct SettingsSection: View {
         }
     }
 
+    private var profileManagerPanel: some View {
+        PremiumPanel {
+            VStack(alignment: .leading, spacing: Theme.Space.large) {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: Theme.Space.tight) {
+                        Text(L10n.string("Hardware profiles"))
+                            .font(.headline)
+                        Text(L10n.format(
+                            "Active: %@ · %@",
+                            model.activeProfileLabel,
+                            model.activeHardwareLocationLabel
+                        ))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Label(
+                        L10n.string("Read back from device"),
+                        systemImage: "checkmark.seal"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.green)
+                }
+
+                HStack(spacing: Theme.Space.medium) {
+                    Button(L10n.string("Importer…")) {
+                        isImportingProfile = true
+                    }
+                    Button(L10n.string("Exporter le profil actif")) {
+                        archive = model.exportProfile()
+                        isExportingProfile = archive != nil
+                    }
+                    .disabled(model.exportProfile() == nil)
+                    Spacer()
+                    Text(L10n.string("The selected slot is included in the archive."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let preview = model.profileImportPreview {
+                    profilePreviewSection(
+                        title: L10n.string("Aperçu de l'import — aucun réglage appliqué"),
+                        subtitle: L10n.format(
+                            "%@ vers %@",
+                            preview.archive.profileLabel,
+                            preview.targetProfile.map { L10n.format("Profil %d", $0 + 1) }
+                                ?? L10n.string("profil actif")
+                        ),
+                        changes: preview.changes,
+                        skipped: preview.skipped
+                    ) {
+                        HStack(spacing: Theme.Space.medium) {
+                            Button(L10n.string("Charger dans les modifications")) {
+                                lastImportSkipped = preview.skipped
+                                model.confirmProfileImportPreview()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(model.draftRecovery != nil)
+                            Button(L10n.string("Annuler")) {
+                                model.dismissProfileImportPreview()
+                            }
+                        }
+                    }
+                }
+
+                Divider()
+
+                Text(L10n.string("Comparer deux profils"))
+                    .font(.callout.weight(.medium))
+                HStack(spacing: Theme.Space.medium) {
+                    profilePicker(selection: $compareLeft)
+                    Image(systemName: "arrow.left.and.right")
+                        .foregroundStyle(.secondary)
+                    profilePicker(selection: $compareRight)
+                    Button(L10n.string("Relire et comparer")) {
+                        Task { await model.compareProfiles(compareLeft, compareRight) }
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!canUseProfileAction || compareLeft == compareRight)
+                }
+
+                if let comparison = model.profileComparison {
+                    comparisonSection(comparison)
+                }
+
+                Divider()
+
+                Text(L10n.string("Copier le profil actif"))
+                    .font(.callout.weight(.medium))
+                HStack(spacing: Theme.Space.medium) {
+                    Text(L10n.format("%@ →", model.activeProfileLabel))
+                        .foregroundStyle(.secondary)
+                    profilePicker(selection: $copyTarget)
+                    Button(L10n.string("Prévisualiser la copie")) {
+                        Task { await model.previewProfileCopy(to: copyTarget) }
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!canUseProfileAction || copyTarget == model.activeProfileIndex)
+                }
+
+                if let preview = model.profileCopyPreview {
+                    profilePreviewSection(
+                        title: L10n.string("Aperçu de la copie — aucun réglage appliqué"),
+                        subtitle: L10n.format(
+                            "%@ → %@ · l'actif sera restauré après l'opération",
+                            preview.source.profileLabel,
+                            preview.target.profileLabel
+                        ),
+                        changes: preview.changes,
+                        skipped: []
+                    ) {
+                        HStack(spacing: Theme.Space.medium) {
+                            Button(L10n.string("Copier et appliquer")) {
+                                Task { await model.applyProfileCopyPreview() }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(!canUseProfileAction)
+                            Button(L10n.string("Annuler")) {
+                                model.discardProfileCopyPreview()
+                            }
+                        }
+                    }
+                }
+
+                if let skipped = lastImportSkipped, !skipped.isEmpty {
+                    Label(
+                        L10n.string("Certains réglages n'ont pas été chargés : ")
+                            + skipped.joined(separator: ", "),
+                        systemImage: "info.circle"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                }
+            }
+        }
+    }
+
+    private var canUseProfileAction: Bool {
+        !model.connection.isBusy
+            && !model.hasPendingChanges
+            && model.draftRecovery == nil
+            && !model.requiresExplicitReread
+    }
+
+    private func profilePicker(selection: Binding<Int>) -> some View {
+        Picker(L10n.string("Profil"), selection: selection) {
+            ForEach(model.supportedProfileIndices, id: \.self) { index in
+                Text(L10n.format("Profil %d", index + 1)).tag(index)
+            }
+        }
+        .labelsHidden()
+        .frame(width: 130)
+    }
+
+    @ViewBuilder
+    private func profilePreviewSection<Actions: View>(
+        title: String,
+        subtitle: String,
+        changes: [PendingChange],
+        skipped: [String],
+        @ViewBuilder actions: () -> Actions
+    ) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.medium) {
+            VStack(alignment: .leading, spacing: Theme.Space.tight) {
+                Text(title)
+                    .font(.callout.weight(.medium))
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if changes.isEmpty {
+                Text(L10n.string("Aucun réglage ne serait modifié."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                changeRows(changes)
+            }
+            if !skipped.isEmpty {
+                VStack(alignment: .leading, spacing: Theme.Space.tight) {
+                    ForEach(skipped, id: \.self) { item in
+                        Label(item, systemImage: "exclamationmark.triangle")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                }
+            }
+            actions()
+        }
+        .padding(Theme.Space.medium)
+        .background(PremiumPalette.elevated.opacity(0.42), in: .rect(cornerRadius: Theme.Radius.control))
+    }
+
+    private func comparisonSection(_ comparison: ProfileComparison) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.medium) {
+            Text(L10n.format(
+                "%@ · %@",
+                comparison.left.profileLabel,
+                comparison.right.profileLabel
+            ))
+            .font(.caption.weight(.medium))
+            if comparison.isIdentical {
+                Label(
+                    L10n.string("Les deux profils sont identiques après relecture."),
+                    systemImage: "checkmark.circle"
+                )
+                .font(.caption)
+                .foregroundStyle(.green)
+            } else {
+                VStack(alignment: .leading, spacing: Theme.Space.tight) {
+                    ForEach(comparison.differences) { difference in
+                        HStack(spacing: Theme.Space.small) {
+                            Text(difference.label)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Text(difference.before)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "arrow.right")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text(difference.after)
+                        }
+                        .font(.caption.monospacedDigit())
+                    }
+                }
+            }
+        }
+        .padding(Theme.Space.medium)
+        .background(PremiumPalette.surface.opacity(0.5), in: .rect(cornerRadius: Theme.Radius.control))
+    }
+
+    private func changeRows(_ changes: [PendingChange]) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Space.tight) {
+            ForEach(changes) { change in
+                HStack(spacing: Theme.Space.small) {
+                    Text(change.label)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(change.before)
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "arrow.right")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text(change.after)
+                }
+                .font(.caption.monospacedDigit())
+            }
+        }
+    }
+
     private var deviceToolsPanel: some View {
         PremiumPanel {
             VStack(alignment: .leading, spacing: 0) {
                 Text(L10n.string("Device tools"))
                     .font(.headline)
                     .padding(.bottom, Theme.Space.medium)
-
-                PremiumRow(
-                    label: L10n.string("Profile backup"),
-                    detail: importSummary
-                ) {
-                    HStack(spacing: Theme.Space.small) {
-                        Button(L10n.string("Import…")) {
-                            isImportingProfile = true
-                        }
-                        Button(L10n.string("Export…")) {
-                            archive = model.exportProfile()
-                            isExportingProfile = archive != nil
-                        }
-                    }
-                }
 
                 PremiumRow(
                     label: L10n.string("Pair wireless receiver"),
@@ -428,16 +671,6 @@ struct SettingsSection: View {
 
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.2.0"
-    }
-
-    private var importSummary: String? {
-        guard let skipped = lastImportSkipped else {
-            return L10n.string("Import or export a versioned JSON backup.")
-        }
-        return skipped.isEmpty
-            ? L10n.string("Backup loaded into pending changes.")
-            : L10n.string("Loaded with unsupported settings skipped: ")
-                + skipped.joined(separator: ", ")
     }
 
     private var pairingHelp: String? {

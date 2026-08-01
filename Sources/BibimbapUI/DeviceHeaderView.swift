@@ -44,9 +44,9 @@ struct DeviceHeaderView: View {
                     )
                 }
 
-                if let profile = snapshot.activeProfile, model.capabilities?.supportsProfiles == true {
-                    profilePicker(current: profile)
-                }
+                    if let profile = snapshot.activeProfile, model.capabilities?.supportsProfiles == true {
+                        profilePicker(current: profile)
+                    }
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 14)
@@ -75,18 +75,30 @@ struct DeviceHeaderView: View {
     }
 
     private func profilePicker(current: Int) -> some View {
-        Picker(L10n.string( "Profil"), selection: Binding(
-            get: { current },
-            set: { profile in Task { await model.selectProfile(profile) } }
-        )) {
-            ForEach(0..<3, id: \.self) { index in
-                Text("Profil \(index + 1)").tag(index)
+        VStack(alignment: .leading, spacing: 2) {
+            Picker(L10n.string( "Profil actif"), selection: Binding(
+                get: { current },
+                set: { profile in
+                    guard model.canChangeProfile else { return }
+                    Task { await model.selectProfile(profile) }
+                }
+            )) {
+                ForEach(model.supportedProfileIndices, id: \.self) { index in
+                    Text("Profil \(index + 1)").tag(index)
+                }
             }
+            .pickerStyle(.menu)
+            .frame(width: 130)
+            .disabled(!model.canChangeProfile)
+            .accessibilityLabel(L10n.string( "Profil actif"))
+
+            Text(model.activeHardwareLocationLabel)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(width: 130, alignment: .leading)
         }
-        .pickerStyle(.menu)
-        .labelsHidden()
-        .frame(width: 130)
-        .accessibilityLabel(L10n.string( "Profil actif"))
     }
 
     @ViewBuilder
@@ -135,6 +147,25 @@ struct PendingChangesBar: View {
         VStack(spacing: 0) {
             if let result = model.lastResult, !model.hasPendingChanges {
                 resultBanner(result)
+            }
+
+            if let progress = model.writeProgress,
+               case .writing = model.connection {
+                HStack(spacing: Theme.Space.medium) {
+                    ProgressView(value: progress.fraction)
+                    Text(L10n.format(
+                        "%d/%d · %@",
+                        progress.completed,
+                        progress.total,
+                        progress.currentOperation ?? L10n.string("Vérification terminée")
+                    ))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, Theme.Space.page)
+                .padding(.top, Theme.Space.small)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(L10n.string("Write progress"))
             }
 
             HStack(spacing: Theme.Space.large) {
@@ -286,7 +317,19 @@ struct PendingChangesBar: View {
                 }
             }
             Spacer()
-            Button("Relire") { Task { await model.reload() } }
+            Button(model.requiresExplicitReread
+                   ? L10n.string("Récupérer l'état matériel")
+                   : model.hasPendingChanges
+                       ? L10n.string("Relire et comparer")
+                       : L10n.string("Relire")) {
+                Task {
+                    if model.requiresExplicitReread {
+                        await model.recoverUncertainHardware()
+                    } else {
+                        await model.rereadAndCompare()
+                    }
+                }
+            }
                 .buttonStyle(.link)
         }
         .padding(.horizontal, 24)

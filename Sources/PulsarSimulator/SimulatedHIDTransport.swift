@@ -10,6 +10,8 @@ import PulsarProtocol
 /// (checksum faux, timeout, écriture partielle, relecture divergente), et donner aux
 /// tests un périphérique déterministe.
 public actor SimulatedHIDTransport: HIDTransport {
+    private static let profileCount = 3
+
     /// Défauts injectables, pour éprouver les chemins d'erreur.
     public struct Faults: Sendable {
         /// Ne répond pas aux commandes listées.
@@ -20,6 +22,11 @@ public actor SimulatedHIDTransport: HIDTransport {
         public var corruptEveryNthResponse: Int?
         /// Accepte l'écriture mais n'applique rien, ce qui fait diverger la relecture.
         public var dropWrites = false
+        /// Accepte les commandes récepteur mais n'en modifie pas l'état.
+        public var dropReceiverWrites = false
+        /// Après ce nombre d'écritures flash réussies, les suivantes sont acquittées sans
+        /// effet. Cela permet de tester une restauration partielle de façon déterministe.
+        public var dropWritesAfterWriteOperations: Int? = nil
         /// Interrompt la connexion après ce nombre de trames reçues.
         public var disconnectAfterFrames: Int?
         /// Latence ajoutée à chaque réponse.
@@ -54,9 +61,13 @@ public actor SimulatedHIDTransport: HIDTransport {
     private let firmwareVersion: String
 
     private var faults: Faults
-    private var flash = FlashImage()
+    /// Une image de flash par profil : le protocole sélectionne l'emplacement avant les
+    /// lectures/écritures, comme sur le matériel. Les tests de copie et de comparaison ne
+    /// doivent donc pas donner l'illusion que trois profils partagent la même mémoire.
+    private var profileImages: [Int: FlashImage] = [:]
     private var isOpen = false
     private var receivedFrames = 0
+    private var writeOperations = 0
     private var responseCount = 0
     private var onlinePolls = 0
     /// Nombre d'ouvertures réussies, pour vérifier qu'aucune session ne fuit après un échec.
@@ -69,6 +80,30 @@ public actor SimulatedHIDTransport: HIDTransport {
         mode: 1,
         colors: [255, 255, 255, 255, 255, 255, 255, 255, 255]
     )
+    private var receiverEffect = ReceiverLightEffect(
+        mode: 3,
+        color: CatalogColor(red: 80, green: 160, blue: 255),
+        speed: 5,
+        brightness: 9,
+        duration: 0
+    )
+    private var receiverDPILightEnabled = true
+    private var receiverButtonMode = 0
+    private var receiverButtonFunctions = (0..<4).map {
+        ReceiverButtonFunction(
+            index: $0,
+            mode: 0,
+            color: CatalogColor(red: 255, green: 255, blue: 255),
+            speed: 5,
+            brightness: 9,
+            duration: 0
+        )
+    }
+
+    private var flash: FlashImage {
+        get { profileImages[activeProfile] ?? FlashImage() }
+        set { profileImages[activeProfile] = newValue }
+    }
 
     private var inputContinuations: [UUID: AsyncStream<HIDInputReport>.Continuation] = [:]
     private var eventContinuations: [UUID: AsyncStream<HIDDeviceEvent>.Continuation] = [:]
@@ -79,13 +114,16 @@ public actor SimulatedHIDTransport: HIDTransport {
         cid: Int = 87,
         mid: Int = 10,
         connectionType: PulsarConnectionType = .wireless4k,
+        dongleType: Int = 1,
         faults: Faults = Faults()
     ) {
         guard let family = catalog.family(cid: cid, mid: mid) else {
             preconditionFailure("CID \(cid) / MID \(mid) absent du catalogue")
         }
         self.family = family
-        self.identity = DeviceIdentity(cid: cid, mid: mid, connectionType: connectionType, dongleType: 1)
+        self.identity = DeviceIdentity(
+            cid: cid, mid: mid, connectionType: connectionType, dongleType: dongleType
+        )
         self.firmwareVersion = family.firmware.deviceVersion ?? "v1.00"
         self.faults = faults
         self.identifier = HIDDeviceIdentifier(
@@ -102,7 +140,10 @@ public actor SimulatedHIDTransport: HIDTransport {
             maxInputReportSize: PulsarFrame.length + 1,
             maxOutputReportSize: PulsarFrame.length + 1
         )
-        self.flash = Self.factoryImage(catalog: catalog, family: family)
+        let factory = Self.factoryImage(catalog: catalog, family: family)
+        self.profileImages = (0..<Self.profileCount).reduce(into: [:]) { result, index in
+            result[index] = factory
+        }
         self.longDistance = family.power.defaultLongDistance
     }
 
@@ -112,6 +153,13 @@ public actor SimulatedHIDTransport: HIDTransport {
 
     /// Image de flash courante, pour qu'un test vérifie ce qui a réellement été écrit.
     public func flashImage() -> FlashImage { flash }
+
+    /// Image d'un emplacement donné, sans changer le profil actif. Réservé aux tests :
+    /// le modèle applicatif, lui, passe toujours par la sélection et la relecture du
+    /// protocole avant de consulter un profil matériel.
+    public func flashImage(forProfile profile: Int) -> FlashImage {
+        profileImages[profile] ?? FlashImage()
+    }
 
     // MARK: Réglages usine
 
@@ -133,10 +181,14 @@ public actor SimulatedHIDTransport: HIDTransport {
         scalar(family.sensor.supportsPerformanceMode ? 1 : 0, at: FlashMap.performanceState)
         scalar(UInt8(family.power.defaultSleepTimeCode), at: FlashMap.performance)
         scalar(UInt8(family.sensor.defaultSensorMode), at: FlashMap.sensorMode)
+        scalar(0, at: FlashMap.fanMode)
         scalar(0, at: FlashMap.angleTune)
         scalar(0, at: FlashMap.angleTuneState)
         scalar(UInt8(family.power.defaultPowerSaveBattery), at: FlashMap.powerSaveBattery)
         scalar(0, at: FlashMap.dpiEffectMode)
+        scalar(UInt8(DPIEffectCodec.defaultBrightness), at: FlashMap.dpiEffectBrightness)
+        scalar(UInt8(DPIEffectCodec.defaultSpeed), at: FlashMap.dpiEffectSpeed)
+        scalar(1, at: FlashMap.dpiEffectState)
 
         if let codec = DPICodec(family: family, catalog: catalog) {
             for (index, stage) in family.dpi.stages.enumerated() {
@@ -187,6 +239,7 @@ public actor SimulatedHIDTransport: HIDTransport {
         isOpen = true
         openCount += 1
         receivedFrames = 0
+        writeOperations = 0
         onlinePolls = 0
     }
 
@@ -316,7 +369,11 @@ public actor SimulatedHIDTransport: HIDTransport {
             return PulsarFrame(command: .getCurrentConfig, payload: [UInt8(activeProfile)])
 
         case .setCurrentConfig:
-            activeProfile = Int(frame[byte: 5])
+            let requested = Int(frame[byte: 5])
+            guard (0..<Self.profileCount).contains(requested) else {
+                return PulsarFrame(command: .setCurrentConfig, status: 1)
+            }
+            activeProfile = requested
             return PulsarFrame(command: .setCurrentConfig)
 
         case .getLongRangeMode:
@@ -342,11 +399,138 @@ public actor SimulatedHIDTransport: HIDTransport {
             guard !identity.connectionType.isWired else {
                 return PulsarFrame(command: .set4KDongleRGB, status: 1)
             }
-            dongleLighting = DongleLightingState(
-                mode: frame[byte: 5],
-                colors: (6...14).map { frame[byte: $0] }
-            )
+            if !faults.dropReceiverWrites {
+                dongleLighting = DongleLightingState(
+                    mode: frame[byte: 5],
+                    colors: (6...14).map { frame[byte: $0] }
+                )
+            }
             return PulsarFrame(command: .set4KDongleRGB)
+
+        case .getPulsarDongleLightParam:
+            guard !identity.connectionType.isWired, identity.dongleType > 0 else {
+                return PulsarFrame(command: .getPulsarDongleLightParam, status: 1)
+            }
+            return PulsarFrame(command: .getPulsarDongleLightParam, payload: receiverEffect.payload)
+
+        case .setPulsarDongleLightParam:
+            guard !identity.connectionType.isWired, identity.dongleType > 0,
+                  frame.payload.count >= 7 else {
+                return PulsarFrame(command: .setPulsarDongleLightParam, status: 1)
+            }
+            if !faults.dropReceiverWrites {
+                receiverEffect = ReceiverLightEffect(
+                    mode: Int(frame[byte: 5]),
+                    color: CatalogColor(
+                        red: Int(frame[byte: 6]),
+                        green: Int(frame[byte: 7]),
+                        blue: Int(frame[byte: 8])
+                    ),
+                    speed: Int(frame[byte: 9]),
+                    brightness: Int(frame[byte: 10]),
+                    duration: Int(frame[byte: 11])
+                )
+            }
+            return PulsarFrame(command: .setPulsarDongleLightParam)
+
+        case .getPulsarDongleDPILightParam:
+            guard !identity.connectionType.isWired, identity.dongleType > 0 else {
+                return PulsarFrame(command: .getPulsarDongleDPILightParam, status: 1)
+            }
+            return PulsarFrame(
+                command: .getPulsarDongleDPILightParam,
+                payload: [receiverDPILightEnabled ? 1 : 0]
+            )
+
+        case .setPulsarDongleDPILightParam:
+            guard !identity.connectionType.isWired, identity.dongleType > 0,
+                  !frame.payload.isEmpty else {
+                return PulsarFrame(command: .setPulsarDongleDPILightParam, status: 1)
+            }
+            if !faults.dropReceiverWrites {
+                receiverDPILightEnabled = frame[byte: 5] == 1
+            }
+            return PulsarFrame(command: .setPulsarDongleDPILightParam)
+
+        case .getPulsarDongleKeyFunction:
+            guard !identity.connectionType.isWired, [2, 4].contains(identity.dongleType) else {
+                return PulsarFrame(command: .getPulsarDongleKeyFunction, status: 1)
+            }
+            return PulsarFrame(command: .getPulsarDongleKeyFunction, payload: [UInt8(receiverButtonMode)])
+
+        case .setPulsarDongleKeyFunction:
+            guard !identity.connectionType.isWired, [2, 4].contains(identity.dongleType),
+                  !frame.payload.isEmpty else {
+                return PulsarFrame(command: .setPulsarDongleKeyFunction, status: 1)
+            }
+            if !faults.dropReceiverWrites {
+                receiverButtonMode = Int(frame[byte: 5])
+            }
+            return PulsarFrame(command: .setPulsarDongleKeyFunction)
+
+        case .getPulsarDongleOButtonCurrentMode:
+            guard !identity.connectionType.isWired, identity.dongleType == 1 else {
+                return PulsarFrame(command: .getPulsarDongleOButtonCurrentMode, status: 1)
+            }
+            return PulsarFrame(
+                command: .getPulsarDongleOButtonCurrentMode,
+                payload: [UInt8(receiverButtonMode)]
+            )
+
+        case .setPulsarDongleOButtonCurrentMode:
+            guard !identity.connectionType.isWired, identity.dongleType == 1,
+                  !frame.payload.isEmpty else {
+                return PulsarFrame(command: .setPulsarDongleOButtonCurrentMode, status: 1)
+            }
+            if !faults.dropReceiverWrites {
+                receiverButtonMode = Int(frame[byte: 5])
+            }
+            return PulsarFrame(command: .setPulsarDongleOButtonCurrentMode)
+
+        case .getPulsarDongleOButtonFunction:
+            guard !identity.connectionType.isWired, identity.dongleType == 1 else {
+                return PulsarFrame(command: .getPulsarDongleOButtonFunction, status: 1)
+            }
+            let index = Int(frame[byte: 5])
+            guard let function = receiverButtonFunctions.first(where: { $0.index == index }) else {
+                return PulsarFrame(command: .getPulsarDongleOButtonFunction, status: 1)
+            }
+            return PulsarFrame(command: .getPulsarDongleOButtonFunction, payload: [
+                UInt8(clamping: function.index),
+                UInt8(clamping: function.mode),
+                UInt8(clamping: function.color.red),
+                UInt8(clamping: function.color.green),
+                UInt8(clamping: function.color.blue),
+                UInt8(clamping: function.speed),
+                UInt8(clamping: function.brightness),
+                UInt8(clamping: function.duration),
+            ])
+
+        case .setPulsarDongleOButtonFunction:
+            guard !identity.connectionType.isWired, identity.dongleType == 1,
+                  frame.payload.count >= 8 else {
+                return PulsarFrame(command: .setPulsarDongleOButtonFunction, status: 1)
+            }
+            let function = ReceiverButtonFunction(
+                index: Int(frame[byte: 5]),
+                mode: Int(frame[byte: 6]),
+                color: CatalogColor(
+                    red: Int(frame[byte: 7]),
+                    green: Int(frame[byte: 8]),
+                    blue: Int(frame[byte: 9])
+                ),
+                speed: Int(frame[byte: 10]),
+                brightness: Int(frame[byte: 11]),
+                duration: Int(frame[byte: 12])
+            )
+            guard receiverButtonFunctions.contains(where: { $0.index == function.index }) else {
+                return PulsarFrame(command: .setPulsarDongleOButtonFunction, status: 1)
+            }
+            if !faults.dropReceiverWrites,
+               let position = receiverButtonFunctions.firstIndex(where: { $0.index == function.index }) {
+                receiverButtonFunctions[position] = function
+            }
+            return PulsarFrame(command: .setPulsarDongleOButtonFunction)
 
         case .getRSSIValue:
             guard !identity.connectionType.isWired else {
@@ -365,7 +549,10 @@ public actor SimulatedHIDTransport: HIDTransport {
             )
 
         case .writeFlashData:
-            if !faults.dropWrites {
+            let shouldDrop = faults.dropWrites
+                || faults.dropWritesAfterWriteOperations.map { writeOperations >= $0 } == true
+            writeOperations += 1
+            if !shouldDrop {
                 flash.write(frame.payload, at: frame.address)
             }
             return PulsarFrame(

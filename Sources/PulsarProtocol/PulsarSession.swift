@@ -1,4 +1,5 @@
 import Foundation
+import BibimbapLocalization
 import PulsarHID
 
 /// Dialogue requête/réponse avec un périphérique Pulsar.
@@ -26,6 +27,8 @@ public actor PulsarSession {
         case mismatchedResponse(expected: PulsarCommand, received: PulsarCommand)
         case firmwareOperationBlocked(PulsarCommand)
         case readbackMismatch(address: UInt16)
+        case malformedResponse(PulsarCommand)
+        case commandReadbackMismatch(PulsarCommand)
     }
 
     private let transport: any HIDTransport
@@ -216,6 +219,29 @@ public actor PulsarSession {
         waiter = nil
         timeoutTask = nil
         pending.continuation.resume(returning: nil)
+    }
+}
+
+extension PulsarSession.SessionError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .notStarted:
+            L10n.string("La session matérielle n'est pas démarrée.")
+        case .timedOut:
+            L10n.string("Le périphérique n'a pas répondu à temps.")
+        case .unsupported:
+            L10n.string("Cette capacité n'est pas prise en charge par ce périphérique.")
+        case .mismatchedResponse:
+            L10n.string("Le périphérique a répondu avec une opération inattendue.")
+        case .firmwareOperationBlocked:
+            L10n.string("Cette opération firmware est bloquée par le modèle de sécurité.")
+        case .readbackMismatch:
+            L10n.string("La relecture indépendante n'a pas confirmé la valeur écrite.")
+        case .malformedResponse:
+            L10n.string("La réponse du périphérique est mal formée.")
+        case .commandReadbackMismatch:
+            L10n.string("La relecture d'une commande n'a pas confirmé l'état écrit.")
+        }
     }
 }
 

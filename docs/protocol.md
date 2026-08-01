@@ -7,8 +7,11 @@ HID de la X2 CrazyLight branchée en USB.
 Aucun code du site n'est repris. Ce document décrit le format observé ; l'implémentation Swift
 (`PulsarProtocol`) est écrite à partir de ces notes et validée par les fixtures de `Tests/`.
 
-**État de validation.** Le format ci-dessous a été confronté au matériel le 2026-07-26 sur une
-X2 CrazyLight (CID 87, MID 10, firmware v3.05), dans deux configurations :
+**État de validation.** Le format ci-dessous contient un relevé matériel historique daté du
+2026-07-26 sur une X2 CrazyLight (CID 87, MID 10, firmware v3.05), dans deux configurations.
+Ce relevé est conservé comme preuve documentaire; il n'a pas été rejoué par la CI ni par le
+travail de distribution BIB-017/BIB-018. Les niveaux de preuve et les limites sont détaillés
+dans [`docs/validation-matrix.md`](validation-matrix.md).
 
 - **USB filaire**, en lecture seule (`swift run pulsar-probe`). Handshake, version, batterie,
   profil actif, mode longue portée, lecture de `0x0000..0x0100`, checksums scalaires,
@@ -31,7 +34,7 @@ de bloc scalaire et de bloc composé, l'empaquetage DPI (bits hauts et code d'ex
 découpage d'une écriture sur plusieurs trames, l'acceptation d'une fonction de bouton
 réécrite, la prise de verrou, le cycle écriture-relecture et la restauration.
 
-Reste non validé sur matériel : le **polling au-delà de 1 kHz**. C'est le dernier codec
+Reste non validé sur matériel : le **polling au-delà de 1 kHz sans fil**. C'est le dernier codec
 dont la formule n'a jamais été confrontée au firmware. L'essai existe
 (`swift run pulsar-writetest polling`) mais n'est pas lancé par défaut : changer la
 cadence de rapport peut faire renégocier la liaison sans fil, et une coupure entre
@@ -313,8 +316,10 @@ trente-neuf trames au lieu de six.
 Bloc de 32 octets à `ShortcutKey + 32 × emplacement`. Premier octet = `2 × nombre de touches`.
 Puis, pour chaque touche dans l'ordre, `[0x80 | type, valeur & 0xFF, valeur >> 8]` (appui),
 suivi des mêmes touches en ordre inverse avec `[0x40 | type, …]` (relâchement).
-Une valeur de premier octet supérieure à 2 indique un raccourci multi-touches à relire
-au-delà des 10 premiers octets.
+Le dernier octet utilisé complète la somme à `0x55` ; le firmware place d'abord un zéro
+à cet emplacement avant de calculer ce checksum. Cinq touches au maximum tiennent dans
+les 32 octets. Une valeur de premier octet supérieure à 2 indique un raccourci
+multi-touches à relire au-delà des 10 premiers octets.
 
 ## 5. Notifications `StatusChanged`
 

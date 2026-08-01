@@ -152,7 +152,7 @@ public struct MenuBarMenu: View {
 
     private func profileMenu(active: Int) -> some View {
         Menu(L10n.string( "Profil")) {
-            ForEach(0..<3, id: \.self) { index in
+            ForEach(model.supportedProfileIndices, id: \.self) { index in
                 Toggle(
                     L10n.format("Profile %d", index + 1),
                     isOn: binding(isOn: index == active) {
@@ -161,7 +161,7 @@ public struct MenuBarMenu: View {
                 )
             }
         }
-        .disabled(model.connection.isBusy)
+        .disabled(!model.canChangeProfile)
     }
 
     /// Une bascule de menu se comporte ici comme un choix dans une liste : cocher une
@@ -196,9 +196,21 @@ public struct MenuBarMenu: View {
 
         Button(model.snapshot == nil
             ? L10n.string( "Rechercher une souris")
-            : L10n.string( "Relire le périphérique")
+            : model.requiresExplicitReread
+                ? L10n.string("Récupérer l'état matériel")
+                : model.hasPendingChanges
+                    ? L10n.string("Relire et comparer")
+                    : L10n.string( "Relire le périphérique")
         ) {
-            Task { model.snapshot == nil ? await model.retryConnection() : await model.reload() }
+            Task {
+                if model.snapshot == nil {
+                    await model.retryConnection()
+                } else if model.requiresExplicitReread {
+                    await model.recoverUncertainHardware()
+                } else {
+                    await model.rereadAndCompare()
+                }
+            }
         }
         .disabled(model.connection.isBusy)
     }

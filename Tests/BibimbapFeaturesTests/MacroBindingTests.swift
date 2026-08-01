@@ -124,4 +124,34 @@ struct MacroBindingTests {
         #expect(snapshot.settings.macros.isEmpty)
         await controller.disconnect()
     }
+
+    @Test("Un raccourci clavier écrit son bloc séparé puis se relit")
+    func writeThenReadShortcut() async throws {
+        let (_, controller, snapshot) = try await connected()
+
+        var draft = snapshot.settings
+        let buttonIndex = 0
+        draft.buttons[buttonIndex].function = .keyboardShortcut
+        draft.buttons[buttonIndex].parameter = 0
+        draft.buttons[buttonIndex].shortcut = PulsarShortcut(keys: [
+            .init(kind: .modifier, value: 8),
+            .init(kind: .key, value: 4),
+        ])
+
+        let plan = WritePlanner(family: snapshot.family, catalog: .embedded)
+            .plan(from: snapshot.settings, to: draft)
+        let ids = plan.operations.map(\.id)
+        #expect(ids.contains("shortcut.0"))
+        #expect(ids.contains("button.0"))
+        #expect(ids.firstIndex(of: "shortcut.0")! < ids.firstIndex(of: "button.0")!)
+
+        let result = try await controller.apply(plan)
+        #expect(result.outcome == .succeeded)
+
+        let refreshed = try await controller.readSnapshot()
+        #expect(refreshed.settings.buttons[buttonIndex].function == .keyboardShortcut)
+        #expect(refreshed.settings.buttons[buttonIndex].shortcut
+            == draft.buttons[buttonIndex].shortcut)
+        await controller.disconnect()
+    }
 }

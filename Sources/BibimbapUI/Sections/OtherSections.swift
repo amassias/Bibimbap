@@ -1,5 +1,6 @@
 import BibimbapFeatures
 import BibimbapLocalization
+import PulsarCatalog
 import PulsarProtocol
 import SwiftUI
 
@@ -234,27 +235,47 @@ struct CustomizeSection: View {
     @ViewBuilder
     private func assignmentRow(_ button: ButtonPresentation) -> some View {
         if let position = model.draftButtonPosition(firmwareIndex: button.firmwareIndex) {
+            let assignment = Binding<DeviceSettings.ButtonAssignment>(
+                get: { model.draft.buttons[position] },
+                set: { model.draft.buttons[position] = $0 }
+            )
             PremiumRow(
                 label: button.label,
                 detail: button.numberLabel,
                 showsDivider: button.firmwareIndex != buttons.last?.firmwareIndex
             ) {
-                Picker("", selection: Binding(
-                    get: { model.draft.buttons[position].function },
-                    set: { newFunction in
-                        model.draft.buttons[position].function = newFunction
-                        model.draft.buttons[position].parameter = defaultParameter(
-                            for: newFunction,
-                            firmwareIndex: button.firmwareIndex
-                        )
+                VStack(alignment: .trailing, spacing: Theme.Space.small) {
+                    Picker("", selection: Binding(
+                        get: { assignment.wrappedValue.function },
+                        set: { newFunction in
+                            var updated = assignment.wrappedValue
+                            updated.function = newFunction
+                            updated.parameter = defaultParameter(
+                                for: newFunction,
+                                firmwareIndex: button.firmwareIndex
+                            )
+                            if newFunction == .keyboardShortcut,
+                               updated.shortcut == nil {
+                                updated.shortcut = PulsarShortcut(keys: [])
+                            }
+                            assignment.wrappedValue = updated
+                            if newFunction == .macro {
+                                ensureMacro(
+                                    slot: (updated.parameter >> 8) & 0xFF,
+                                    repeatCount: updated.parameter & 0xFF
+                                )
+                            }
+                        }
+                    )) {
+                        ForEach(assignableFunctions, id: \.self) { function in
+                            Text(label(for: function)).tag(function)
+                        }
                     }
-                )) {
-                    ForEach(assignableFunctions, id: \.self) { function in
-                        Text(label(for: function)).tag(function)
-                    }
+                    .labelsHidden()
+                    .frame(width: 190)
+
+                    parameterEditor(for: assignment)
                 }
-                .labelsHidden()
-                .frame(width: 190)
             }
             .padding(.horizontal, Theme.Space.small)
             .background(
@@ -269,17 +290,241 @@ struct CustomizeSection: View {
         }
     }
 
-    /// Le paramètre par défaut d'une fonction, exprimé dans les termes du firmware :
-    /// l'emplacement de macro et le masque de bouton HID suivent l'index firmware, pas
-    /// le numéro affiché.
+    @ViewBuilder
+    private func parameterEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        switch ButtonParameterCodec.decode(
+            function: button.wrappedValue.function,
+            parameter: button.wrappedValue.parameter
+        ) {
+        case .disabled:
+            Text(L10n.string("No parameter"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        case .mouseButton:
+            mouseButtonEditor(for: button)
+        case .dpiSwitch:
+            dpiSwitchEditor(for: button)
+        case .horizontalScroll:
+            scrollEditor(for: button)
+        case .verticalScroll:
+            scrollEditor(for: button)
+        case .rapidFire:
+            rapidFireEditor(for: button)
+        case .keyboardShortcut:
+            ShortcutContextEditor(shortcut: shortcutBinding(for: button))
+        case .macro:
+            macroEditor(for: button)
+        case .reportRateSwitch:
+            fixedFunctionEditor(label: L10n.string("Cycle polling rate"))
+        case .lighting:
+            fixedFunctionEditor(label: L10n.string("Cycle lighting"))
+        case .profileSwitch:
+            fixedFunctionEditor(label: L10n.string("Cycle profile"))
+        case .dpiLock:
+            dpiLockEditor(for: button)
+        case .unknown:
+            VStack(alignment: .trailing, spacing: Theme.Space.hairline) {
+                Text(L10n.string("Unsupported parameter"))
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                Button(L10n.string("Reset to default")) {
+                    button.wrappedValue.parameter = defaultParameter(
+                        for: button.wrappedValue.function,
+                        firmwareIndex: button.wrappedValue.index
+                    )
+                }
+                .buttonStyle(.link)
+                .font(.caption)
+            }
+        }
+    }
+
+    private func mouseButtonEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        Picker(L10n.string("Button"), selection: Binding(
+            get: { button.wrappedValue.parameter >> 8 },
+            set: { button.wrappedValue.parameter = $0 << 8 }
+        )) {
+            ForEach(PulsarMacro.MouseButtonMask.allCases, id: \.self) { mask in
+                Text(mask.label).tag(mask.rawValue)
+            }
+        }
+        .labelsHidden()
+        .frame(width: 190)
+    }
+
+    private func dpiSwitchEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        Picker(L10n.string("DPI action"), selection: Binding(
+            get: { button.wrappedValue.parameter },
+            set: { button.wrappedValue.parameter = $0 }
+        )) {
+            ForEach(PulsarButtonParameter.DPISwitchMode.allCases, id: \.self) { mode in
+                Text(mode.label).tag(mode.rawValue)
+            }
+        }
+        .labelsHidden()
+        .frame(width: 190)
+    }
+
+    private func scrollEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        Picker(L10n.string("Direction"), selection: Binding(
+            get: { button.wrappedValue.parameter },
+            set: { button.wrappedValue.parameter = $0 }
+        )) {
+            ForEach(PulsarButtonParameter.ScrollDirection.allCases, id: \.self) { direction in
+                Text(direction.label).tag(direction.rawValue)
+            }
+        }
+        .labelsHidden()
+        .frame(width: 190)
+    }
+
+    private func rapidFireEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        let fallbackTimes = 0
+        let fallbackInterval = 50
+        return VStack(alignment: .trailing, spacing: Theme.Space.hairline) {
+            Stepper(value: Binding(
+                get: {
+                    if case .rapidFire(let times, _) = ButtonParameterCodec.decode(
+                        function: .rapidFire,
+                        parameter: button.wrappedValue.parameter
+                    ) { return times }
+                    return fallbackTimes
+                },
+                set: { newValue in
+                    let interval = min(255, max(10, button.wrappedValue.parameter >> 8))
+                    button.wrappedValue.parameter = interval << 8 | newValue
+                }
+            ), in: 0...3) {
+                Text(L10n.string("Repeat count"))
+                    .font(.caption)
+            }
+            Stepper(value: Binding(
+                get: {
+                    if case .rapidFire(_, let interval) = ButtonParameterCodec.decode(
+                        function: .rapidFire,
+                        parameter: button.wrappedValue.parameter
+                    ) { return interval }
+                    return fallbackInterval
+                },
+                set: { newValue in
+                    let times = min(3, max(0, button.wrappedValue.parameter & 0xFF))
+                    button.wrappedValue.parameter = newValue << 8 | times
+                }
+            ), in: 10...255) {
+                Text(L10n.string("Interval (ms)"))
+                    .font(.caption)
+            }
+        }
+    }
+
+    private func dpiLockEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        let minimum = model.capabilities?.minimumDPI ?? 50
+        let maximum = model.capabilities?.maximumDPI ?? 32_000
+        let step = max(1, model.snapshot?.family.dpi.step ?? 10)
+        return Stepper(value: Binding(
+            get: { button.wrappedValue.parameter },
+            set: { value in
+                guard let family = model.snapshot?.family,
+                      let codec = DPICodec(family: family, catalog: .embedded),
+                      let snapped = try? codec.snap(dpi: value)
+                else {
+                    button.wrappedValue.parameter = value
+                    return
+                }
+                button.wrappedValue.parameter = snapped
+            }
+        ), in: minimum...maximum, step: step) {
+            Text(L10n.format("%d DPI", button.wrappedValue.parameter))
+                .font(.caption)
+                .monospacedDigit()
+        }
+    }
+
+    @ViewBuilder
+    private func macroEditor(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> some View {
+        let slot = (button.wrappedValue.parameter >> 8) & 0xFF
+        if let index = model.draft.macros.firstIndex(where: { $0.slot == slot }) {
+            Stepper(value: $model.draft.macros[index].repeatCount, in: 1...255) {
+                Text(L10n.format("Repeat %d×", model.draft.macros[index].repeatCount))
+                    .font(.caption)
+                    .monospacedDigit()
+            }
+            Button(L10n.string("Open macro editor")) {
+                model.section = .macros
+            }
+            .buttonStyle(.link)
+            .font(.caption)
+        } else {
+            VStack(alignment: .trailing, spacing: Theme.Space.hairline) {
+                Text(L10n.string("No macro in this slot"))
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                Button(L10n.string("Create macro")) {
+                    ensureMacro(
+                        slot: slot,
+                        repeatCount: button.wrappedValue.parameter & 0xFF
+                    )
+                }
+                .buttonStyle(.link)
+                .font(.caption)
+            }
+        }
+    }
+
+    private func fixedFunctionEditor(label: String) -> some View {
+        Text(label)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+
+    private func shortcutBinding(
+        for button: Binding<DeviceSettings.ButtonAssignment>
+    ) -> Binding<PulsarShortcut> {
+        Binding(
+            get: { button.wrappedValue.shortcut ?? PulsarShortcut(keys: []) },
+            set: { button.wrappedValue.shortcut = $0 }
+        )
+    }
+
     private func defaultParameter(for function: PulsarKeyFunction, firmwareIndex: Int) -> Int {
         switch function {
         case .macro: (firmwareIndex << 8) | 1
         case .mouseButton: 1 << (firmwareIndex + 8)
-        case .dpiLock: 800
+        case .dpiSwitch: PulsarButtonParameter.DPISwitchMode.cycle.rawValue
+        case .horizontalScroll, .verticalScroll: PulsarButtonParameter.ScrollDirection.positive.rawValue
+        case .rapidFire: 50 << 8
+        case .dpiLock: min(max(model.capabilities?.minimumDPI ?? 800, 800), model.capabilities?.maximumDPI ?? 800)
         case .disabled: 0
-        default: 0x0100
+        case .keyboardShortcut, .reportRateSwitch, .lighting, .profileSwitch: 0
         }
+    }
+
+    private func ensureMacro(slot: Int, repeatCount: Int) {
+        guard !model.draft.macros.contains(where: { $0.slot == slot }) else { return }
+        model.draft.macros.append(
+            DeviceSettings.MacroBinding(
+                slot: slot,
+                macro: PulsarMacro(
+                    name: L10n.format("Macro %d", slot + 1),
+                    steps: []
+                ),
+                repeatCount: max(1, min(255, repeatCount))
+            )
+        )
     }
 
     private var assignableFunctions: [PulsarKeyFunction] {
@@ -303,6 +548,93 @@ struct CustomizeSection: View {
         case .dpiLock: L10n.string("DPI Lock")
         case .verticalScroll: L10n.string("Vertical scroll")
         }
+    }
+}
+
+struct ShortcutContextEditor: View {
+    @Binding var shortcut: PulsarShortcut
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: Theme.Space.hairline) {
+            if shortcut.keys.isEmpty {
+                Text(L10n.string("No key selected"))
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            } else {
+                ForEach(Array(shortcut.keys.indices), id: \.self) { index in
+                    HStack(spacing: Theme.Space.tight) {
+                        inputPicker(at: index)
+                        Button {
+                            shortcut.keys.remove(at: index)
+                        } label: {
+                            Image(systemName: "minus.circle")
+                        }
+                        .buttonStyle(.borderless)
+                        .help(L10n.string("Remove input"))
+                    }
+                }
+            }
+
+            Menu {
+                Menu(L10n.string("Keyboard")) {
+                    ForEach(PulsarInputCatalog.keyboardOptions) { option in
+                        Button(option.label) { append(option) }
+                    }
+                }
+                Menu(L10n.string("Media")) {
+                    ForEach(PulsarInputCatalog.mediaOptions) { option in
+                        Button(option.label) { append(option) }
+                    }
+                }
+            } label: {
+                Label(L10n.string("Add input"), systemImage: "plus")
+                    .font(.caption)
+            }
+            .menuStyle(.borderlessButton)
+            .disabled(shortcut.keys.count >= ShortcutCodec.maxKeys)
+
+            Text(shortcut.summary)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .frame(width: 250, alignment: .trailing)
+    }
+
+    private func inputPicker(at index: Int) -> some View {
+        let unavailableID = "unavailable-\(index)"
+        return Picker("", selection: Binding(
+            get: {
+                guard shortcut.keys.indices.contains(index),
+                      let option = PulsarInputCatalog.option(for: shortcut.keys[index])
+                else { return unavailableID }
+                return option.id
+            },
+            set: { id in
+                guard let option = PulsarInputCatalog.allOptions.first(where: { $0.id == id }),
+                      shortcut.keys.indices.contains(index)
+                else { return }
+                shortcut.keys[index] = PulsarShortcut.Key(
+                    kind: option.kind,
+                    value: option.value
+                )
+            }
+        )) {
+            if shortcut.keys.indices.contains(index) {
+                let key = shortcut.keys[index]
+                Text(PulsarInputCatalog.label(for: key)).tag(unavailableID)
+            }
+            ForEach(PulsarInputCatalog.allOptions) { option in
+                Text(option.label).tag(option.id)
+            }
+        }
+        .labelsHidden()
+        .frame(width: 205)
+    }
+
+    private func append(_ option: PulsarInputOption) {
+        guard shortcut.keys.count < ShortcutCodec.maxKeys else { return }
+        shortcut.keys.append(PulsarShortcut.Key(kind: option.kind, value: option.value))
     }
 }
 
@@ -387,17 +719,32 @@ struct PowerSection: View {
                         .padding(.bottom, Theme.Space.large)
                 }
 
-                PremiumRow(
-                    label: L10n.string("Sleep after"),
-                    detail: L10n.string("The selected delay is written to both firmware sleep timers.")
-                ) {
-                    Picker("", selection: $model.draft.sleepTimeCode) {
-                        ForEach(DeviceSettings.supportedSleepTimeCodes, id: \.self) { code in
-                            Text(DeviceSettings.sleepTimeLabel(for: code)).tag(code)
+                if capabilities.supportsPerformanceLevel {
+                    PremiumRow(
+                        label: L10n.string("Performance level"),
+                        detail: L10n.string("The selected level is written to both firmware sleep timers.")
+                    ) {
+                        Picker("", selection: performanceLevelBinding) {
+                            ForEach(capabilities.performanceLevelOptions, id: \.self) { code in
+                                Text(DeviceSettings.sleepTimeLabel(for: code)).tag(code)
+                            }
                         }
+                        .labelsHidden()
+                        .frame(width: 120)
                     }
-                    .labelsHidden()
-                    .frame(width: 120)
+                } else {
+                    PremiumRow(
+                        label: L10n.string("Sleep after"),
+                        detail: L10n.string("The selected delay is written to the firmware sleep timer.")
+                    ) {
+                        Picker("", selection: $model.draft.sleepTimeCode) {
+                            ForEach(DeviceSettings.supportedSleepTimeCodes, id: \.self) { code in
+                                Text(DeviceSettings.sleepTimeLabel(for: code)).tag(code)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 120)
+                    }
                 }
 
                 PremiumRow(
@@ -460,32 +807,23 @@ struct PowerSection: View {
                         }
                         PremiumRow(
                             label: L10n.string("Firmware"),
-                            showsDivider: snapshot.dongleLighting != nil
+                            showsDivider: receiverControls(for: capabilities).isEmpty
                         ) {
                             Text(snapshot.dongleVersion ?? snapshot.firmwareVersion)
                                 .monospacedDigit()
                         }
-                        if let lighting = snapshot.dongleLighting {
-                            PremiumRow(
-                                label: L10n.string("Receiver lighting"),
-                                detail: L10n.string("Turns off the receiver LEDs without changing their colors."),
-                                showsDivider: false
-                            ) {
-                                Toggle(
-                                    "",
-                                    isOn: Binding(
-                                        get: { lighting.isEnabled },
-                                        set: { enabled in
-                                            Task { await model.setDongleLightEnabled(enabled) }
-                                        }
-                                    )
-                                )
-                                .labelsHidden()
-                                .disabled(model.connection.isBusy)
-                                .accessibilityLabel(L10n.string("Receiver lighting"))
-                            }
-                        }
                     }
+                }
+
+                if model.draft.receiver != nil, !receiverControls(for: capabilities).isEmpty {
+                    ReceiverSettingsRows(
+                        settings: Binding(
+                            get: { model.draft.receiver ?? ReceiverSettings() },
+                            set: { model.draft.receiver = $0 }
+                        ),
+                        capabilities: capabilities.receiver
+                    )
+                    .padding(.top, Theme.Space.small)
                 }
 
                 Divider()
@@ -506,6 +844,16 @@ struct PowerSection: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private var performanceLevelBinding: Binding<Int> {
+        Binding(
+            get: { model.draft.performanceLevel },
+            set: { value in
+                model.draft.performanceLevel = value
+                model.draft.sleepTimeCode = value
+            }
+        )
     }
 
     private func powerBehavior(
@@ -612,4 +960,335 @@ struct PowerSection: View {
         }
     }
 
+}
+
+/// Éditeur des commandes récepteur dont les getters ont effectivement répondu.
+/// Toutes les mutations restent dans `DeviceSettings` : la barre Apply du modèle
+/// construit ensuite le plan, écrit, puis relit chaque commande.
+private struct ReceiverSettingsRows: View {
+    @Binding var settings: ReceiverSettings
+    let capabilities: ReceiverCapabilities
+
+    private let rgbModes = [0, 1, 2, 3]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if capabilities.supportsRGBLighting, settings.rgbLighting != nil {
+                Text(L10n.string("Receiver lighting"))
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.bottom, Theme.Space.tight)
+
+                PremiumRow(
+                    label: L10n.string("Enabled"),
+                    detail: L10n.string("Turns off the receiver LEDs without changing their colors.")
+                ) {
+                    Toggle("", isOn: rgbEnabledBinding)
+                        .labelsHidden()
+                }
+
+                PremiumRow(label: L10n.string("Mode")) {
+                    Picker("", selection: rgbModeBinding) {
+                        ForEach(rgbModes, id: \.self) { mode in
+                            Text(rgbModeLabel(mode)).tag(mode)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 130)
+                }
+
+                ForEach(0..<3, id: \.self) { colorIndex in
+                    PremiumRow(
+                        label: L10n.format("Color %d", colorIndex + 1),
+                        showsDivider: colorIndex != 2
+                    ) {
+                        ColorPicker(
+                            "",
+                            selection: rgbColorBinding(colorIndex * 3),
+                            supportsOpacity: false
+                        )
+                        .labelsHidden()
+                    }
+                }
+            }
+
+            if capabilities.supportsEffect, settings.effect != nil {
+                Text(L10n.string("Receiver effect"))
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.top, Theme.Space.medium)
+                    .padding(.bottom, Theme.Space.tight)
+
+                PremiumRow(label: L10n.string("Effect")) {
+                    Picker("", selection: effectIntBinding(\.mode)) {
+                        ForEach(ReceiverLightEffect.supportedModes, id: \.self) { mode in
+                            Text(effectModeLabel(mode)).tag(mode)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 130)
+                }
+
+                PremiumRow(label: L10n.string("Color")) {
+                    ColorPicker(
+                        "",
+                        selection: effectColorBinding,
+                        supportsOpacity: false
+                    )
+                    .labelsHidden()
+                }
+
+                PremiumRow(label: L10n.string("Speed")) {
+                    valueSlider(binding: effectIntBinding(\.speed))
+                }
+
+                PremiumRow(label: L10n.string("Brightness"), showsDivider: false) {
+                    valueSlider(binding: effectIntBinding(\.brightness))
+                }
+            }
+
+            if capabilities.supportsDPILighting, settings.dpiLightEnabled != nil {
+                PremiumRow(
+                    label: L10n.string("DPI lighting"),
+                    detail: L10n.string("Controls the indicator on the receiver.")
+                ) {
+                    Toggle("", isOn: dpiLightBinding)
+                        .labelsHidden()
+                }
+            }
+
+            if capabilities.supportsButtonMode, settings.buttonMode != nil {
+                Text(L10n.string("Receiver button"))
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.top, Theme.Space.medium)
+                    .padding(.bottom, Theme.Space.tight)
+
+                PremiumRow(label: L10n.string("Function"), showsDivider: false) {
+                    Picker("", selection: buttonModeBinding) {
+                        ForEach(capabilities.buttonModeOptions, id: \.self) { mode in
+                            Text(buttonFunctionLabel(mode)).tag(mode)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 150)
+                }
+            }
+
+            if capabilities.supportsButtonFunctions, !settings.buttonFunctions.isEmpty {
+                Text(L10n.string("Receiver button effects"))
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.top, Theme.Space.medium)
+                    .padding(.bottom, Theme.Space.tight)
+
+                ForEach($settings.buttonFunctions) { $function in
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(L10n.format("Button %d", function.index + 1))
+                            .font(.caption.weight(.semibold))
+                            .padding(.top, Theme.Space.tight)
+
+                        PremiumRow(label: L10n.string("Mode")) {
+                            Picker("", selection: $function.mode) {
+                                ForEach(ReceiverLightEffect.supportedModes, id: \.self) { mode in
+                                    Text(receiverFunctionModeLabel(mode)).tag(mode)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(width: 130)
+                        }
+
+                        PremiumRow(label: L10n.string("Color")) {
+                            ColorPicker(
+                                "",
+                                selection: buttonColorBinding(function.index),
+                                supportsOpacity: false
+                            )
+                            .labelsHidden()
+                        }
+
+                        PremiumRow(label: L10n.string("Speed")) {
+                            valueSlider(binding: buttonIntBinding(function.index, \.speed))
+                        }
+
+                        PremiumRow(
+                            label: L10n.string("Brightness"),
+                            showsDivider: function.id != settings.buttonFunctions.last?.id
+                        ) {
+                            valueSlider(binding: buttonIntBinding(function.index, \.brightness))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var rgbEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { settings.rgbLighting?.isEnabled ?? false },
+            set: { enabled in
+                guard var lighting = settings.rgbLighting else { return }
+                lighting = lighting.setting(enabled: enabled)
+                settings.rgbLighting = lighting
+            }
+        )
+    }
+
+    private var rgbModeBinding: Binding<Int> {
+        Binding(
+            get: { Int(settings.rgbLighting?.mode ?? 0) },
+            set: { mode in
+                guard var lighting = settings.rgbLighting else { return }
+                lighting.mode = UInt8(clamping: mode)
+                settings.rgbLighting = lighting
+            }
+        )
+    }
+
+    private func rgbColorBinding(_ index: Int) -> Binding<Color> {
+        Binding(
+            get: {
+                guard let lighting = settings.rgbLighting,
+                      lighting.colors.indices.contains(index + 2) else { return .white }
+                let color = CatalogColor(
+                    red: Int(lighting.colors[index]),
+                    green: Int(lighting.colors[index + 1]),
+                    blue: Int(lighting.colors[index + 2])
+                )
+                return color.swiftUIColor
+            },
+            set: { color in
+                guard var lighting = settings.rgbLighting,
+                      lighting.colors.indices.contains(index + 2) else { return }
+                let catalogColor = CatalogColor(color)
+                lighting.colors[index] = UInt8(clamping: catalogColor.red)
+                lighting.colors[index + 1] = UInt8(clamping: catalogColor.green)
+                lighting.colors[index + 2] = UInt8(clamping: catalogColor.blue)
+                settings.rgbLighting = lighting
+            }
+        )
+    }
+
+    private func effectIntBinding(
+        _ keyPath: WritableKeyPath<ReceiverLightEffect, Int>
+    ) -> Binding<Int> {
+        Binding(
+            get: { settings.effect?[keyPath: keyPath] ?? 0 },
+            set: { value in
+                guard var effect = settings.effect else { return }
+                effect[keyPath: keyPath] = value
+                settings.effect = effect
+            }
+        )
+    }
+
+    private var effectColorBinding: Binding<Color> {
+        Binding(
+            get: { settings.effect?.color.swiftUIColor ?? .white },
+            set: { color in
+                guard var effect = settings.effect else { return }
+                effect.color = CatalogColor(color)
+                settings.effect = effect
+            }
+        )
+    }
+
+    private var dpiLightBinding: Binding<Bool> {
+        Binding(
+            get: { settings.dpiLightEnabled ?? false },
+            set: { settings.dpiLightEnabled = $0 }
+        )
+    }
+
+    private var buttonModeBinding: Binding<Int> {
+        Binding(
+            get: { settings.buttonMode ?? 0 },
+            set: { settings.buttonMode = $0 }
+        )
+    }
+
+    private func buttonColorBinding(_ index: Int) -> Binding<Color> {
+        Binding(
+            get: {
+                settings.buttonFunctions.first(where: { $0.index == index })?.color.swiftUIColor
+                    ?? .white
+            },
+            set: { color in
+                guard let position = settings.buttonFunctions.firstIndex(where: { $0.index == index })
+                else { return }
+                settings.buttonFunctions[position].color = CatalogColor(color)
+            }
+        )
+    }
+
+    private func buttonIntBinding(
+        _ index: Int,
+        _ keyPath: WritableKeyPath<ReceiverButtonFunction, Int>
+    ) -> Binding<Int> {
+        Binding(
+            get: {
+                settings.buttonFunctions.first(where: { $0.index == index })?[keyPath: keyPath] ?? 0
+            },
+            set: { value in
+                guard let position = settings.buttonFunctions.firstIndex(where: { $0.index == index })
+                else { return }
+                settings.buttonFunctions[position][keyPath: keyPath] = value
+            }
+        )
+    }
+
+    private func valueSlider(binding: Binding<Int>) -> some View {
+        HStack(spacing: Theme.Space.small) {
+            Slider(
+                value: Binding(
+                    get: { Double(binding.wrappedValue) },
+                    set: { binding.wrappedValue = Int($0.rounded()) }
+                ),
+                in: 0...9,
+                step: 1
+            )
+            .frame(width: 112)
+            Text("\(binding.wrappedValue + 1)")
+                .monospacedDigit()
+                .frame(width: 24, alignment: .trailing)
+        }
+    }
+
+    private func rgbModeLabel(_ mode: Int) -> String {
+        switch mode {
+        case 0: L10n.string("Off")
+        case 1: L10n.string("Rainbow")
+        case 2: L10n.string("Breathing")
+        case 3: L10n.string("Fixed")
+        default: L10n.format("Mode %d", mode)
+        }
+    }
+
+    private func effectModeLabel(_ mode: Int) -> String {
+        switch mode {
+        case 0: L10n.string("Off")
+        case 1: L10n.string("Rainbow")
+        case 2: L10n.string("Breathing")
+        case 3: L10n.string("Fixed")
+        case 4: L10n.string("Neon")
+        case 5: L10n.string("Rainbow breathing")
+        case 6: L10n.string("Fixed rainbow")
+        default: L10n.format("Mode %d", mode)
+        }
+    }
+
+    private func receiverFunctionModeLabel(_ mode: Int) -> String {
+        L10n.format("Mode %d", mode)
+    }
+
+    private func buttonFunctionLabel(_ mode: Int) -> String {
+        switch mode {
+        case 0: L10n.string("Off")
+        case 1: L10n.string("Polling rate")
+        case 2: L10n.string("Lift-off distance")
+        case 3: L10n.string("Debounce")
+        case 4: L10n.string("Motion Sync")
+        case 5: L10n.string("Profile")
+        case 6: L10n.string("Performance mode")
+        case 7: L10n.string("Turbo mode")
+        case 8: L10n.string("Fan mode")
+        default: L10n.format("Function %d", mode)
+        }
+    }
 }

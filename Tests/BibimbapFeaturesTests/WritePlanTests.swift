@@ -121,6 +121,50 @@ struct WritePlanTests {
         #expect(changes.count == 2)
         #expect(changes.allSatisfy { $0.group == .performance })
     }
+
+    @Test("La couleur, X/Y et l'effet DPI passent par leurs codecs et portent une restauration")
+    func dpiAndLightingFieldsAreEncoded() throws {
+        var draft = baselineSettings()
+        draft.dpiStages[0].x = 800
+        draft.dpiStages[0].y = 1600
+        draft.dpiStages[0].color = CatalogColor(red: 12, green: 128, blue: 250)
+        draft.dpiEffect.mode = .breathing
+        draft.dpiEffect.speed = 8
+        draft.dpiEffect.brightness = 7
+        draft.dpiEffect.enabled = false
+
+        let operations = planner.plan(from: baselineSettings(), to: draft).operations
+        #expect(operations.map(\.id).contains("dpi.value.0"))
+        #expect(operations.map(\.id).contains("dpi.color.0"))
+        #expect(operations.first { $0.id == "light.mode" }?.payload == .scalar(2))
+        #expect(operations.first { $0.id == "light.speed" }?.payload == .scalar(8))
+        #expect(operations.first { $0.id == "light.brightness" }?.payload == .scalar(7))
+        #expect(operations.first { $0.id == "light.state" }?.payload == .scalar(0))
+        #expect(operations.allSatisfy { $0.rollback != nil })
+
+        let colorOperation = try #require(operations.first { $0.id == "dpi.color.0" })
+        #expect(colorOperation.payload == .block(try DPIColorCodec().encode(draft.dpiStages[0].color)))
+        #expect(colorOperation.rollback == .block(
+            try DPIColorCodec().encode(baselineSettings().dpiStages[0].color)
+        ))
+    }
+
+    @Test("La liste des changements affiche des valeurs utilisateur, pas des octets")
+    func pendingChangesUseUserValues() {
+        var draft = baselineSettings()
+        draft.reportRateHertz = 4000
+        draft.debounceMilliseconds = 4
+
+        let changes = planner.changes(from: baselineSettings(), to: draft)
+
+        #expect(changes.contains {
+            $0.id == "perf.rate" && $0.before == "1 kHz" && $0.after == "4 kHz"
+        })
+        #expect(changes.contains {
+            $0.id == "perf.debounce" && $0.before == "2 ms" && $0.after == "4 ms"
+        })
+        #expect(changes.allSatisfy { !$0.before.contains("0x") && !$0.after.contains("0x") })
+    }
 }
 
 @Suite("Validation du brouillon")
@@ -174,12 +218,87 @@ struct DraftValidatorTests {
         #expect(validator.validate(draft).contains { $0.id.hasPrefix("stage.0") && $0.isBlocking })
     }
 
+    @Test("Les plages du capteur sont exposées et les valeurs intermédiaires sont arrondies par le même codec")
+    func capabilitiesExposeDPIRanges() {
+        #expect(capabilities.supportsDPIEditing)
+        #expect(capabilities.dpiRepresentableRanges == [
+            DPIRepresentableRange(minimum: 10, maximum: 10_000, step: 10),
+            DPIRepresentableRange(minimum: 10_050, maximum: 30_000, step: 50),
+            DPIRepresentableRange(minimum: 30_100, maximum: 32_000, step: 100),
+        ])
+        #expect(capabilities.snapDPI(10_025) == 10_000)
+        #expect(capabilities.snapDPI(10_026) == 10_050)
+    }
+
+    @Test("Une vitesse ou une couleur hors codec bloque l'application")
+    func rejectsInvalidLightingFields() {
+        var draft = baselineSettings()
+        draft.dpiEffect.speed = DPIEffectCodec.speedRange.upperBound + 1
+        draft.dpiStages[0].color = CatalogColor(red: -1, green: 0, blue: 0)
+
+        let issues = validator.validate(draft)
+        #expect(issues.contains { $0.id == "lighting.speed" && $0.isBlocking })
+        #expect(issues.contains { $0.id == "stage.0.color" && $0.isBlocking })
+    }
+
     @Test("Un palier actif hors des paliers activés est refusé")
     func rejectsActiveStageOutOfRange() {
         var draft = baselineSettings()
         draft.enabledStageCount = 2
         draft.activeStage = 4
         #expect(validator.validate(draft).contains { $0.id == "stages.active" && $0.isBlocking })
+    }
+
+    @Test("Un paramètre rapid-fire hors bornes est refusé")
+    func rejectsInvalidButtonParameter() {
+        var draft = baselineSettings()
+        draft.buttons[0].function = .rapidFire
+        draft.buttons[0].parameter = 9 << 8
+        #expect(validator.validate(draft).contains {
+            $0.id == "button.0.parameter" && $0.isBlocking
+        })
+    }
+
+    @Test("Un raccourci sans touche ne peut pas être écrit")
+    func rejectsEmptyShortcut() {
+        var draft = baselineSettings()
+        draft.buttons[0].function = .keyboardShortcut
+        draft.buttons[0].parameter = 0
+        draft.buttons[0].shortcut = PulsarShortcut(keys: [])
+        #expect(validator.validate(draft).contains {
+            $0.id == "button.0.shortcut" && $0.isBlocking
+        })
+    }
+
+    @Test("La cadence de macro est projetée dans l'octet du bouton")
+    func macroRepeatBindingIsEncodedInButtonBlock() {
+        var current = baselineSettings()
+        guard let buttonPosition = current.buttons.firstIndex(where: { $0.index == 3 }) else {
+            Issue.record("Le bouton firmware 3 manque dans la famille de test")
+            return
+        }
+        current.buttons[buttonPosition].function = .macro
+        current.buttons[buttonPosition].parameter = (3 << 8) | 1
+
+        var draft = current
+        draft.macros = [DeviceSettings.MacroBinding(
+            slot: 3,
+            macro: PulsarMacro(name: "Test", steps: [
+                .init(kind: .key, action: .press, value: 4, delayMilliseconds: 0),
+            ]),
+            repeatCount: 5
+        )]
+        let operation = WritePlanner(family: family, catalog: catalog)
+            .plan(from: current, to: draft).operations.first {
+            $0.id == "button.3"
+        }
+        guard case .block(let bytes) = operation?.payload else {
+            Issue.record("Le plan ne contient pas le bloc du bouton 3")
+            return
+        }
+        #expect(bytes[0] == PulsarKeyFunction.macro.rawValue)
+        #expect(bytes[1] == 3)
+        #expect(bytes[2] == 5)
     }
 
     @Test("Les capacités reflètent le plafond de la connexion")
@@ -191,5 +310,47 @@ struct DraftValidatorTests {
         #expect(wired.availableReportRates == [125, 250, 500, 1000])
         #expect(!wired.supportsBattery)
         #expect(!wired.supportsLongDistance)
+    }
+
+    @Test("Une commande récepteur non sondée est bloquante avant le plan")
+    func rejectsUnsupportedReceiverEffect() {
+        var draft = baselineSettings()
+        draft.receiver = ReceiverSettings(effect: ReceiverLightEffect(mode: 2))
+        let issues = validator.validate(draft)
+
+        #expect(issues.contains { $0.id == "receiver.effect.unsupported" && $0.isBlocking })
+    }
+
+    @Test("Un mode ventilateur reste bloqué quand la capacité n'est pas confirmée")
+    func rejectsUnsupportedFanMode() {
+        var draft = baselineSettings()
+        draft.fanMode = 2
+
+        #expect(validator.validate(draft).contains {
+            $0.id == "fanMode.unsupported" && $0.isBlocking
+        })
+    }
+
+    @Test("Le mode capteur est validé contre la connexion et ses options")
+    func validatesSensorModeOptions() {
+        let wirelessOneK = DeviceCapabilities(
+            family: family,
+            catalog: catalog,
+            connection: .wireless1k,
+            supportsProfiles: true,
+            supportsLongDistance: true,
+            supportsSignalStrength: true,
+            flashCapabilities: DeviceFlashCapabilities(
+                supportsSensorMode: true,
+                supportsPerformanceLevel: true
+            )
+        )
+        var draft = baselineSettings()
+        draft.sensorMode = 2
+        let issues = DraftValidator(
+            capabilities: wirelessOneK, family: family, catalog: catalog
+        ).validate(draft)
+
+        #expect(issues.contains { $0.id == "sensorMode" && $0.isBlocking })
     }
 }

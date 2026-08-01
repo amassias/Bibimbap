@@ -27,6 +27,7 @@ struct DPICodecTests {
     func snapping() throws {
         #expect(try pulsarX1.snap(dpi: 1503) == 1500)
         #expect(try pulsarX1.snap(dpi: 1506) == 1510)
+        #expect(try pulsarX1.snap(dpi: 405) == 410)
         #expect(try pulsarX1.snap(dpi: 12_780) == 12_800)
     }
 
@@ -41,6 +42,19 @@ struct DPICodecTests {
         let block = try pulsarX1.encodeStage(x: 1500, y: 1500)
         #expect(block.count == 4)
         #expect(block.reduce(UInt8(0)) { $0 &+ $1 } == 0x55)
+    }
+
+    @Test("Un palier dont le checksum est faux est refusé")
+    func stageChecksumIsRequired() throws {
+        var block = try pulsarX1.encodeStage(x: 1500, y: 1500)
+        block[3] &+= 1
+
+        #expect(throws: DPICodec.CodecError.checksumMismatch(
+            expected: PulsarFrame.blockChecksum(over: block.dropLast()),
+            actual: block[3]
+        )) {
+            _ = try pulsarX1.decodeStage(block)
+        }
     }
 
     @Test("Un palier X/Y dissocié conserve les deux axes")
@@ -60,6 +74,20 @@ struct DPICodecTests {
         let decoded = try codec.decodeStage(block)
         #expect(decoded.x == 42_000)
         #expect(decoded.y == 42_000)
+    }
+
+    @Test("Les plages exposées à l'UI sont celles du capteur et du plafond du modèle")
+    func representableRanges() throws {
+        #expect(pulsarX1.representableRanges == [
+            DPICodec.RepresentableRange(minimum: 10, maximum: 10_000, step: 10),
+            DPICodec.RepresentableRange(minimum: 10_050, maximum: 30_000, step: 50),
+            DPICodec.RepresentableRange(minimum: 30_100, maximum: 32_000, step: 100),
+        ])
+
+        let codec3955 = DPICodec(sensorType: "3955", ranges: DeviceCatalog.embedded.sensors["3955"]!)
+        #expect(codec3955.representableRanges(upTo: 42_000) == [
+            DPICodec.RepresentableRange(minimum: 50, maximum: 42_000, step: 1),
+        ])
     }
 
     @Test("Tous les capteurs du catalogue savent encoder leurs bornes")

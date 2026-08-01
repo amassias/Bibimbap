@@ -16,6 +16,7 @@ No browser bridge. No WebHID wrapper. No background web service.
 ## Table of contents
 
 - [At a glance](#at-a-glance)
+- [Download](#download)
 - [Install](#install)
 - [Usage](#usage)
 - [Supported hardware and software](#supported-hardware-and-software)
@@ -26,6 +27,8 @@ No browser bridge. No WebHID wrapper. No background web service.
 - [Features](#features)
 - [Project status](#project-status)
 - [Compatibility](#compatibility)
+- [Validation matrix](#validation-matrix)
+- [Distribution](#distribution)
 - [Safety model](#safety-model)
 - [Architecture](#architecture)
 - [Requirements](#requirements)
@@ -42,10 +45,25 @@ Bibimbap is a native macOS app for Pulsar mice that lets you configure device se
 - **Native and lightweight:** SwiftUI app with direct HID communication.
 - **Safe writes:** every write path has read-back validation and rollback support.
 - **Model-aware UI:** only capabilities supported by your connected device are shown.
+- **Installable releases:** versioned ZIP and DMG artifacts are produced by GitHub Actions.
+
+## Download
+
+The canonical download page is the [latest GitHub Release](https://github.com/amassias/Bibimbap/releases/latest).
+Each tag release contains a versioned ZIP, DMG, manifest and `SHA256SUMS` file. The
+[download page](docs/download.md) explains how to verify and install an asset.
 
 ## Install
 
-Bibimbap currently ships as source code. You can build and run it locally:
+For normal use, download the versioned ZIP or DMG from the
+[GitHub Releases page](https://github.com/amassias/Bibimbap/releases/latest), verify
+`SHA256SUMS`, copy `Bibimbap.app` to `/Applications`, and follow the HID permission
+steps in [`docs/distribution.md`](docs/distribution.md). Xcode is not needed to install
+a release. Unsigned workflow artifacts are explicitly labelled in their manifest and
+may require the macOS right-click **Open** flow; they are not equivalent to a
+notarized release.
+
+For development, build and run locally:
 
 ```bash
 xcodebuild \
@@ -74,11 +92,12 @@ swift run pulsar-probe
 
 - **OS:** macOS 15 or later
 - **CPU:** Apple silicon
-- **Toolchain:** Xcode with macOS 15 SDK or later
+- **Release installation:** no Xcode required
+- **Development toolchain:** Xcode with macOS 15 SDK or later
 - **Hardware support scope:** Pulsar model identifiers bundled in `PulsarCatalog` (catalog snapshot v1.3.11)
-- **Hardware validated on device:** X2 CrazyLight (USB and 8K receiver)
+- **Physical evidence retained in the repository:** X2 CrazyLight over USB and an 8K receiver; this is historical evidence, not a validation performed by CI.
 
-See [Compatibility](#compatibility) for validation details and tested operations.
+See [Compatibility](#compatibility) and the [validation matrix](docs/validation-matrix.md) for the evidence level, tested operations and limits.
 
 ## Troubleshooting
 
@@ -125,8 +144,8 @@ Bibimbap focuses on reliability first: read from device, edit safely, write with
 
 | Layer | Status |
 |---|---|
-| HID transport (`PulsarHID`) | Validated on hardware over USB and through an 8K receiver |
-| Protocol (`PulsarProtocol`) | Reading and writing validated on hardware |
+| HID transport (`PulsarHID`) | Automated coverage; physical connection validation is tracked separately |
+| Protocol (`PulsarProtocol`) | Codec and fixture coverage; historical physical records are listed separately |
 | Device catalog (`PulsarCatalog`) | 31 families and 127 models from catalog snapshot v1.3.11 |
 | Simulator (`PulsarSimulator`) | Nominal path plus injected failure scenarios |
 | Application (`BibimbapFeatures` + `BibimbapUI`) | Complete configuration UI, pairing, backups, and diagnostics |
@@ -144,9 +163,12 @@ Compatibility is described at three levels:
 |---|---|
 | Declared by the bundled catalog | 127 model identifiers under catalog CID 87 |
 | Covered by fixtures | A real X2 CrazyLight capture replayed by the test suite |
-| Validated on physical hardware | X2 CrazyLight over USB and through an 8K receiver |
+| Physical evidence retained in the repository | X2 CrazyLight over USB and through an 8K receiver; not executed by CI |
 
-Hardware validation for the X2 CrazyLight:
+The retained physical record for the X2 CrazyLight is documented in
+[`docs/validation-matrix.md`](docs/validation-matrix.md) and
+[`docs/protocol.md`](docs/protocol.md). It must not be read as a new hardware run by
+this package or by GitHub Actions:
 
 | Operation | USB | 8K receiver |
 |---|---:|---:|
@@ -158,9 +180,22 @@ Hardware validation for the X2 CrazyLight:
 | Multi-report macro write | ✅ | ✅ |
 | Button-function write | ✅ | ✅ |
 | Independent read-back and restoration | ✅ | ✅ |
-| Polling above 1 kHz | Not applicable | Not yet hardware-validated |
+| Polling above 1 kHz | Not applicable | Not yet physically validated |
 
 The X2 CrazyLight is limited to 1 kHz over USB and reaches higher polling rates through its receiver, so higher polling-codec paths cannot be validated over wired mode on this model.
+
+## Validation matrix
+
+The full BIB-018 matrix distinguishes catalog declarations, simulator paths, retained
+fixtures and physical validation. It also records sensors (`pulsar x1`, `3950`,
+`3955`), transports, firmware evidence, operations and the explicit wireless polling
+limit above 1 kHz: [`docs/validation-matrix.md`](docs/validation-matrix.md).
+
+## Distribution
+
+The BIB-017 packaging contract covers versioning, ZIP/DMG generation, optional
+Developer ID signing, optional notarization, checksums, GitHub Release publication and
+Input Monitoring instructions: [`docs/distribution.md`](docs/distribution.md).
 
 ## Safety model
 
@@ -189,6 +224,7 @@ Sources/
   bibimbap-render/        Off-screen light/dark UI renderer
   pulsar-probe/           Read-only hardware diagnostics
   pulsar-writetest/       Explicit reversible hardware-write checks
+scripts/                  Reproducible distribution and metadata validation scripts
 App/
   Bibimbap.xcodeproj      macOS application target
   Bibimbap/               App entry point, assets, entitlements, and strings
@@ -196,6 +232,8 @@ Tests/                    Protocol, catalog, simulator, feature, and fixture tes
 Tools/generate_catalog.py Catalog regeneration tool
 docs/protocol.md          Observed protocol documentation
 docs/troubleshooting.md   Connection diagnosis and validation procedure
+docs/validation-matrix.md Catalog, simulator, fixture and physical evidence matrix
+docs/distribution.md      ZIP/DMG, signing, notarization and installation contract
 Design/                   Logo concepts and redesign reference screens
 ```
 
@@ -203,7 +241,7 @@ Design/                   Logo concepts and redesign reference screens
 
 - macOS 15 or later
 - Apple silicon Mac
-- Xcode with the macOS 15 SDK or later
+- Xcode with the macOS 15 SDK or later for development builds
 - A supported Pulsar mouse or receiver for hardware usage
 
 ## Quick start
@@ -212,7 +250,9 @@ Build and test the Swift package:
 
 ```bash
 swift build
-swift test
+swift test --filter HardwareFixtureTests
+swift test --filter CatalogTests
+swift test --filter SimulatorFaultTests
 ```
 
 Build the macOS app:
@@ -223,6 +263,14 @@ xcodebuild \
   -scheme Bibimbap \
   -configuration Debug \
   build
+```
+
+Validate distribution metadata and build installable artifacts:
+
+```bash
+./scripts/validate_distribution.sh
+./scripts/package_macos.sh --version 0.1.0 --output .build/distribution --arch arm64
+./scripts/validate_distribution.sh --artifacts .build/distribution
 ```
 
 Run the app with a simulated X2 CrazyLight:
