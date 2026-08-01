@@ -111,11 +111,17 @@ public struct WriteResult: Equatable, Sendable {
 public struct WritePlanner: Sendable {
     public let family: DeviceFamily
     public let catalog: DeviceCatalog
+    public let capabilities: DeviceCapabilities?
     private let codec: DPICodec?
 
-    public init(family: DeviceFamily, catalog: DeviceCatalog) {
+    public init(
+        family: DeviceFamily,
+        catalog: DeviceCatalog,
+        capabilities: DeviceCapabilities? = nil
+    ) {
         self.family = family
         self.catalog = catalog
+        self.capabilities = capabilities
         self.codec = DPICodec(family: family, catalog: catalog)
     }
 
@@ -237,8 +243,14 @@ public struct WritePlanner: Sendable {
                FlashMap.rippleControl, draft.rippleControl ? 1 : 0, current.rippleControl ? 1 : 0)
         scalar("perf.performanceState", .performance, L10n.string( "Mode performance"),
                FlashMap.performanceState, draft.performanceMode ? 1 : 0, current.performanceMode ? 1 : 0)
-        scalar("perf.sensorMode", .performance, L10n.string( "Mode capteur"),
-               FlashMap.sensorMode, draft.sensorMode, current.sensorMode)
+        if capabilities?.supportsSensorMode != false {
+            scalar("perf.sensorMode", .performance, L10n.string( "Mode capteur"),
+                   FlashMap.sensorMode, draft.sensorMode, current.sensorMode)
+        }
+        if capabilities?.supportsFanMode != false {
+            scalar("perf.fanMode", .performance, L10n.string("Fan mode"),
+                   FlashMap.fanMode, draft.fanMode, current.fanMode)
+        }
 
         if draft.rotationDegrees != current.rotationDegrees {
             // La rotation est signée ; l'octet la porte en complément à deux.
@@ -261,6 +273,82 @@ public struct WritePlanner: Sendable {
                      draft.dpiEffect.speed, current.dpiEffect.speed)
         effectScalar("light.state", L10n.string( "Indicateur DPI"), FlashMap.dpiEffectState, .state,
                      draft.dpiEffect.enabled ? 1 : 0, current.dpiEffect.enabled ? 1 : 0)
+
+        // 3 bis. Commandes hors flash du récepteur. Elles ne sont planifiées que lorsque
+        // le getter a répondu et que l'ancien état est donc disponible pour rollback.
+        if let receiverCapabilities = capabilities?.receiver,
+           let currentReceiver = current.receiver,
+           let draftReceiver = draft.receiver {
+            if receiverCapabilities.supportsRGBLighting,
+               let old = currentReceiver.rgbLighting,
+               let new = draftReceiver.rgbLighting,
+               old.colors.count == 9,
+               new.colors.count == 9,
+               old != new {
+                operations.append(WriteOperation(
+                    id: "receiver.rgb",
+                    group: .lighting,
+                    label: L10n.string("Receiver lighting"),
+                    address: 0,
+                    payload: .command(.set4KDongleRGB, [new.mode] + new.colors),
+                    rollback: .command(.set4KDongleRGB, [old.mode] + old.colors)
+                ))
+            }
+            if receiverCapabilities.supportsEffect,
+               let old = currentReceiver.effect,
+               let new = draftReceiver.effect,
+               old != new {
+                operations.append(WriteOperation(
+                    id: "receiver.effect",
+                    group: .lighting,
+                    label: L10n.string("Receiver effect"),
+                    address: 0,
+                    payload: .command(.setPulsarDongleLightParam, new.payload),
+                    rollback: .command(.setPulsarDongleLightParam, old.payload)
+                ))
+            }
+            if receiverCapabilities.supportsDPILighting,
+               let old = currentReceiver.dpiLightEnabled,
+               let new = draftReceiver.dpiLightEnabled,
+               old != new {
+                operations.append(WriteOperation(
+                    id: "receiver.dpiLight",
+                    group: .lighting,
+                    label: L10n.string("DPI receiver light"),
+                    address: 0,
+                    payload: .command(.setPulsarDongleDPILightParam, [new ? 1 : 0]),
+                    rollback: .command(.setPulsarDongleDPILightParam, [old ? 1 : 0])
+                ))
+            }
+            if let kind = receiverCapabilities.buttonModeKind,
+               let old = currentReceiver.buttonMode,
+               let new = draftReceiver.buttonMode,
+               old != new {
+                operations.append(WriteOperation(
+                    id: "receiver.buttonMode",
+                    group: .buttons,
+                    label: L10n.string("Receiver button"),
+                    address: 0,
+                    payload: .command(kind.setCommand, [UInt8(clamping: new)]),
+                    rollback: .command(kind.setCommand, [UInt8(clamping: old)])
+                ))
+            }
+            if receiverCapabilities.buttonModeKind == .oButton {
+                for index in receiverCapabilities.buttonFunctionSlots {
+                    guard let old = currentReceiver.buttonFunctions.first(where: { $0.index == index }),
+                          let new = draftReceiver.buttonFunctions.first(where: { $0.index == index }),
+                          old != new else { continue }
+                    operations.append(WriteOperation(
+                        id: "receiver.buttonFunction." + String(index),
+                        group: .buttons,
+                        label: L10n.format("Receiver button %d", index + 1),
+                        address: 0,
+                        payload: .command(.setPulsarDongleOButtonFunction, new.payload),
+                        rollback: .command(.setPulsarDongleOButtonFunction, old.payload)
+                    ))
+                }
+            }
+        }
 
         // 4. Macros, avant les boutons qui les référencent : un bouton ne doit jamais
         // pointer un emplacement dont le contenu n'est pas encore écrit.
@@ -340,11 +428,16 @@ public struct WritePlanner: Sendable {
         }
 
         // 7. Alimentation, en dernier : la veille peut couper le dialogue.
-        if draft.sleepTimeCode != current.sleepTimeCode {
+        let sleepChanged = draft.sleepTimeCode != current.sleepTimeCode
+        let performanceChanged = draft.performanceLevel != current.performanceLevel
+        if sleepChanged {
             scalar("power.sleep", .power, L10n.string("Mise en veille"),
                    FlashMap.sleepTime, draft.sleepTimeCode, current.sleepTimeCode)
+        }
+        if capabilities?.supportsPerformanceLevel != false, sleepChanged || performanceChanged {
+            let target = sleepChanged ? draft.sleepTimeCode : draft.performanceLevel
             scalar("power.sleepPerformance", .power, L10n.string("Sensor sleep"),
-                   FlashMap.performance, draft.sleepTimeCode, current.performanceLevel)
+                   FlashMap.performance, target, current.performanceLevel)
         }
         scalar("power.saveBattery", .power, L10n.string( "Seuil d'économie"),
                FlashMap.powerSaveBattery, draft.powerSaveBatteryPercent, current.powerSaveBatteryPercent)
@@ -508,6 +601,148 @@ public struct DraftValidator: Sendable {
                 }
             default:
                 break
+            }
+        }
+
+        if capabilities.supportsSensorMode {
+            if !capabilities.sensorModeOptions.contains(draft.sensorMode) {
+                issues.append(Issue(
+                    id: "sensorMode",
+                    message: L10n.string("This sensor mode is not available on this connection."),
+                    isBlocking: true
+                ))
+            }
+        } else if draft.sensorMode != 0 {
+            issues.append(Issue(
+                id: "sensorMode.unsupported",
+                message: L10n.string("Sensor mode is unavailable for this model or connection."),
+                isBlocking: true
+            ))
+        }
+
+        if capabilities.supportsFanMode {
+            if !capabilities.fanModeOptions.contains(draft.fanMode) {
+                issues.append(Issue(
+                    id: "fanMode",
+                    message: L10n.string("This fan mode is not available on this model."),
+                    isBlocking: true
+                ))
+            }
+        } else if draft.fanMode != 0 {
+            issues.append(Issue(
+                id: "fanMode.unsupported",
+                message: L10n.string("Fan mode is unavailable for this model."),
+                isBlocking: true
+            ))
+        }
+
+        if capabilities.supportsPerformanceLevel {
+            if !capabilities.performanceLevelOptions.contains(draft.performanceLevel) {
+                issues.append(Issue(
+                    id: "performanceLevel",
+                    message: L10n.string("This performance level is not available."),
+                    isBlocking: true
+                ))
+            }
+            if !capabilities.performanceLevelOptions.contains(draft.sleepTimeCode) {
+                issues.append(Issue(
+                    id: "sleepTime",
+                    message: L10n.string("This sleep delay is not available."),
+                    isBlocking: true
+                ))
+            }
+        } else if draft.performanceLevel != 6 {
+            issues.append(Issue(
+                id: "performanceLevel.unsupported",
+                message: L10n.string("Performance levels are unavailable for this model."),
+                isBlocking: true
+            ))
+        }
+
+        func receiverIssue(_ id: String, _ message: String) {
+            issues.append(Issue(id: id, message: message, isBlocking: true))
+        }
+
+        func colorIsValid(_ color: CatalogColor) -> Bool {
+            [color.red, color.green, color.blue].allSatisfy { (0...255).contains($0) }
+        }
+
+        if let receiver = draft.receiver {
+            if let rgb = receiver.rgbLighting {
+                if !capabilities.receiver.supportsRGBLighting {
+                    receiverIssue(
+                        "receiver.rgb.unsupported",
+                        L10n.string("Receiver lighting is unavailable on this model.")
+                    )
+                } else if rgb.colors.count != 9 {
+                    receiverIssue(
+                        "receiver.rgb.colors",
+                        L10n.string("The receiver lighting data is incomplete and cannot be written safely.")
+                    )
+                }
+            }
+
+            if let effect = receiver.effect {
+                if !capabilities.receiver.supportsEffect {
+                    receiverIssue(
+                        "receiver.effect.unsupported",
+                        L10n.string("Receiver effects are unavailable on this model.")
+                    )
+                } else {
+                    if !ReceiverLightEffect.supportedModes.contains(effect.mode) {
+                        receiverIssue("receiver.effect.mode", L10n.string("This receiver effect is unknown."))
+                    }
+                    if !ReceiverLightEffect.supportedLevels.contains(effect.speed)
+                        || !ReceiverLightEffect.supportedLevels.contains(effect.brightness)
+                        || !(0...255).contains(effect.duration)
+                        || !colorIsValid(effect.color) {
+                        receiverIssue(
+                            "receiver.effect.values",
+                            L10n.string("Receiver effect values are outside the safe range.")
+                        )
+                    }
+                }
+            }
+
+            if receiver.dpiLightEnabled != nil, !capabilities.receiver.supportsDPILighting {
+                receiverIssue(
+                    "receiver.dpiLight.unsupported",
+                    L10n.string("DPI receiver lighting is unavailable on this model.")
+                )
+            }
+
+            if let mode = receiver.buttonMode {
+                if !capabilities.receiver.supportsButtonMode {
+                    receiverIssue(
+                        "receiver.button.unsupported",
+                        L10n.string("The receiver button is unavailable on this model.")
+                    )
+                } else if !capabilities.receiver.buttonModeOptions.contains(mode) {
+                    receiverIssue(
+                        "receiver.button.mode",
+                        L10n.string("This receiver button function is not available.")
+                    )
+                }
+            }
+
+            for function in receiver.buttonFunctions {
+                guard capabilities.receiver.buttonFunctionSlots.contains(function.index) else {
+                    receiverIssue(
+                        "receiver.buttonFunction." + String(function.index) + ".unsupported",
+                        L10n.string("This receiver button function is unavailable on this model.")
+                    )
+                    continue
+                }
+                if !ReceiverLightEffect.supportedModes.contains(function.mode)
+                    || !ReceiverLightEffect.supportedLevels.contains(function.speed)
+                    || !ReceiverLightEffect.supportedLevels.contains(function.brightness)
+                    || !(0...255).contains(function.duration)
+                    || !colorIsValid(function.color) {
+                    receiverIssue(
+                        "receiver.buttonFunction." + String(function.index) + ".values",
+                        L10n.string("Receiver button values are outside the safe range.")
+                    )
+                }
             }
         }
 

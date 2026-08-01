@@ -321,9 +321,9 @@ public actor DeviceController {
 
         let firmware = (try? await session.readFirmwareVersion()) ?? "—"
         let dongle = identity.connectionType.isWired ? nil : try? await session.readDongleVersion()
-        let dongleLighting = identity.connectionType.isWired
+        let receiverReadback = identity.connectionType.isWired
             ? nil
-            : try? await session.readDongleLighting()
+            : await session.readReceiverSettings(dongleType: identity.dongleType)
         let battery = identity.connectionType.isWired ? nil : try? await session.readBattery()
         let signal = try? await session.readSignalStrength()
         let profile = try? await session.readActiveProfile()
@@ -343,7 +343,15 @@ public actor DeviceController {
             longDistance: longDistance ?? false
         )
         settings.buttons = try await readShortcuts(for: settings.buttons, using: session)
+        settings.receiver = receiverReadback?.settings
         settings.macros = try await readMacros(for: settings.buttons, using: session)
+
+        let flashCapabilities = DeviceFlashCapabilities(
+            supportsFanMode: family.supportsFanMode
+                && ScalarSetting.decode(from: image, at: FlashMap.fanMode) != nil,
+            supportsSensorMode: ScalarSetting.decode(from: image, at: FlashMap.sensorMode) != nil,
+            supportsPerformanceLevel: ScalarSetting.decode(from: image, at: FlashMap.performance) != nil
+        )
 
         return DeviceSnapshot(
             identity: identity,
@@ -352,7 +360,9 @@ public actor DeviceController {
             connection: HIDConnectionSummary(connectionType: identity.connectionType),
             firmwareVersion: firmware,
             dongleVersion: dongle ?? nil,
-            dongleLighting: dongleLighting ?? nil,
+            dongleLighting: receiverReadback?.settings.rgbLighting,
+            receiverCapabilities: receiverReadback?.capabilities ?? .none,
+            flashCapabilities: flashCapabilities,
             battery: battery,
             signalStrength: signal ?? nil,
             activeProfile: profile ?? nil,
@@ -405,7 +415,9 @@ public actor DeviceController {
             connection: snapshot.identity.connectionType,
             supportsProfiles: snapshot.activeProfile != nil,
             supportsLongDistance: snapshot.family.power.supportsLongDistance,
-            supportsSignalStrength: snapshot.signalStrength != nil
+            supportsSignalStrength: snapshot.signalStrength != nil,
+            flashCapabilities: snapshot.flashCapabilities,
+            receiver: snapshot.receiverCapabilities
         )
     }
 
@@ -435,6 +447,7 @@ public actor DeviceController {
         settings.performanceMode = scalar(FlashMap.performanceState, default: 0) == 1
         settings.performanceLevel = scalar(FlashMap.performance, default: family.sensor.defaultPerformance)
         settings.sensorMode = scalar(FlashMap.sensorMode, default: family.sensor.defaultSensorMode)
+        settings.fanMode = scalar(FlashMap.fanMode, default: 0)
         settings.sleepTimeCode = scalar(
             FlashMap.sleepTime, default: family.power.defaultSleepTimeCode
         )
@@ -529,7 +542,12 @@ public actor DeviceController {
                 try await perform(operation, using: session)
                 applied.append(operation)
             } catch {
-                let uncertain = await rollback(applied, using: session)
+                // La commande courante peut avoir été acceptée puis avoir divergé à la
+                // relecture. On tente donc aussi son rollback avant de défaire le lot
+                // précédent ; l'absence de rollback est déclarée incertaine.
+                let currentUncertain = await rollback([operation], using: session)
+                let previousUncertain = await rollback(applied, using: session)
+                let uncertain = currentUncertain + previousUncertain
                 let message = (error as? LocalizedError)?.errorDescription
                     ?? String(describing: error)
                 let failure = L10n.format("%@ : %@", operation.label, message)
@@ -561,6 +579,79 @@ public actor DeviceController {
 
         case .command(let command, let payload):
             try await session.request(PulsarFrame(command: command, payload: payload))
+            try await verifyCommand(command, payload: payload, using: session)
+        }
+    }
+
+    /// Les commandes hors flash n'ont pas de bloc checksum à relire : leur getter
+    /// correspondant est donc obligatoire avant de considérer l'opération appliquée.
+    private func verifyCommand(
+        _ command: PulsarCommand,
+        payload: [UInt8],
+        using session: PulsarSession
+    ) async throws {
+        switch command {
+        case .set4KDongleRGB:
+            guard payload.count == 10,
+                  let actual = try await session.readDongleLighting(),
+                  actual == DongleLightingState(mode: payload[0], colors: Array(payload.dropFirst()))
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        case .setPulsarDongleLightParam:
+            guard payload.count == 7,
+                  let actual = try await session.readReceiverEffect(),
+                  actual == ReceiverLightEffect(
+                    mode: Int(payload[0]),
+                    color: CatalogColor(
+                        red: Int(payload[1]), green: Int(payload[2]), blue: Int(payload[3])
+                    ),
+                    speed: Int(payload[4]),
+                    brightness: Int(payload[5]),
+                    duration: Int(payload[6])
+                  )
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        case .setPulsarDongleDPILightParam:
+            guard let expected = payload.first,
+                  let actual = try await session.readReceiverDPILight(),
+                  actual == (expected == 1)
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        case .setPulsarDongleKeyFunction:
+            guard let expected = payload.first,
+                  let actual = try await session.readReceiverButtonMode(kind: .keyFunction),
+                  actual == Int(expected)
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        case .setPulsarDongleOButtonCurrentMode:
+            guard let expected = payload.first,
+                  let actual = try await session.readReceiverButtonMode(kind: .oButton),
+                  actual == Int(expected)
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        case .setPulsarDongleOButtonFunction:
+            guard payload.count == 8,
+                  let actual = try await session.readReceiverButtonFunction(index: Int(payload[0])),
+                  actual == ReceiverButtonFunction(
+                    index: Int(payload[0]),
+                    mode: Int(payload[1]),
+                    color: CatalogColor(
+                        red: Int(payload[2]), green: Int(payload[3]), blue: Int(payload[4])
+                    ),
+                    speed: Int(payload[5]),
+                    brightness: Int(payload[6]),
+                    duration: Int(payload[7])
+                  )
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        case .setLongRangeMode:
+            guard let expected = payload.first,
+                  let actual = try await session.readLongDistanceMode(),
+                  actual == (expected == 1)
+            else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
+
+        default:
+            throw PulsarSession.SessionError.malformedResponse(command)
         }
     }
 
@@ -603,9 +694,14 @@ public actor DeviceController {
         let target = current.setting(enabled: enabled)
         try await session.setDongleLighting(target)
 
-        guard let confirmed = try await session.readDongleLighting(),
-              confirmed.isEnabled == enabled else {
-            throw PulsarSession.SessionError.unsupported(.set4KDongleRGB)
+        guard let confirmed = try await session.readDongleLighting(), confirmed == target else {
+            // Même cette action ponctuelle conserve le contrat de restauration si le
+            // setter a répondu mais que sa relecture diverge.
+            try? await session.setDongleLighting(current)
+            guard let restored = try? await session.readDongleLighting(), restored == current else {
+                throw PulsarSession.SessionError.commandReadbackMismatch(.set4KDongleRGB)
+            }
+            throw PulsarSession.SessionError.commandReadbackMismatch(.set4KDongleRGB)
         }
         return try await readSnapshot()
     }

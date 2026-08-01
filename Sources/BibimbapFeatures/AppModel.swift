@@ -168,7 +168,11 @@ public final class AppModel {
 
     public var pendingChanges: [PendingChange] {
         guard let snapshot else { return [] }
-        return WritePlanner(family: snapshot.family, catalog: catalog)
+        return WritePlanner(
+            family: snapshot.family,
+            catalog: catalog,
+            capabilities: capabilities
+        )
             .changes(from: draftBase ?? snapshot.settings, to: draft)
     }
 
@@ -208,7 +212,8 @@ public final class AppModel {
     public var availableSections: [Section] {
         guard let capabilities else { return [.overview, .settings] }
         var sections: [Section] = [.overview, .customize, .performance, .macros]
-        if capabilities.supportsBattery || capabilities.supportsLongDistance || capabilities.supportsFanMode {
+        if capabilities.supportsBattery || capabilities.supportsLongDistance
+            || capabilities.supportsFanMode || capabilities.receiver != .none {
             sections.append(.power)
         }
         sections.append(.settings)
@@ -368,7 +373,11 @@ public final class AppModel {
     /// Valide, écrit, relit.
     public func apply() async {
         guard let snapshot, canApply else { return }
-        let plan = WritePlanner(family: snapshot.family, catalog: catalog)
+        let plan = WritePlanner(
+            family: snapshot.family,
+            catalog: catalog,
+            capabilities: capabilities
+        )
             .plan(from: snapshot.settings, to: draft)
         guard !plan.isEmpty else { return }
 
@@ -448,14 +457,12 @@ public final class AppModel {
     }
 
     public func setDongleLightEnabled(_ enabled: Bool) async {
-        guard snapshot?.dongleLighting != nil, !connection.isBusy else { return }
-        connection = .writing(progress: 0)
-        do {
-            adopt(try await controller.setDongleLightEnabled(enabled))
-            connection = .connected
-        } catch {
-            connection = .failed(message(for: error))
-        }
+        guard !connection.isBusy, var receiver = draft.receiver,
+              var lighting = receiver.rgbLighting else { return }
+        lighting = lighting.setting(enabled: enabled)
+        receiver.rgbLighting = lighting
+        draft.receiver = receiver
+        await apply()
     }
 
     // MARK: Appairage
@@ -612,7 +619,9 @@ public final class AppModel {
             connection: snapshot.identity.connectionType,
             supportsProfiles: snapshot.activeProfile != nil,
             supportsLongDistance: snapshot.family.power.supportsLongDistance,
-            supportsSignalStrength: snapshot.signalStrength != nil
+            supportsSignalStrength: snapshot.signalStrength != nil,
+            flashCapabilities: snapshot.flashCapabilities,
+            receiver: snapshot.receiverCapabilities
         )
     }
 
@@ -839,7 +848,11 @@ public final class AppModel {
             return
         }
 
-        let planner = WritePlanner(family: refreshed.family, catalog: catalog)
+        let planner = WritePlanner(
+            family: refreshed.family,
+            catalog: catalog,
+            capabilities: controllerCapabilities(for: refreshed)
+        )
         let local = planner.changes(from: base, to: draft)
         guard !local.isEmpty else {
             // Aucun travail local en cours : l'état relu fait foi, comme d'habitude.

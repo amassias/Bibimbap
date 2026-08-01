@@ -20,6 +20,9 @@ public struct DeviceSettings: Equatable, Sendable, Codable {
     public var performanceMode = false
     public var performanceLevel: Int = 6
     public var sensorMode: Int = 0
+    /// Niveau du ventilateur, disponible seulement après validation du modèle et de la
+    /// lecture de la case flash correspondante.
+    public var fanMode: Int = 0
     public var rotationDegrees: Int = 0
     /// Code brut du délai de veille, conservé sous son ancien nom afin que les profils
     /// JSON déjà exportés restent lisibles. Une unité vaut dix secondes.
@@ -27,10 +30,49 @@ public struct DeviceSettings: Equatable, Sendable, Codable {
     public var powerSaveBatteryPercent: Int = 0
     public var longDistance = false
     public var dpiEffect: DPIEffect = DPIEffect()
+    /// Réglages hors flash du récepteur. Nil signifie qu'aucun état exploitable n'a été
+    /// relu pour cette connexion ; il ne doit alors produire aucune écriture.
+    public var receiver: ReceiverSettings?
     public var buttons: [ButtonAssignment] = []
     public var macros: [MacroBinding] = []
 
     public init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case reportRateHertz, dpiStages, activeStage, enabledStageCount
+        case liftOffMillimetres, debounceMilliseconds, motionSync, angleSnap, rippleControl
+        case performanceMode, performanceLevel, sensorMode, fanMode, rotationDegrees
+        case sleepMinutes, powerSaveBatteryPercent, longDistance, dpiEffect, receiver
+        case buttons, macros
+    }
+
+    /// Les profils antérieurs à BIB-013 ne contiennent ni `fanMode` ni `receiver`.
+    /// Les nouveaux champs sont donc décodés avec une valeur sûre plutôt que de rendre
+    /// les sauvegardes historiques illisibles.
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        reportRateHertz = try values.decodeIfPresent(Int.self, forKey: .reportRateHertz) ?? 1000
+        dpiStages = try values.decodeIfPresent([DPIStage].self, forKey: .dpiStages) ?? []
+        activeStage = try values.decodeIfPresent(Int.self, forKey: .activeStage) ?? 0
+        enabledStageCount = try values.decodeIfPresent(Int.self, forKey: .enabledStageCount) ?? 6
+        liftOffMillimetres = try values.decodeIfPresent(Int.self, forKey: .liftOffMillimetres) ?? 1
+        debounceMilliseconds = try values.decodeIfPresent(Int.self, forKey: .debounceMilliseconds) ?? 2
+        motionSync = try values.decodeIfPresent(Bool.self, forKey: .motionSync) ?? false
+        angleSnap = try values.decodeIfPresent(Bool.self, forKey: .angleSnap) ?? false
+        rippleControl = try values.decodeIfPresent(Bool.self, forKey: .rippleControl) ?? false
+        performanceMode = try values.decodeIfPresent(Bool.self, forKey: .performanceMode) ?? false
+        performanceLevel = try values.decodeIfPresent(Int.self, forKey: .performanceLevel) ?? 6
+        sensorMode = try values.decodeIfPresent(Int.self, forKey: .sensorMode) ?? 0
+        fanMode = try values.decodeIfPresent(Int.self, forKey: .fanMode) ?? 0
+        rotationDegrees = try values.decodeIfPresent(Int.self, forKey: .rotationDegrees) ?? 0
+        sleepMinutes = try values.decodeIfPresent(Int.self, forKey: .sleepMinutes) ?? 6
+        powerSaveBatteryPercent = try values.decodeIfPresent(Int.self, forKey: .powerSaveBatteryPercent) ?? 0
+        longDistance = try values.decodeIfPresent(Bool.self, forKey: .longDistance) ?? false
+        dpiEffect = try values.decodeIfPresent(DPIEffect.self, forKey: .dpiEffect) ?? DPIEffect()
+        receiver = try values.decodeIfPresent(ReceiverSettings.self, forKey: .receiver)
+        buttons = try values.decodeIfPresent([ButtonAssignment].self, forKey: .buttons) ?? []
+        macros = try values.decodeIfPresent([MacroBinding].self, forKey: .macros) ?? []
+    }
 
     public var sleepTimeCode: Int {
         get { sleepMinutes }
@@ -190,6 +232,8 @@ public struct DeviceSnapshot: Equatable, Sendable {
     public var firmwareVersion: String
     public var dongleVersion: String?
     public var dongleLighting: DongleLightingState?
+    public var receiverCapabilities: ReceiverCapabilities = .none
+    public var flashCapabilities: DeviceFlashCapabilities = DeviceFlashCapabilities()
     public var battery: BatteryState?
     public var signalStrength: Int?
     public var activeProfile: Int?
@@ -202,10 +246,32 @@ public struct DeviceSnapshot: Equatable, Sendable {
             && lhs.firmwareVersion == rhs.firmwareVersion
             && lhs.dongleVersion == rhs.dongleVersion
             && lhs.dongleLighting == rhs.dongleLighting
+            && lhs.receiverCapabilities == rhs.receiverCapabilities
+            && lhs.flashCapabilities == rhs.flashCapabilities
             && lhs.battery == rhs.battery
             && lhs.signalStrength == rhs.signalStrength
             && lhs.activeProfile == rhs.activeProfile
             && lhs.settings == rhs.settings
+    }
+}
+
+/// Résultat de la présence et de la cohérence des champs avancés de la flash.
+///
+/// Le catalogue fournit une attente initiale ; la lecture de la flash reste l'autorité
+/// pour décider si un champ peut réellement être écrit sur cette connexion.
+public struct DeviceFlashCapabilities: Equatable, Sendable {
+    public var supportsFanMode: Bool
+    public var supportsSensorMode: Bool
+    public var supportsPerformanceLevel: Bool
+
+    public init(
+        supportsFanMode: Bool = false,
+        supportsSensorMode: Bool = false,
+        supportsPerformanceLevel: Bool = false
+    ) {
+        self.supportsFanMode = supportsFanMode
+        self.supportsSensorMode = supportsSensorMode
+        self.supportsPerformanceLevel = supportsPerformanceLevel
     }
 }
 
@@ -242,6 +308,12 @@ public struct DeviceCapabilities: Equatable, Sendable {
     public var supportsPerformanceMode: Bool
     public var supportsRotation: Bool
     public var supportsFanMode: Bool
+    public var fanModeOptions: [Int]
+    public var supportsSensorMode: Bool
+    public var sensorModeOptions: [Int]
+    public var supportsPerformanceLevel: Bool
+    public var performanceLevelOptions: [Int]
+    public var receiver: ReceiverCapabilities
     public var supportsProfiles: Bool
     public var supportsLongDistance: Bool
     public var supportsSignalStrength: Bool
@@ -270,7 +342,9 @@ public struct DeviceCapabilities: Equatable, Sendable {
         connection: PulsarConnectionType,
         supportsProfiles: Bool,
         supportsLongDistance: Bool,
-        supportsSignalStrength: Bool
+        supportsSignalStrength: Bool,
+        flashCapabilities: DeviceFlashCapabilities = DeviceFlashCapabilities(),
+        receiver: ReceiverCapabilities = .none
     ) {
         let ranges = catalog.sensorRanges(for: family)
         let codec = DPICodec(family: family, catalog: catalog)
@@ -294,7 +368,21 @@ public struct DeviceCapabilities: Equatable, Sendable {
         self.supportsRippleControl = family.sensor.supportsRippleControl
         self.supportsPerformanceMode = family.sensor.supportsPerformanceMode
         supportsRotation = family.supportsAngleTune
-        supportsFanMode = family.supportsFanMode
+        supportsFanMode = family.supportsFanMode && flashCapabilities.supportsFanMode
+        fanModeOptions = supportsFanMode ? Array(0...4) : []
+        supportsSensorMode = flashCapabilities.supportsSensorMode
+            && !connection.isWired
+            && connection.maximumReportRate <= 1000
+        sensorModeOptions = supportsSensorMode ? [0, 1] : []
+        supportsPerformanceLevel = flashCapabilities.supportsPerformanceLevel
+        performanceLevelOptions = supportsPerformanceLevel
+            ? DeviceSettings.supportedSleepTimeCodes
+            : []
+        var receiver = receiver
+        if !family.supportsFanMode {
+            receiver.buttonModeOptions.removeAll { $0 == 8 }
+        }
+        self.receiver = receiver
         self.supportsProfiles = supportsProfiles
         self.supportsLongDistance = supportsLongDistance && !connection.isWired
         self.supportsSignalStrength = supportsSignalStrength && !connection.isWired

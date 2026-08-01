@@ -290,4 +290,46 @@ struct DraftValidatorTests {
         #expect(!wired.supportsBattery)
         #expect(!wired.supportsLongDistance)
     }
+
+    @Test("Une commande récepteur non sondée est bloquante avant le plan")
+    func rejectsUnsupportedReceiverEffect() {
+        var draft = baselineSettings()
+        draft.receiver = ReceiverSettings(effect: ReceiverLightEffect(mode: 2))
+        let issues = validator.validate(draft)
+
+        #expect(issues.contains { $0.id == "receiver.effect.unsupported" && $0.isBlocking })
+    }
+
+    @Test("Un mode ventilateur reste bloqué quand la capacité n'est pas confirmée")
+    func rejectsUnsupportedFanMode() {
+        var draft = baselineSettings()
+        draft.fanMode = 2
+
+        #expect(validator.validate(draft).contains {
+            $0.id == "fanMode.unsupported" && $0.isBlocking
+        })
+    }
+
+    @Test("Le mode capteur est validé contre la connexion et ses options")
+    func validatesSensorModeOptions() {
+        let wirelessOneK = DeviceCapabilities(
+            family: family,
+            catalog: catalog,
+            connection: .wireless1k,
+            supportsProfiles: true,
+            supportsLongDistance: true,
+            supportsSignalStrength: true,
+            flashCapabilities: DeviceFlashCapabilities(
+                supportsSensorMode: true,
+                supportsPerformanceLevel: true
+            )
+        )
+        var draft = baselineSettings()
+        draft.sensorMode = 2
+        let issues = DraftValidator(
+            capabilities: wirelessOneK, family: family, catalog: catalog
+        ).validate(draft)
+
+        #expect(issues.contains { $0.id == "sensorMode" && $0.isBlocking })
+    }
 }

@@ -713,17 +713,32 @@ struct PowerSection: View {
                         .padding(.bottom, Theme.Space.large)
                 }
 
-                PremiumRow(
-                    label: L10n.string("Sleep after"),
-                    detail: L10n.string("The selected delay is written to both firmware sleep timers.")
-                ) {
-                    Picker("", selection: $model.draft.sleepTimeCode) {
-                        ForEach(DeviceSettings.supportedSleepTimeCodes, id: \.self) { code in
-                            Text(DeviceSettings.sleepTimeLabel(for: code)).tag(code)
+                if capabilities.supportsPerformanceLevel {
+                    PremiumRow(
+                        label: L10n.string("Performance level"),
+                        detail: L10n.string("The selected level is written to both firmware sleep timers.")
+                    ) {
+                        Picker("", selection: performanceLevelBinding) {
+                            ForEach(capabilities.performanceLevelOptions, id: \.self) { code in
+                                Text(DeviceSettings.sleepTimeLabel(for: code)).tag(code)
+                            }
                         }
+                        .labelsHidden()
+                        .frame(width: 120)
                     }
-                    .labelsHidden()
-                    .frame(width: 120)
+                } else {
+                    PremiumRow(
+                        label: L10n.string("Sleep after"),
+                        detail: L10n.string("The selected delay is written to the firmware sleep timer.")
+                    ) {
+                        Picker("", selection: $model.draft.sleepTimeCode) {
+                            ForEach(DeviceSettings.supportedSleepTimeCodes, id: \.self) { code in
+                                Text(DeviceSettings.sleepTimeLabel(for: code)).tag(code)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 120)
+                    }
                 }
 
                 PremiumRow(
@@ -786,32 +801,23 @@ struct PowerSection: View {
                         }
                         PremiumRow(
                             label: L10n.string("Firmware"),
-                            showsDivider: snapshot.dongleLighting != nil
+                            showsDivider: receiverControls(for: capabilities).isEmpty
                         ) {
                             Text(snapshot.dongleVersion ?? snapshot.firmwareVersion)
                                 .monospacedDigit()
                         }
-                        if let lighting = snapshot.dongleLighting {
-                            PremiumRow(
-                                label: L10n.string("Receiver lighting"),
-                                detail: L10n.string("Turns off the receiver LEDs without changing their colors."),
-                                showsDivider: false
-                            ) {
-                                Toggle(
-                                    "",
-                                    isOn: Binding(
-                                        get: { lighting.isEnabled },
-                                        set: { enabled in
-                                            Task { await model.setDongleLightEnabled(enabled) }
-                                        }
-                                    )
-                                )
-                                .labelsHidden()
-                                .disabled(model.connection.isBusy)
-                                .accessibilityLabel(L10n.string("Receiver lighting"))
-                            }
-                        }
                     }
+                }
+
+                if model.draft.receiver != nil, !receiverControls(for: capabilities).isEmpty {
+                    ReceiverSettingsRows(
+                        settings: Binding(
+                            get: { model.draft.receiver ?? ReceiverSettings() },
+                            set: { model.draft.receiver = $0 }
+                        ),
+                        capabilities: capabilities.receiver
+                    )
+                    .padding(.top, Theme.Space.small)
                 }
 
                 Divider()
@@ -832,6 +838,16 @@ struct PowerSection: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private var performanceLevelBinding: Binding<Int> {
+        Binding(
+            get: { model.draft.performanceLevel },
+            set: { value in
+                model.draft.performanceLevel = value
+                model.draft.sleepTimeCode = value
+            }
+        )
     }
 
     private func powerBehavior(
@@ -938,4 +954,335 @@ struct PowerSection: View {
         }
     }
 
+}
+
+/// Éditeur des commandes récepteur dont les getters ont effectivement répondu.
+/// Toutes les mutations restent dans `DeviceSettings` : la barre Apply du modèle
+/// construit ensuite le plan, écrit, puis relit chaque commande.
+private struct ReceiverSettingsRows: View {
+    @Binding var settings: ReceiverSettings
+    let capabilities: ReceiverCapabilities
+
+    private let rgbModes = [0, 1, 2, 3]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if capabilities.supportsRGBLighting, settings.rgbLighting != nil {
+                Text(L10n.string("Receiver lighting"))
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.bottom, Theme.Space.tight)
+
+                PremiumRow(
+                    label: L10n.string("Enabled"),
+                    detail: L10n.string("Turns off the receiver LEDs without changing their colors.")
+                ) {
+                    Toggle("", isOn: rgbEnabledBinding)
+                        .labelsHidden()
+                }
+
+                PremiumRow(label: L10n.string("Mode")) {
+                    Picker("", selection: rgbModeBinding) {
+                        ForEach(rgbModes, id: \.self) { mode in
+                            Text(rgbModeLabel(mode)).tag(mode)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 130)
+                }
+
+                ForEach(0..<3, id: \.self) { colorIndex in
+                    PremiumRow(
+                        label: L10n.format("Color %d", colorIndex + 1),
+                        showsDivider: colorIndex != 2
+                    ) {
+                        ColorPicker(
+                            "",
+                            selection: rgbColorBinding(colorIndex * 3),
+                            supportsOpacity: false
+                        )
+                        .labelsHidden()
+                    }
+                }
+            }
+
+            if capabilities.supportsEffect, settings.effect != nil {
+                Text(L10n.string("Receiver effect"))
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.top, Theme.Space.medium)
+                    .padding(.bottom, Theme.Space.tight)
+
+                PremiumRow(label: L10n.string("Effect")) {
+                    Picker("", selection: effectIntBinding(\.mode)) {
+                        ForEach(ReceiverLightEffect.supportedModes, id: \.self) { mode in
+                            Text(effectModeLabel(mode)).tag(mode)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 130)
+                }
+
+                PremiumRow(label: L10n.string("Color")) {
+                    ColorPicker(
+                        "",
+                        selection: effectColorBinding,
+                        supportsOpacity: false
+                    )
+                    .labelsHidden()
+                }
+
+                PremiumRow(label: L10n.string("Speed")) {
+                    valueSlider(binding: effectIntBinding(\.speed))
+                }
+
+                PremiumRow(label: L10n.string("Brightness"), showsDivider: false) {
+                    valueSlider(binding: effectIntBinding(\.brightness))
+                }
+            }
+
+            if capabilities.supportsDPILighting, settings.dpiLightEnabled != nil {
+                PremiumRow(
+                    label: L10n.string("DPI lighting"),
+                    detail: L10n.string("Controls the indicator on the receiver.")
+                ) {
+                    Toggle("", isOn: dpiLightBinding)
+                        .labelsHidden()
+                }
+            }
+
+            if capabilities.supportsButtonMode, settings.buttonMode != nil {
+                Text(L10n.string("Receiver button"))
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.top, Theme.Space.medium)
+                    .padding(.bottom, Theme.Space.tight)
+
+                PremiumRow(label: L10n.string("Function"), showsDivider: false) {
+                    Picker("", selection: buttonModeBinding) {
+                        ForEach(capabilities.buttonModeOptions, id: \.self) { mode in
+                            Text(buttonFunctionLabel(mode)).tag(mode)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 150)
+                }
+            }
+
+            if capabilities.supportsButtonFunctions, !settings.buttonFunctions.isEmpty {
+                Text(L10n.string("Receiver button effects"))
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.top, Theme.Space.medium)
+                    .padding(.bottom, Theme.Space.tight)
+
+                ForEach($settings.buttonFunctions) { $function in
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(L10n.format("Button %d", function.index + 1))
+                            .font(.caption.weight(.semibold))
+                            .padding(.top, Theme.Space.tight)
+
+                        PremiumRow(label: L10n.string("Mode")) {
+                            Picker("", selection: $function.mode) {
+                                ForEach(ReceiverLightEffect.supportedModes, id: \.self) { mode in
+                                    Text(receiverFunctionModeLabel(mode)).tag(mode)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(width: 130)
+                        }
+
+                        PremiumRow(label: L10n.string("Color")) {
+                            ColorPicker(
+                                "",
+                                selection: buttonColorBinding(function.index),
+                                supportsOpacity: false
+                            )
+                            .labelsHidden()
+                        }
+
+                        PremiumRow(label: L10n.string("Speed")) {
+                            valueSlider(binding: buttonIntBinding(function.index, \.speed))
+                        }
+
+                        PremiumRow(
+                            label: L10n.string("Brightness"),
+                            showsDivider: function.id != settings.buttonFunctions.last?.id
+                        ) {
+                            valueSlider(binding: buttonIntBinding(function.index, \.brightness))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var rgbEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { settings.rgbLighting?.isEnabled ?? false },
+            set: { enabled in
+                guard var lighting = settings.rgbLighting else { return }
+                lighting = lighting.setting(enabled: enabled)
+                settings.rgbLighting = lighting
+            }
+        )
+    }
+
+    private var rgbModeBinding: Binding<Int> {
+        Binding(
+            get: { Int(settings.rgbLighting?.mode ?? 0) },
+            set: { mode in
+                guard var lighting = settings.rgbLighting else { return }
+                lighting.mode = UInt8(clamping: mode)
+                settings.rgbLighting = lighting
+            }
+        )
+    }
+
+    private func rgbColorBinding(_ index: Int) -> Binding<Color> {
+        Binding(
+            get: {
+                guard let lighting = settings.rgbLighting,
+                      lighting.colors.indices.contains(index + 2) else { return .white }
+                let color = CatalogColor(
+                    red: Int(lighting.colors[index]),
+                    green: Int(lighting.colors[index + 1]),
+                    blue: Int(lighting.colors[index + 2])
+                )
+                return color.swiftUIColor
+            },
+            set: { color in
+                guard var lighting = settings.rgbLighting,
+                      lighting.colors.indices.contains(index + 2) else { return }
+                let catalogColor = CatalogColor(color)
+                lighting.colors[index] = UInt8(clamping: catalogColor.red)
+                lighting.colors[index + 1] = UInt8(clamping: catalogColor.green)
+                lighting.colors[index + 2] = UInt8(clamping: catalogColor.blue)
+                settings.rgbLighting = lighting
+            }
+        )
+    }
+
+    private func effectIntBinding(
+        _ keyPath: WritableKeyPath<ReceiverLightEffect, Int>
+    ) -> Binding<Int> {
+        Binding(
+            get: { settings.effect?[keyPath: keyPath] ?? 0 },
+            set: { value in
+                guard var effect = settings.effect else { return }
+                effect[keyPath: keyPath] = value
+                settings.effect = effect
+            }
+        )
+    }
+
+    private var effectColorBinding: Binding<Color> {
+        Binding(
+            get: { settings.effect?.color.swiftUIColor ?? .white },
+            set: { color in
+                guard var effect = settings.effect else { return }
+                effect.color = CatalogColor(color)
+                settings.effect = effect
+            }
+        )
+    }
+
+    private var dpiLightBinding: Binding<Bool> {
+        Binding(
+            get: { settings.dpiLightEnabled ?? false },
+            set: { settings.dpiLightEnabled = $0 }
+        )
+    }
+
+    private var buttonModeBinding: Binding<Int> {
+        Binding(
+            get: { settings.buttonMode ?? 0 },
+            set: { settings.buttonMode = $0 }
+        )
+    }
+
+    private func buttonColorBinding(_ index: Int) -> Binding<Color> {
+        Binding(
+            get: {
+                settings.buttonFunctions.first(where: { $0.index == index })?.color.swiftUIColor
+                    ?? .white
+            },
+            set: { color in
+                guard let position = settings.buttonFunctions.firstIndex(where: { $0.index == index })
+                else { return }
+                settings.buttonFunctions[position].color = CatalogColor(color)
+            }
+        )
+    }
+
+    private func buttonIntBinding(
+        _ index: Int,
+        _ keyPath: WritableKeyPath<ReceiverButtonFunction, Int>
+    ) -> Binding<Int> {
+        Binding(
+            get: {
+                settings.buttonFunctions.first(where: { $0.index == index })?[keyPath: keyPath] ?? 0
+            },
+            set: { value in
+                guard let position = settings.buttonFunctions.firstIndex(where: { $0.index == index })
+                else { return }
+                settings.buttonFunctions[position][keyPath: keyPath] = value
+            }
+        )
+    }
+
+    private func valueSlider(binding: Binding<Int>) -> some View {
+        HStack(spacing: Theme.Space.small) {
+            Slider(
+                value: Binding(
+                    get: { Double(binding.wrappedValue) },
+                    set: { binding.wrappedValue = Int($0.rounded()) }
+                ),
+                in: 0...9,
+                step: 1
+            )
+            .frame(width: 112)
+            Text("\(binding.wrappedValue + 1)")
+                .monospacedDigit()
+                .frame(width: 24, alignment: .trailing)
+        }
+    }
+
+    private func rgbModeLabel(_ mode: Int) -> String {
+        switch mode {
+        case 0: L10n.string("Off")
+        case 1: L10n.string("Rainbow")
+        case 2: L10n.string("Breathing")
+        case 3: L10n.string("Fixed")
+        default: L10n.format("Mode %d", mode)
+        }
+    }
+
+    private func effectModeLabel(_ mode: Int) -> String {
+        switch mode {
+        case 0: L10n.string("Off")
+        case 1: L10n.string("Rainbow")
+        case 2: L10n.string("Breathing")
+        case 3: L10n.string("Fixed")
+        case 4: L10n.string("Neon")
+        case 5: L10n.string("Rainbow breathing")
+        case 6: L10n.string("Fixed rainbow")
+        default: L10n.format("Mode %d", mode)
+        }
+    }
+
+    private func receiverFunctionModeLabel(_ mode: Int) -> String {
+        L10n.format("Mode %d", mode)
+    }
+
+    private func buttonFunctionLabel(_ mode: Int) -> String {
+        switch mode {
+        case 0: L10n.string("Off")
+        case 1: L10n.string("Polling rate")
+        case 2: L10n.string("Lift-off distance")
+        case 3: L10n.string("Debounce")
+        case 4: L10n.string("Motion Sync")
+        case 5: L10n.string("Profile")
+        case 6: L10n.string("Performance mode")
+        case 7: L10n.string("Turbo mode")
+        case 8: L10n.string("Fan mode")
+        default: L10n.format("Function %d", mode)
+        }
+    }
 }

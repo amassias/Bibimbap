@@ -8,9 +8,14 @@ import Testing
 @Suite("Contrôleur — cycle lecture / écriture / relecture")
 struct DeviceControllerTests {
     private func makeController(
-        faults: SimulatedHIDTransport.Faults = .init()
+        faults: SimulatedHIDTransport.Faults = .init(),
+        cid: Int = 87,
+        mid: Int = 10,
+        connectionType: PulsarConnectionType = .wireless4k
     ) -> (SimulatedHIDTransport, DeviceController) {
-        let transport = SimulatedHIDTransport(faults: faults)
+        let transport = SimulatedHIDTransport(
+            cid: cid, mid: mid, connectionType: connectionType, faults: faults
+        )
         return (transport, DeviceController(transport: transport))
     }
 
@@ -31,13 +36,161 @@ struct DeviceControllerTests {
     @Test("L'éclairage du récepteur peut être éteint et rallumé")
     func toggleDongleLighting() async throws {
         let (_, controller) = makeController()
-        _ = try await controller.connect()
+        let initial = try await controller.connect()
+        let initialColors = try #require(initial.dongleLighting?.colors)
 
         let disabled = try await controller.setDongleLightEnabled(false)
         #expect(disabled.dongleLighting?.isEnabled == false)
+        #expect(disabled.dongleLighting?.colors == initialColors)
 
         let enabled = try await controller.setDongleLightEnabled(true)
         #expect(enabled.dongleLighting?.isEnabled == true)
+        #expect(enabled.dongleLighting?.colors == initialColors)
+        await controller.disconnect()
+    }
+
+    @Test("Les réglages avancés du récepteur passent par le plan et la relecture")
+    func advancedReceiverSettingsRoundTrip() async throws {
+        let (_, controller) = makeController()
+        let snapshot = try await controller.connect()
+        let capabilities = await controller.capabilities(for: snapshot)
+        var draft = snapshot.settings
+        var receiver = try #require(draft.receiver)
+
+        var lighting = try #require(receiver.rgbLighting)
+        lighting.mode = 0
+        lighting.colors = [10, 20, 30, 40, 50, 60, 70, 80, 90]
+        receiver.rgbLighting = lighting
+
+        var effect = try #require(receiver.effect)
+        effect.mode = 2
+        effect.color = CatalogColor(red: 101, green: 102, blue: 103)
+        effect.speed = 7
+        effect.brightness = 4
+        receiver.effect = effect
+        receiver.dpiLightEnabled = false
+        receiver.buttonMode = 5
+        receiver.buttonFunctions[0].mode = 4
+        draft.receiver = receiver
+
+        let plan = WritePlanner(
+            family: snapshot.family,
+            catalog: .embedded,
+            capabilities: capabilities
+        ).plan(from: snapshot.settings, to: draft)
+        #expect(plan.operations.map(\.id).contains("receiver.rgb"))
+        #expect(plan.operations.map(\.id).contains("receiver.effect"))
+        #expect(plan.operations.map(\.id).contains("receiver.dpiLight"))
+        #expect(plan.operations.map(\.id).contains("receiver.buttonMode"))
+        #expect(plan.operations.map(\.id).contains("receiver.buttonFunction.0"))
+        let commandOperations = plan.operations.filter {
+            if case .command = $0.payload { return true }
+            return false
+        }
+        #expect(commandOperations.allSatisfy { $0.rollback != nil })
+
+        let result = try await controller.apply(plan)
+        #expect(result.outcome == .succeeded)
+        let refreshed = try await controller.readSnapshot()
+        #expect(refreshed.settings.receiver == draft.receiver)
+        await controller.disconnect()
+    }
+
+    @Test("Les niveaux capteur et performance sont reliés à leurs écritures flash")
+    func advancedFlashSettingsRoundTrip() async throws {
+        let (_, controller) = makeController(connectionType: .wireless1k)
+        let snapshot = try await controller.connect()
+        let capabilities = await controller.capabilities(for: snapshot)
+        #expect(capabilities.supportsSensorMode)
+        #expect(capabilities.supportsPerformanceLevel)
+
+        var draft = snapshot.settings
+        draft.sensorMode = 1
+        draft.performanceLevel = 30
+        draft.sleepTimeCode = 30
+        let plan = WritePlanner(
+            family: snapshot.family,
+            catalog: .embedded,
+            capabilities: capabilities
+        ).plan(from: snapshot.settings, to: draft)
+        #expect(plan.operations.map(\.id).contains("perf.sensorMode"))
+        #expect(plan.operations.map(\.id).contains("power.sleep"))
+        #expect(plan.operations.map(\.id).contains("power.sleepPerformance"))
+
+        #expect((try await controller.apply(plan)).outcome == .succeeded)
+        let refreshed = try await controller.readSnapshot()
+        #expect(refreshed.settings.sensorMode == 1)
+        #expect(refreshed.settings.performanceLevel == 30)
+        #expect(refreshed.settings.sleepTimeCode == 30)
+        await controller.disconnect()
+    }
+
+    @Test("Le fan mode reste réservé au modèle dont la flash et le catalogue le déclarent")
+    func fanModeRoundTrip() async throws {
+        let (_, controller) = makeController(cid: 87, mid: 101, connectionType: .wireless1k)
+        let snapshot = try await controller.connect()
+        let capabilities = await controller.capabilities(for: snapshot)
+        #expect(capabilities.supportsFanMode)
+        #expect(capabilities.fanModeOptions == [0, 1, 2, 3, 4])
+
+        var draft = snapshot.settings
+        draft.fanMode = 3
+        let plan = WritePlanner(
+            family: snapshot.family,
+            catalog: .embedded,
+            capabilities: capabilities
+        ).plan(from: snapshot.settings, to: draft)
+        #expect(plan.operations.contains { $0.id == "perf.fanMode" })
+        #expect((try await controller.apply(plan)).outcome == .succeeded)
+        #expect((try await controller.readSnapshot()).settings.fanMode == 3)
+        await controller.disconnect()
+    }
+
+    @Test("Une commande récepteur non sondée ne crée pas de capacité d'interface")
+    func unsupportedReceiverSettingsAreNotExposed() async throws {
+        var faults = SimulatedHIDTransport.Faults()
+        faults.unsupportedCommands = [
+            .getPulsarDongleLightParam,
+            .getPulsarDongleDPILightParam,
+            .getPulsarDongleOButtonCurrentMode,
+            .getPulsarDongleOButtonFunction,
+        ]
+        let (_, controller) = makeController(faults: faults)
+        let snapshot = try await controller.connect()
+        let capabilities = await controller.capabilities(for: snapshot)
+        #expect(capabilities.receiver.supportsRGBLighting)
+        #expect(!capabilities.receiver.supportsEffect)
+        #expect(!capabilities.receiver.supportsDPILighting)
+        #expect(!capabilities.receiver.supportsButtonMode)
+        #expect(!capabilities.receiver.supportsButtonFunctions)
+        await controller.disconnect()
+    }
+
+    @Test("Une commande récepteur avalée est relue puis restaurée")
+    func receiverWriteDivergenceIsRestored() async throws {
+        let (transport, controller) = makeController()
+        let snapshot = try await controller.connect()
+        let capabilities = await controller.capabilities(for: snapshot)
+        var draft = snapshot.settings
+        var receiver = try #require(draft.receiver)
+        receiver.dpiLightEnabled = false
+        draft.receiver = receiver
+        let plan = WritePlanner(
+            family: snapshot.family,
+            catalog: .embedded,
+            capabilities: capabilities
+        ).plan(from: snapshot.settings, to: draft)
+
+        var faults = SimulatedHIDTransport.Faults()
+        faults.dropReceiverWrites = true
+        await transport.setFaults(faults)
+        let result = try await controller.apply(plan)
+
+        guard case .failedAndRestored = result.outcome else {
+            Issue.record("la relecture d'une commande récepteur avalée doit être restaurée")
+            return
+        }
+        #expect((try await controller.readSnapshot()).settings.receiver == snapshot.settings.receiver)
         await controller.disconnect()
     }
 

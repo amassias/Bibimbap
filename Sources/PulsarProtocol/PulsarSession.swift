@@ -26,6 +26,8 @@ public actor PulsarSession {
         case mismatchedResponse(expected: PulsarCommand, received: PulsarCommand)
         case firmwareOperationBlocked(PulsarCommand)
         case readbackMismatch(address: UInt16)
+        case malformedResponse(PulsarCommand)
+        case commandReadbackMismatch(PulsarCommand)
     }
 
     private let transport: any HIDTransport

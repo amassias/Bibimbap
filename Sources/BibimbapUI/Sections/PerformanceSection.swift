@@ -375,8 +375,50 @@ struct PerformanceSection: View {
                             .labelsHidden()
                     }
                 }
+
+                if !capabilities.sensorModeOptions.isEmpty {
+                    PremiumRow(
+                        label: L10n.string("Sensor mode"),
+                        detail: L10n.string("Selects the sensor power profile reported by the receiver.")
+                    ) {
+                        Picker("", selection: $model.draft.sensorMode) {
+                            ForEach(capabilities.sensorModeOptions, id: \.self) { mode in
+                                Text(sensorModeLabel(mode)).tag(mode)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 110)
+                    }
+                }
+
+                if !capabilities.fanModeOptions.isEmpty {
+                    PremiumRow(
+                        label: L10n.string("Fan mode"),
+                        detail: L10n.string("Controls the receiver cooling profile.")
+                    ) {
+                        Picker("", selection: $model.draft.fanMode) {
+                            ForEach(capabilities.fanModeOptions, id: \.self) { mode in
+                                Text(fanModeLabel(mode)).tag(mode)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 110)
+                    }
+                }
             }
         }
+    }
+
+    private func sensorModeLabel(_ mode: Int) -> String {
+        switch mode {
+        case 0: "LP"
+        case 1: "HP"
+        default: L10n.format("Mode %d", mode)
+        }
+    }
+
+    private func fanModeLabel(_ mode: Int) -> String {
+        mode == 0 ? L10n.string("Off") : L10n.format("Level %d", mode)
     }
 
     private var rotationPanel: some View {
