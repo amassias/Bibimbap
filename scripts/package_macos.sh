@@ -226,6 +226,7 @@ zip_path="$output_dir/$base_name.zip"
 dmg_path="$output_dir/$base_name.dmg"
 manifest_path="$output_dir/$base_name-manifest.json"
 checksums_path="$output_dir/SHA256SUMS"
+dmg_staging_dir="$work_root/dmg-staging"
 
 create_zip() {
     rm -f "$zip_path"
@@ -237,10 +238,14 @@ create_zip() {
 
 create_dmg() {
     rm -f "$dmg_path"
+    rm -rf "$dmg_staging_dir"
+    mkdir -p "$dmg_staging_dir"
+    COPYFILE_DISABLE=1 ditto "$staging_dir/Bibimbap.app" "$dmg_staging_dir/Bibimbap.app"
+    ln -s /Applications "$dmg_staging_dir/Applications"
     hdiutil create \
         -quiet \
         -volname "Bibimbap $version" \
-        -srcfolder "$staging_dir" \
+        -srcfolder "$dmg_staging_dir" \
         -ov \
         -format UDZO \
         -imagekey zlib-level=9 \
