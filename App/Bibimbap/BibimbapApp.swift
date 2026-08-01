@@ -62,8 +62,18 @@ struct BibimbapApp: App {
 
                 Divider()
 
-                Button("Relire le périphérique") {
-                    Task { await model.reload() }
+                Button(model.requiresExplicitReread
+                       ? "Récupérer l'état matériel"
+                       : model.hasPendingChanges
+                           ? "Relire et comparer"
+                           : "Relire le périphérique") {
+                    Task {
+                        if model.requiresExplicitReread {
+                            await model.recoverUncertainHardware()
+                        } else {
+                            await model.rereadAndCompare()
+                        }
+                    }
                 }
                 .keyboardShortcut("r", modifiers: [.command, .shift])
             }

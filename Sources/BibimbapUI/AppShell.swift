@@ -119,9 +119,27 @@ private struct AppTitleBar: View {
             HStack {
                 Spacer()
                 if model.connection.isBusy {
-                    ProgressView()
-                        .controlSize(.small)
+                    if let progress = model.writeProgress,
+                       case .writing = model.connection {
+                        HStack(spacing: Theme.Space.small) {
+                            ProgressView(value: progress.fraction)
+                                .frame(width: 100)
+                            Text(L10n.format(
+                                "%d/%d",
+                                progress.completed,
+                                progress.total
+                            ))
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                        }
                         .padding(.trailing, Theme.Space.xlarge)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(L10n.string("Write progress"))
+                    } else {
+                        ProgressView()
+                            .controlSize(.small)
+                            .padding(.trailing, Theme.Space.xlarge)
+                    }
                 }
             }
         }
@@ -313,10 +331,20 @@ private struct DeviceStatusHeader: View {
                     }
 
                     Menu {
-                        Button(L10n.string("Reload device")) {
-                            Task { await model.reload() }
+                        Button(model.requiresExplicitReread
+                               ? L10n.string("Récupérer l'état matériel")
+                               : model.hasPendingChanges
+                                   ? L10n.string("Relire et comparer")
+                                   : L10n.string("Relire le périphérique")) {
+                            Task {
+                                if model.requiresExplicitReread {
+                                    await model.recoverUncertainHardware()
+                                } else {
+                                    await model.rereadAndCompare()
+                                }
+                            }
                         }
-                        Button(L10n.string("Export diagnostics")) {
+                        Button(L10n.string("Exporter le diagnostic")) {
                             model.section = .settings
                         }
                     } label: {
@@ -359,21 +387,32 @@ private struct DeviceStatusHeader: View {
 
     private func profilePicker(current: Int) -> some View {
         VStack(alignment: .leading, spacing: Theme.Space.snug) {
-            Text(L10n.string("Profile"))
+            Text(L10n.string("Profil actif"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
 
-            Picker("", selection: Binding(
+            Picker(L10n.string("Profil actif"), selection: Binding(
                 get: { current },
-                set: { profile in Task { await model.selectProfile(profile) } }
+                set: { profile in
+                    guard model.canChangeProfile else { return }
+                    Task { await model.selectProfile(profile) }
+                }
             )) {
-                ForEach(0..<3, id: \.self) { index in
+                ForEach(model.supportedProfileIndices, id: \.self) { index in
                     Text(L10n.format("Profile %d", index + 1)).tag(index)
                 }
             }
-            .labelsHidden()
             .frame(width: 160)
+            .disabled(!model.canChangeProfile)
+            .help(model.activeHardwareLocationLabel)
+
+            Text(model.activeHardwareLocationLabel)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .frame(width: 160, alignment: .leading)
         }
     }
 

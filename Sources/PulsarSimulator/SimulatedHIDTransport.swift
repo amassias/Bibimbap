@@ -10,6 +10,8 @@ import PulsarProtocol
 /// (checksum faux, timeout, écriture partielle, relecture divergente), et donner aux
 /// tests un périphérique déterministe.
 public actor SimulatedHIDTransport: HIDTransport {
+    private static let profileCount = 3
+
     /// Défauts injectables, pour éprouver les chemins d'erreur.
     public struct Faults: Sendable {
         /// Ne répond pas aux commandes listées.
@@ -22,6 +24,9 @@ public actor SimulatedHIDTransport: HIDTransport {
         public var dropWrites = false
         /// Accepte les commandes récepteur mais n'en modifie pas l'état.
         public var dropReceiverWrites = false
+        /// Après ce nombre d'écritures flash réussies, les suivantes sont acquittées sans
+        /// effet. Cela permet de tester une restauration partielle de façon déterministe.
+        public var dropWritesAfterWriteOperations: Int? = nil
         /// Interrompt la connexion après ce nombre de trames reçues.
         public var disconnectAfterFrames: Int?
         /// Latence ajoutée à chaque réponse.
@@ -56,9 +61,13 @@ public actor SimulatedHIDTransport: HIDTransport {
     private let firmwareVersion: String
 
     private var faults: Faults
-    private var flash = FlashImage()
+    /// Une image de flash par profil : le protocole sélectionne l'emplacement avant les
+    /// lectures/écritures, comme sur le matériel. Les tests de copie et de comparaison ne
+    /// doivent donc pas donner l'illusion que trois profils partagent la même mémoire.
+    private var profileImages: [Int: FlashImage] = [:]
     private var isOpen = false
     private var receivedFrames = 0
+    private var writeOperations = 0
     private var responseCount = 0
     private var onlinePolls = 0
     /// Nombre d'ouvertures réussies, pour vérifier qu'aucune session ne fuit après un échec.
@@ -89,6 +98,11 @@ public actor SimulatedHIDTransport: HIDTransport {
             brightness: 9,
             duration: 0
         )
+    }
+
+    private var flash: FlashImage {
+        get { profileImages[activeProfile] ?? FlashImage() }
+        set { profileImages[activeProfile] = newValue }
     }
 
     private var inputContinuations: [UUID: AsyncStream<HIDInputReport>.Continuation] = [:]
@@ -126,7 +140,10 @@ public actor SimulatedHIDTransport: HIDTransport {
             maxInputReportSize: PulsarFrame.length + 1,
             maxOutputReportSize: PulsarFrame.length + 1
         )
-        self.flash = Self.factoryImage(catalog: catalog, family: family)
+        let factory = Self.factoryImage(catalog: catalog, family: family)
+        self.profileImages = (0..<Self.profileCount).reduce(into: [:]) { result, index in
+            result[index] = factory
+        }
         self.longDistance = family.power.defaultLongDistance
     }
 
@@ -136,6 +153,13 @@ public actor SimulatedHIDTransport: HIDTransport {
 
     /// Image de flash courante, pour qu'un test vérifie ce qui a réellement été écrit.
     public func flashImage() -> FlashImage { flash }
+
+    /// Image d'un emplacement donné, sans changer le profil actif. Réservé aux tests :
+    /// le modèle applicatif, lui, passe toujours par la sélection et la relecture du
+    /// protocole avant de consulter un profil matériel.
+    public func flashImage(forProfile profile: Int) -> FlashImage {
+        profileImages[profile] ?? FlashImage()
+    }
 
     // MARK: Réglages usine
 
@@ -215,6 +239,7 @@ public actor SimulatedHIDTransport: HIDTransport {
         isOpen = true
         openCount += 1
         receivedFrames = 0
+        writeOperations = 0
         onlinePolls = 0
     }
 
@@ -344,7 +369,11 @@ public actor SimulatedHIDTransport: HIDTransport {
             return PulsarFrame(command: .getCurrentConfig, payload: [UInt8(activeProfile)])
 
         case .setCurrentConfig:
-            activeProfile = Int(frame[byte: 5])
+            let requested = Int(frame[byte: 5])
+            guard (0..<Self.profileCount).contains(requested) else {
+                return PulsarFrame(command: .setCurrentConfig, status: 1)
+            }
+            activeProfile = requested
             return PulsarFrame(command: .setCurrentConfig)
 
         case .getLongRangeMode:
@@ -520,7 +549,10 @@ public actor SimulatedHIDTransport: HIDTransport {
             )
 
         case .writeFlashData:
-            if !faults.dropWrites {
+            let shouldDrop = faults.dropWrites
+                || faults.dropWritesAfterWriteOperations.map { writeOperations >= $0 } == true
+            writeOperations += 1
+            if !shouldDrop {
                 flash.write(frame.payload, at: frame.address)
             }
             return PulsarFrame(

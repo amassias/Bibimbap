@@ -9,6 +9,10 @@ import PulsarProtocol
 /// C'est ici que vit la règle centrale du projet : rien n'est réputé écrit tant que
 /// la relecture ne l'a pas confirmé, et un lot qui échoue est défait au mieux.
 public actor DeviceController {
+    /// Les modèles actuellement décrits par le protocole exposent trois emplacements
+    /// sélectionnables. On ne déduit jamais ce nombre d'un octet arbitraire relu.
+    public static let profileCount = 3
+
     private let transport: any HIDTransport
     private let catalog: DeviceCatalog
     private var session: PulsarSession?
@@ -35,6 +39,9 @@ public actor DeviceController {
         case openFailed(code: Int32)
         /// Tout le reste : le dialogue a eu lieu mais n'a pas abouti.
         case communicationFailure(String)
+        /// La commande de sélection a été acquittée mais la relecture ne confirme pas
+        /// l'emplacement demandé.
+        case profileSelectionReadbackMismatch(expected: Int, actual: Int?)
     }
 
     // MARK: Journal de connexion
@@ -529,7 +536,10 @@ public actor DeviceController {
     /// 4. les opérations déjà appliquées sont défaites dans l'ordre inverse ;
     /// 5. toute restauration qui échoue est nommée dans le résultat, parce que l'état
     ///    matériel correspondant n'est alors plus connu.
-    public func apply(_ plan: WritePlan) async throws -> WriteResult {
+    public func apply(
+        _ plan: WritePlan,
+        progress: @escaping @Sendable (WriteProgress) async -> Void = { _ in }
+    ) async throws -> WriteResult {
         guard let session else { throw ControllerError.notConnected }
         guard !plan.isEmpty else { return WriteResult(outcome: .succeeded, applied: []) }
 
@@ -537,10 +547,22 @@ public actor DeviceController {
         defer { Task { try? await session.hold(false) } }
 
         var applied: [WriteOperation] = []
-        for operation in plan.operations {
+        for (index, operation) in plan.operations.enumerated() {
+            await progress(WriteProgress(
+                completed: applied.count,
+                total: plan.count,
+                currentOperation: operation.label
+            ))
             do {
                 try await perform(operation, using: session)
                 applied.append(operation)
+                await progress(WriteProgress(
+                    completed: applied.count,
+                    total: plan.count,
+                    currentOperation: index + 1 < plan.count
+                        ? plan.operations[index + 1].label
+                        : nil
+                ))
             } catch {
                 // La commande courante peut avoir été acceptée puis avoir divergé à la
                 // relecture. On tente donc aussi son rollback avant de défaire le lot
@@ -681,7 +703,25 @@ public actor DeviceController {
 
     public func setActiveProfile(_ profile: Int) async throws {
         guard let session else { throw ControllerError.notConnected }
+        guard (0..<Self.profileCount).contains(profile) else {
+            throw ControllerError.profileSelectionReadbackMismatch(expected: profile, actual: nil)
+        }
         try await session.setActiveProfile(profile)
+        let confirmed = try await session.readActiveProfile()
+        guard confirmed == profile else {
+            throw ControllerError.profileSelectionReadbackMismatch(
+                expected: profile,
+                actual: confirmed
+            )
+        }
+    }
+
+    /// Sélectionne un emplacement, confirme le choix par une lecture indépendante, puis
+    /// relit son instantané complet. La lecture est nécessaire même si la commande a été
+    /// acquittée : l'interface ne doit jamais afficher un profil supposé.
+    public func readProfile(_ profile: Int) async throws -> DeviceSnapshot {
+        try await setActiveProfile(profile)
+        return try await readSnapshot()
     }
 
     /// Bascule l'éclairage du récepteur en conservant les couleurs actuellement stockées.
@@ -748,6 +788,12 @@ extension DeviceController.ControllerError: LocalizedError {
             L10n.string("Le périphérique n'a pas répondu au dialogue d'identification.")
         case .openFailed(let code):
             L10n.format("Device opening denied (code %d).", code)
+        case .profileSelectionReadbackMismatch(let expected, let actual):
+            L10n.format(
+                "Le profil demandé (%d) n'a pas été confirmé par la relecture (reçu %@).",
+                expected + 1,
+                actual.map { String($0 + 1) } ?? "—"
+            )
         case .communicationFailure(let reason):
             reason
         }

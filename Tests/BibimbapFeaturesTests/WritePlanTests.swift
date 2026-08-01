@@ -148,6 +148,23 @@ struct WritePlanTests {
             try DPIColorCodec().encode(baselineSettings().dpiStages[0].color)
         ))
     }
+
+    @Test("La liste des changements affiche des valeurs utilisateur, pas des octets")
+    func pendingChangesUseUserValues() {
+        var draft = baselineSettings()
+        draft.reportRateHertz = 4000
+        draft.debounceMilliseconds = 4
+
+        let changes = planner.changes(from: baselineSettings(), to: draft)
+
+        #expect(changes.contains {
+            $0.id == "perf.rate" && $0.before == "1 kHz" && $0.after == "4 kHz"
+        })
+        #expect(changes.contains {
+            $0.id == "perf.debounce" && $0.before == "2 ms" && $0.after == "4 ms"
+        })
+        #expect(changes.allSatisfy { !$0.before.contains("0x") && !$0.after.contains("0x") })
+    }
 }
 
 @Suite("Validation du brouillon")

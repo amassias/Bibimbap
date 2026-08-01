@@ -103,6 +103,28 @@ public struct WriteResult: Equatable, Sendable {
     }
 }
 
+/// Progression d'un lot d'écritures validées une par une.
+///
+/// `completed` ne compte qu'une opération dont l'écriture et la relecture indépendante
+/// ont réussi. Une opération en cours reste donc visible dans `currentOperation` sans
+/// être présentée comme réussie.
+public struct WriteProgress: Equatable, Sendable {
+    public var completed: Int
+    public var total: Int
+    public var currentOperation: String?
+
+    public init(completed: Int, total: Int, currentOperation: String?) {
+        self.completed = completed
+        self.total = total
+        self.currentOperation = currentOperation
+    }
+
+    public var fraction: Double {
+        guard total > 0 else { return 1 }
+        return min(1, max(0, Double(completed) / Double(total)))
+    }
+}
+
 /// Construit le plan d'écriture à partir de l'écart entre l'état lu et le brouillon.
 ///
 /// L'ordre est déterministe et volontairement conservateur : les paliers DPI avant le
@@ -133,19 +155,10 @@ public struct WritePlanner: Sendable {
                     id: $0.id,
                     group: $0.group,
                     label: $0.label,
-                    before: describe($0.rollback),
-                    after: describe($0.payload)
+                    before: DeviceSettingValueFormatter.value(for: $0.id, in: current),
+                    after: DeviceSettingValueFormatter.value(for: $0.id, in: draft)
                 )
             }
-    }
-
-    private func describe(_ payload: WriteOperation.Payload?) -> String {
-        switch payload {
-        case .scalar(let value): String(value)
-        case .block(let bytes): bytes.map { String(format: "%02X", $0) }.joined(separator: " ")
-        case .command(_, let bytes): bytes.map(String.init).joined(separator: " ")
-        case nil: "—"
-        }
     }
 
     public func plan(from current: DeviceSettings, to draft: DeviceSettings) -> WritePlan {

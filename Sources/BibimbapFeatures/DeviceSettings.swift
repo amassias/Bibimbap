@@ -223,6 +223,139 @@ public struct DPIRepresentableRange: Equatable, Sendable {
     }
 }
 
+/// Valeurs lisibles par une personne, indépendantes de l'encodage flash.
+///
+/// Les plans d'écriture et les archives utilisent cette couche pour ne jamais exposer
+/// un code de codec ou un bloc checksummé dans une prévisualisation. Une opération peut
+/// donc continuer à être représentée par des octets pour le protocole, tout en restant
+/// compréhensible dans l'interface et dans un conflit de brouillon.
+public enum DeviceSettingValueFormatter {
+    public static func reportRate(_ hertz: Int) -> String {
+        hertz >= 1_000 ? "\(hertz / 1_000) kHz" : "\(hertz) Hz"
+    }
+
+    public static func dpi(_ stage: DeviceSettings.DPIStage) -> String {
+        if stage.x == stage.y {
+            return "\(stage.x) DPI"
+        }
+        return "\(stage.x) × \(stage.y) DPI"
+    }
+
+    public static func color(_ color: CatalogColor) -> String {
+        String(format: "#%02X%02X%02X", color.red, color.green, color.blue)
+    }
+
+    public static func onOff(_ value: Bool) -> String {
+        value ? L10n.string("Activé") : L10n.string("Désactivé")
+    }
+
+    public static func stageCount(_ count: Int) -> String {
+        L10n.format("%d stage(s)", count)
+    }
+
+    public static func activeStage(_ index: Int) -> String {
+        L10n.format("Stage %d", index + 1)
+    }
+
+    public static func button(_ assignment: DeviceSettings.ButtonAssignment) -> String {
+        let function: String
+        switch assignment.function {
+        case .disabled: function = L10n.string("Désactivé")
+        case .mouseButton: function = L10n.string("Bouton souris")
+        case .dpiSwitch: function = L10n.string("Cycle DPI")
+        case .horizontalScroll: function = L10n.string("Défilement horizontal")
+        case .rapidFire: function = L10n.string("Tir rapide")
+        case .keyboardShortcut: function = L10n.string("Raccourci clavier")
+        case .macro: function = L10n.string("Macro")
+        case .reportRateSwitch: function = L10n.string("Cycle polling")
+        case .lighting: function = L10n.string("Éclairage")
+        case .profileSwitch: function = L10n.string("Cycle de profils")
+        case .dpiLock: function = L10n.string("Verrouillage DPI")
+        case .verticalScroll: function = L10n.string("Défilement vertical")
+        }
+        guard assignment.parameter != 0 else { return function }
+        return L10n.format("%@ (paramètre %@)", function, String(assignment.parameter))
+    }
+
+    public static func macro(_ binding: DeviceSettings.MacroBinding) -> String {
+        let repetitions = L10n.format("×%d", binding.repeatCount)
+        let steps = L10n.format("%d étape(s)", binding.macro.steps.count)
+        return "\(binding.macro.name) · \(steps) \(repetitions)"
+    }
+
+    /// Retourne la valeur utilisateur correspondant à l'identifiant stable d'une
+    /// opération de `WritePlanner`.
+    public static func value(for operationID: String, in settings: DeviceSettings) -> String {
+        let parts = operationID.split(separator: ".")
+        guard let first = parts.first else { return "—" }
+
+        switch first {
+        case "dpi":
+            switch parts.dropFirst().first {
+            case "value":
+                guard let index = Int(parts.last ?? ""),
+                      let stage = settings.dpiStages.first(where: { $0.index == index }) else {
+                    return "—"
+                }
+                return dpi(stage)
+            case "color":
+                guard let index = Int(parts.last ?? ""),
+                      let stage = settings.dpiStages.first(where: { $0.index == index }) else {
+                    return "—"
+                }
+                return color(stage.color)
+            case "count": return stageCount(settings.enabledStageCount)
+            case "active": return activeStage(settings.activeStage)
+            default: return "—"
+            }
+        case "perf":
+            switch parts.dropFirst().first {
+            case "rate": return reportRate(settings.reportRateHertz)
+            case "lod": return L10n.format("%d mm", settings.liftOffMillimetres)
+            case "debounce": return L10n.format("%d ms", settings.debounceMilliseconds)
+            case "motionSync": return onOff(settings.motionSync)
+            case "angleSnap": return onOff(settings.angleSnap)
+            case "ripple": return onOff(settings.rippleControl)
+            case "performanceState": return onOff(settings.performanceMode)
+            case "sensorMode": return L10n.format("Mode %d", settings.sensorMode)
+            case "rotation": return L10n.format("%d°", settings.rotationDegrees)
+            case "rotationState": return onOff(settings.rotationDegrees != 0)
+            default: return "—"
+            }
+        case "light":
+            switch parts.dropFirst().first {
+            case "mode": return settings.dpiEffect.mode.label
+            case "brightness": return L10n.format("Niveau %d", settings.dpiEffect.brightness)
+            case "speed": return L10n.format("Niveau %d", settings.dpiEffect.speed)
+            case "state": return onOff(settings.dpiEffect.enabled)
+            default: return "—"
+            }
+        case "macro":
+            guard let slot = Int(parts.dropFirst().first ?? ""),
+                  let binding = settings.macros.first(where: { $0.slot == slot }) else {
+                return L10n.string("Aucune macro")
+            }
+            return macro(binding)
+        case "button":
+            guard let index = Int(parts.dropFirst().first ?? ""),
+                  let assignment = settings.buttons.first(where: { $0.index == index }) else {
+                return "—"
+            }
+            return button(assignment)
+        case "power":
+            switch parts.dropFirst().first {
+            case "sleep", "sleepPerformance":
+                return DeviceSettings.sleepTimeLabel(for: settings.sleepTimeCode)
+            case "saveBattery": return L10n.format("%d %%", settings.powerSaveBatteryPercent)
+            case "longDistance": return onOff(settings.longDistance)
+            default: return "—"
+            }
+        default:
+            return "—"
+        }
+    }
+}
+
 /// Photographie complète d'un périphérique connecté.
 public struct DeviceSnapshot: Equatable, Sendable {
     public var identity: DeviceIdentity
