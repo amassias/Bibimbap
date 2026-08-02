@@ -271,4 +271,6 @@ For hardware-related changes, include the exact mouse or receiver model, firmwar
 
 ## License
 
-No open-source license is currently included in this repository. Until a license is added, the source remains protected by applicable copyright law; publishing it on GitHub does not by itself grant permission to reuse, modify, or redistribute it.
+Bibimbap is licensed under the [MIT License](license.md).
+
+Copyright (c) 2026 Arthur M.
