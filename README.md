@@ -90,6 +90,9 @@ These screenshots show the current application with a connected X2 CrazyLight.
 - [Troubleshooting](#troubleshooting)
 - [Development](#development)
 - [Localization](#localization)
+- [Limitations](#limitations)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
@@ -249,3 +252,23 @@ The string catalog is stored in:
 ```text
 App/Bibimbap/Localizable.xcstrings
 ```
+
+## Limitations
+
+- Bibimbap requires macOS 15 or later on an Apple silicon Mac.
+- Support is limited to Pulsar model identifiers in the bundled catalog. The catalog is a declaration layer, not a compatibility guarantee for every firmware revision or physical unit; unknown models are rejected rather than guessed.
+- Controls vary by model, firmware, connection type, and reported capabilities. Unsupported settings are omitted from the interface instead of being written speculatively.
+- Physical validation is strongest for the Pulsar X2 CrazyLight, firmware `v3.05`, over USB and through an 8K receiver. Other catalog models, firmware revisions, receivers, and sensors are not necessarily physically validated.
+- Wireless polling above 1 kHz, sleep/wake, reconnect, and multi-device selection remain outside the current physical validation matrix.
+- Firmware updates are not implemented. Bibimbap only reads and writes supported configuration settings.
+- Free or locally generated packages may be unsigned and not notarized. The first launch can therefore require the documented **Open** confirmation in macOS; the release manifest records the actual signing and notarization state.
+
+## Contributing
+
+Contributions are welcome through issues and pull requests.
+
+For hardware-related changes, include the exact mouse or receiver model, firmware version, connection type, macOS version, and whether the observation comes from physical hardware, a simulator, or a retained fixture. Keep protocol changes paired with focused tests and independent read-back or rollback evidence where applicable. Do not include private HID captures, credentials, or unrelated personal data.
+
+## License
+
+No open-source license is currently included in this repository. Until a license is added, the source remains protected by applicable copyright law; publishing it on GitHub does not by itself grant permission to reuse, modify, or redistribute it.
