@@ -1,8 +1,21 @@
+import AppKit
 import BibimbapFeatures
 import BibimbapLocalization
 import PulsarCatalog
 import PulsarProtocol
 import SwiftUI
+
+/// Assets des receivers embarqués, choisis d'après la capacité réellement annoncée.
+///
+/// Le X2 CrazyLight validé avec le protocole sans fil expose le receiver 8K : l'asset
+/// `dongle-c` est la vue compacte de ce boîtier. Le type de dongle du handshake décrit
+/// des capacités de commandes, pas une référence graphique stable ; le plafond de
+/// polling est donc le meilleur repère disponible pour l'illustration.
+enum ReceiverArtwork {
+    static func imageName(for connection: HIDConnectionSummary) -> String {
+        connection.maximumReportRate >= 8_000 ? "dongle-c" : "dongle-a"
+    }
+}
 
 // MARK: - Overview B
 
@@ -799,7 +812,7 @@ struct PowerSection: View {
                                 systemImage: "circle.fill"
                             )
                             .labelStyle(.titleAndIcon)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(signalColor(snapshot.signalStrength))
                         }
                         PremiumRow(label: L10n.string("Polling capacity")) {
                             Text(reportRate(snapshot.connection.maximumReportRate))
@@ -927,7 +940,21 @@ struct PowerSection: View {
 
     private func signalLabel(_ signal: Int?) -> String {
         guard let signal else { return L10n.string("Not reported") }
-        return signal >= 4 ? L10n.string("Excellent") : L10n.string("Connected")
+        return switch signal {
+        case 4...: L10n.string("Excellent")
+        case 3: L10n.string("Good")
+        case 2: L10n.string("Fair")
+        default: L10n.string("Weak")
+        }
+    }
+
+    private func signalColor(_ signal: Int?) -> Color {
+        guard let signal else { return .secondary }
+        return switch signal {
+        case 4...: .green
+        case 2...3: .yellow
+        default: .orange
+        }
     }
 
     private func reportRate(_ hertz: Int) -> String {
@@ -942,21 +969,28 @@ struct PowerSection: View {
                 .foregroundStyle(.secondary)
                 .accessibilityLabel(L10n.string("Wired connection"))
         } else {
-            Image(dongleImageName(for: snapshot.identity.dongleType), bundle: .module)
-                .resizable()
-                .scaledToFit()
-                .accessibilityLabel(L10n.string("Pulsar wireless receiver"))
-        }
-    }
+            let imageName = ReceiverArtwork.imageName(for: snapshot.connection)
+            ZStack {
+                RoundedRectangle(cornerRadius: Theme.Radius.group)
+                    .fill(PremiumPalette.canvas.opacity(0.46))
+                RoundedRectangle(cornerRadius: Theme.Radius.group)
+                    .strokeBorder(PremiumPalette.hairline.opacity(0.5), lineWidth: 0.5)
 
-    private func dongleImageName(for type: Int) -> String {
-        switch type {
-        case 1:
-            "dongle-b"
-        case 2, 4:
-            "dongle-a"
-        default:
-            "dongle-c"
+                if let image = Bundle.module.image(forResource: imageName) {
+                    Image(nsImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(10)
+                        .shadow(color: .black.opacity(0.35), radius: 7, y: 3)
+                } else {
+                    // Le fallback reste explicite si une distribution omet par erreur
+                    // une ressource SPM : le panneau ne redevient pas silencieusement vide.
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .font(.system(size: 42, weight: .light))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .accessibilityLabel(L10n.string("Pulsar wireless receiver"))
         }
     }
 

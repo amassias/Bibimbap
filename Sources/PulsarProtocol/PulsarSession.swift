@@ -37,6 +37,10 @@ public actor PulsarSession {
     private var pumpTask: Task<Void, Never>?
     private var timeoutTask: Task<Void, Never>?
     private var waiter: Waiter?
+    /// Le protocole ne porte pas d'identifiant de transaction : même un acteur doit donc
+    /// empêcher deux appels `request` de remplacer le même waiter pendant une suspension.
+    private var requestInFlight = false
+    private var queuedRequests: [CheckedContinuation<Void, Never>] = []
     private var notificationContinuations: [UUID: AsyncStream<PulsarChangeNotification>.Continuation] = [:]
     private var frameLog: [LoggedFrame] = []
 
@@ -157,6 +161,9 @@ public actor PulsarSession {
     @discardableResult
     public func request(_ frame: PulsarFrame, matchingAddress: Bool = false) async throws -> PulsarFrame {
         guard pumpTask != nil else { throw SessionError.notStarted }
+        await acquireRequestSlot()
+        defer { releaseRequestSlot() }
+        guard pumpTask != nil else { throw SessionError.notStarted }
         guard !frame.command.isFirmwareOperation else {
             throw SessionError.firmwareOperationBlocked(frame.command)
         }
@@ -178,6 +185,29 @@ public actor PulsarSession {
             }
         }
         throw SessionError.timedOut(frame.command)
+    }
+
+    /// Attend que la requête précédente ait libéré l'unique canal transactionnel.
+    private func acquireRequestSlot() async {
+        guard requestInFlight else {
+            requestInFlight = true
+            return
+        }
+
+        await withCheckedContinuation { continuation in
+            queuedRequests.append(continuation)
+        }
+    }
+
+    /// Passe directement le canal à la requête suivante, sans laisser une fenêtre où
+    /// deux continuations pourraient croire qu'elles sont propriétaires du waiter.
+    private func releaseRequestSlot() {
+        if let continuation = queuedRequests.first {
+            queuedRequests.removeFirst()
+            continuation.resume()
+        } else {
+            requestInFlight = false
+        }
     }
 
     /// Émet une commande de lecture et exige des données en retour.

@@ -58,4 +58,10 @@ struct ReceiverControlsTests {
         let capabilities = receiverTestCapabilities(receiver)
         #expect(capabilities.receiver.buttonModeOptions == [0, 1])
     }
+
+    @Test("Le receiver sans fil 8K utilise son illustration dédiée")
+    func eightKReceiverUsesDedicatedArtwork() {
+        let connection = HIDConnectionSummary(connectionType: .wireless8k)
+        #expect(ReceiverArtwork.imageName(for: connection) == "dongle-c")
+    }
 }

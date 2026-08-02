@@ -74,6 +74,7 @@ public actor SimulatedHIDTransport: HIDTransport {
     private var openCount = 0
     private var closeCount = 0
     private var battery = BatteryState(percentage: 78, isCharging: false, millivolts: 3980)
+    private var signalStrength = 4
     private var activeProfile = 0
     private var longDistance = false
     private var dongleLighting = DongleLightingState(
@@ -536,7 +537,7 @@ public actor SimulatedHIDTransport: HIDTransport {
             guard !identity.connectionType.isWired else {
                 return PulsarFrame(command: .getRSSIValue, status: 1)
             }
-            return PulsarFrame(command: .getRSSIValue, payload: [4])
+            return PulsarFrame(command: .getRSSIValue, payload: [UInt8(signalStrength)])
 
         case .readFlashData:
             let count = Int(frame.effectiveLength)
@@ -596,6 +597,11 @@ public actor SimulatedHIDTransport: HIDTransport {
 
     public func setBattery(_ state: BatteryState) {
         battery = state
+    }
+
+    /// Change le RSSI relu par `GetRSSIValue`, afin de tester le suivi sans fil en continu.
+    public func setSignalStrength(_ strength: Int) {
+        signalStrength = min(max(strength, 0), 5)
     }
 
     /// Débranche le périphérique : la collection disparaît de l'énumération, la session
