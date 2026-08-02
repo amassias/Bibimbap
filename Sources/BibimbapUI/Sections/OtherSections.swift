@@ -17,6 +17,70 @@ enum ReceiverArtwork {
     }
 }
 
+/// État que la présentation attend d'un signal radio.
+///
+/// Le core worker fournit maintenant `DeviceSnapshot.wirelessSignalStatus`. Cette projection
+/// garde la connaissance du protocole hors des vues et ne déduit jamais « Sleep » d'une
+/// valeur numérique ambiguë.
+enum WirelessSignalDisplayState: Equatable {
+    case unknown
+    case unsupported
+    case sleeping
+    case numeric(Int)
+}
+
+enum WirelessSignalPresentation {
+    static func state(for status: WirelessSignalStatus) -> WirelessSignalDisplayState {
+        switch status {
+        case .unknown: .unknown
+        case .unsupported: .unsupported
+        case .sleeping: .sleeping
+        case .strength(let value): .numeric(value)
+        }
+    }
+
+    static func label(for state: WirelessSignalDisplayState) -> String {
+        switch state {
+        case .unknown:
+            L10n.string("Not reported")
+        case .unsupported:
+            L10n.string("Not supported")
+        case .sleeping:
+            L10n.string("Sleep")
+        case .numeric(let strength):
+            switch strength {
+            case 4...: L10n.string("Excellent")
+            case 3: L10n.string("Good")
+            case 2: L10n.string("Fair")
+            default: L10n.string("Weak")
+            }
+        }
+    }
+
+    static func color(for state: WirelessSignalDisplayState) -> Color {
+        switch state {
+        case .unknown: .secondary
+        case .unsupported: .secondary
+        case .sleeping: .blue
+        case .numeric(let strength):
+            switch strength {
+            case 4...: .green
+            case 2...3: .yellow
+            default: .orange
+            }
+        }
+    }
+
+    static func systemImage(for state: WirelessSignalDisplayState) -> String {
+        switch state {
+        case .unknown: "questionmark.circle"
+        case .unsupported: "minus.circle"
+        case .sleeping: "moon.zzz.fill"
+        case .numeric: "circle.fill"
+        }
+    }
+}
+
 // MARK: - Overview B
 
 struct OverviewSection: View {
@@ -97,7 +161,11 @@ struct OverviewSection: View {
                     PremiumMetric(
                         systemImage: "dot.radiowaves.left.and.right",
                         label: L10n.string("Signal"),
-                        value: signalLabel(snapshot.signalStrength)
+                        value: WirelessSignalPresentation.label(
+                            for: WirelessSignalPresentation.state(
+                                for: snapshot.wirelessSignalStatus
+                            )
+                        )
                     )
                 }
             }
@@ -163,15 +231,6 @@ struct OverviewSection: View {
         hertz >= 1_000 ? "\(hertz / 1_000) kHz" : "\(hertz) Hz"
     }
 
-    private func signalLabel(_ signal: Int?) -> String {
-        guard let signal else { return L10n.string("Not reported") }
-        return switch signal {
-        case 4...: L10n.string("Excellent")
-        case 3: L10n.string("Good")
-        case 2: L10n.string("Fair")
-        default: L10n.string("Weak")
-        }
-    }
 }
 
 // MARK: - Customize A
@@ -193,12 +252,16 @@ struct CustomizeSection: View {
                 )
 
                 ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .top, spacing: Theme.Space.xlarge) {
+                    HStack(alignment: .top, spacing: CustomizeLayoutMetrics.columnSpacing) {
                         buttonMap
-                            .frame(width: 455)
+                            .frame(width: CustomizeLayoutMetrics.mapWidth)
                         assignmentsPanel
-                            .frame(maxWidth: .infinity)
+                            .frame(
+                                minWidth: CustomizeLayoutMetrics.assignmentMinimumWidth,
+                                maxWidth: .infinity
+                            )
                     }
+                    .frame(minWidth: CustomizeLayoutMetrics.minimumColumnWidth)
 
                     VStack(spacing: Theme.Space.xlarge) {
                         buttonMap
@@ -241,6 +304,7 @@ struct CustomizeSection: View {
                 }
             }
         }
+        .frame(minWidth: CustomizeLayoutMetrics.assignmentMinimumWidth)
     }
 
     /// La ligne écrit dans le brouillon via l'index firmware du bouton : sa position
@@ -252,13 +316,18 @@ struct CustomizeSection: View {
                 get: { model.draft.buttons[position] },
                 set: { model.draft.buttons[position] = $0 }
             )
-            PremiumRow(
-                label: button.label,
-                detail: button.numberLabel,
-                showsDivider: button.firmwareIndex != buttons.last?.firmwareIndex
-            ) {
-                VStack(alignment: .trailing, spacing: Theme.Space.small) {
-                    Picker("", selection: Binding(
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top, spacing: Theme.Space.medium) {
+                    VStack(alignment: .leading, spacing: Theme.Space.hairline) {
+                        Text(button.label)
+                            .font(.body)
+                        Text(button.numberLabel)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Picker(L10n.string("Function"), selection: Binding(
                         get: { assignment.wrappedValue.function },
                         set: { newFunction in
                             var updated = assignment.wrappedValue
@@ -286,11 +355,22 @@ struct CustomizeSection: View {
                     }
                     .labelsHidden()
                     .frame(width: 190)
+                    .accessibilityLabel(
+                        L10n.format("%@ function", button.numberLabel)
+                    )
+                }
 
-                    parameterEditor(for: assignment)
+                parameterEditor(for: assignment)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.top, Theme.Space.tight)
+
+                if button.firmwareIndex != buttons.last?.firmwareIndex {
+                    Divider()
+                        .padding(.top, Theme.Space.small)
                 }
             }
             .padding(.horizontal, Theme.Space.small)
+            .padding(.vertical, Theme.Space.small)
             .background(
                 RoundedRectangle(cornerRadius: Theme.Radius.control)
                     .fill(
@@ -299,6 +379,7 @@ struct CustomizeSection: View {
                             : Color.clear
                     )
             )
+            .contentShape(Rectangle())
             .onHover { highlighted = $0 ? button.firmwareIndex : nil }
         }
     }
@@ -792,7 +873,9 @@ struct PowerSection: View {
         _ snapshot: DeviceSnapshot,
         capabilities: DeviceCapabilities
     ) -> some View {
-        PremiumPanel {
+        let controls = receiverControls(for: capabilities)
+
+        return PremiumPanel {
             VStack(alignment: .leading, spacing: 0) {
                 Text(L10n.string("Wireless receiver"))
                     .font(.headline)
@@ -807,12 +890,15 @@ struct PowerSection: View {
                             Text(snapshot.connection.label)
                         }
                         PremiumRow(label: L10n.string("Signal")) {
+                            let signal = WirelessSignalPresentation.state(
+                                for: snapshot.wirelessSignalStatus
+                            )
                             Label(
-                                signalLabel(snapshot.signalStrength),
-                                systemImage: "circle.fill"
+                                WirelessSignalPresentation.label(for: signal),
+                                systemImage: WirelessSignalPresentation.systemImage(for: signal)
                             )
                             .labelStyle(.titleAndIcon)
-                            .foregroundStyle(signalColor(snapshot.signalStrength))
+                            .foregroundStyle(WirelessSignalPresentation.color(for: signal))
                         }
                         PremiumRow(label: L10n.string("Polling capacity")) {
                             Text(reportRate(snapshot.connection.maximumReportRate))
@@ -820,7 +906,7 @@ struct PowerSection: View {
                         }
                         PremiumRow(
                             label: L10n.string("Firmware"),
-                            showsDivider: receiverControls(for: capabilities).isEmpty
+                            showsDivider: controls.isEmpty
                         ) {
                             Text(snapshot.dongleVersion ?? snapshot.firmwareVersion)
                                 .monospacedDigit()
@@ -828,13 +914,21 @@ struct PowerSection: View {
                     }
                 }
 
-                if model.draft.receiver != nil, !receiverControls(for: capabilities).isEmpty {
+                if !snapshot.connection.isWired,
+                   model.draft.receiver != nil,
+                   !controls.isEmpty {
                     ReceiverSettingsRows(
                         settings: Binding(
                             get: { model.draft.receiver ?? ReceiverSettings() },
                             set: { model.draft.receiver = $0 }
                         ),
                         capabilities: capabilities.receiver
+                    )
+                    .padding(.top, Theme.Space.small)
+                } else {
+                    receiverCapabilityStatus(
+                        snapshot: snapshot,
+                        controls: controls
                     )
                     .padding(.top, Theme.Space.small)
                 }
@@ -857,6 +951,45 @@ struct PowerSection: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private func receiverCapabilityStatus(
+        snapshot: DeviceSnapshot,
+        controls: Set<ReceiverControl>
+    ) -> some View {
+        let title: String
+        let detail: String
+        let value: String
+
+        if snapshot.connection.isWired {
+            title = L10n.string("No wireless receiver connected")
+            detail = L10n.string("Receiver controls apply only when a wireless receiver is connected.")
+            value = L10n.string("Not applicable")
+        } else if controls.isEmpty {
+            title = L10n.string("Receiver controls unavailable")
+            detail = L10n.string(
+                "This receiver did not report editable controls. No receiver command will be sent."
+            )
+            value = L10n.string("Unsupported")
+        } else if model.draft.receiver == nil {
+            title = L10n.string("Receiver settings unavailable")
+            detail = L10n.string(
+                "The current receiver values were not read safely, so editing is disabled."
+            )
+            value = L10n.string("Unavailable")
+        } else {
+            // This branch is defensive: the caller normally renders the settings rows when
+            // both the capability probe and the receiver readback are present.
+            title = L10n.string("Receiver settings unavailable")
+            detail = L10n.string("No editable receiver values are available for this connection.")
+            value = L10n.string("Unavailable")
+        }
+
+        return PremiumRow(label: title, detail: detail, showsDivider: false) {
+            Text(value)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(controls.isEmpty ? Color.orange : Color.secondary)
+        }
     }
 
     private var performanceLevelBinding: Binding<Int> {
@@ -938,25 +1071,6 @@ struct PowerSection: View {
         return L10n.string("Pair device")
     }
 
-    private func signalLabel(_ signal: Int?) -> String {
-        guard let signal else { return L10n.string("Not reported") }
-        return switch signal {
-        case 4...: L10n.string("Excellent")
-        case 3: L10n.string("Good")
-        case 2: L10n.string("Fair")
-        default: L10n.string("Weak")
-        }
-    }
-
-    private func signalColor(_ signal: Int?) -> Color {
-        guard let signal else { return .secondary }
-        return switch signal {
-        case 4...: .green
-        case 2...3: .yellow
-        default: .orange
-        }
-    }
-
     private func reportRate(_ hertz: Int) -> String {
         hertz >= 1_000 ? L10n.format("Up to %d kHz", hertz / 1_000) : "\(hertz) Hz"
     }
@@ -996,6 +1110,28 @@ struct PowerSection: View {
 
 }
 
+/// Mutations sûres des trois couleurs du bandeau RGB du récepteur.
+///
+/// Le ColorPicker écrit uniquement dans le brouillon. Cette projection garde la longueur
+/// et les autres composantes intactes, et refuse une position qui ne correspond pas à
+/// l'un des trois groupes RGB relus.
+enum ReceiverColorDraft {
+    static func settingRGB(
+        _ color: CatalogColor,
+        at index: Int,
+        in lighting: DongleLightingState
+    ) -> DongleLightingState? {
+        guard index >= 0, index.isMultiple(of: 3),
+              lighting.colors.indices.contains(index + 2) else { return nil }
+
+        var updated = lighting
+        updated.colors[index] = UInt8(clamping: color.red)
+        updated.colors[index + 1] = UInt8(clamping: color.green)
+        updated.colors[index + 2] = UInt8(clamping: color.blue)
+        return updated
+    }
+}
+
 /// Éditeur des commandes récepteur dont les getters ont effectivement répondu.
 /// Toutes les mutations restent dans `DeviceSettings` : la barre Apply du modèle
 /// construit ensuite le plan, écrit, puis relit chaque commande.
@@ -1005,8 +1141,51 @@ private struct ReceiverSettingsRows: View {
 
     private let rgbModes = [0, 1, 2, 3]
 
+    private var readbackGaps: [String] {
+        var gaps: [String] = []
+        if capabilities.supportsRGBLighting, settings.rgbLighting == nil {
+            gaps.append(L10n.string("Receiver lighting"))
+        }
+        if capabilities.supportsEffect, settings.effect == nil {
+            gaps.append(L10n.string("Receiver effect"))
+        }
+        if capabilities.supportsDPILighting, settings.dpiLightEnabled == nil {
+            gaps.append(L10n.string("DPI lighting"))
+        }
+        if capabilities.supportsButtonMode, settings.buttonMode == nil {
+            gaps.append(L10n.string("Receiver button"))
+        }
+        if capabilities.supportsButtonFunctions {
+            let readSlots = Set(settings.buttonFunctions.map(\.index))
+            if capabilities.buttonFunctionSlots.contains(where: { !readSlots.contains($0) }) {
+                gaps.append(L10n.string("Receiver button effects"))
+            }
+        }
+        return gaps
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            Text(L10n.string("Changes stay pending until Apply."))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.bottom, Theme.Space.small)
+
+            if !readbackGaps.isEmpty {
+                VStack(alignment: .leading, spacing: Theme.Space.hairline) {
+                    Label(
+                        L10n.string("Some receiver controls are unavailable"),
+                        systemImage: "exclamationmark.triangle"
+                    )
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.orange)
+                    Text(readbackGaps.joined(separator: ", "))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.bottom, Theme.Space.small)
+            }
+
             if capabilities.supportsRGBLighting, settings.rgbLighting != nil {
                 Text(L10n.string("Receiver lighting"))
                     .font(.subheadline.weight(.semibold))
@@ -1041,6 +1220,9 @@ private struct ReceiverSettingsRows: View {
                             supportsOpacity: false
                         )
                         .labelsHidden()
+                        .accessibilityLabel(
+                            L10n.format("Receiver color %d", colorIndex + 1)
+                        )
                     }
                 }
             }
@@ -1068,6 +1250,7 @@ private struct ReceiverSettingsRows: View {
                         supportsOpacity: false
                     )
                     .labelsHidden()
+                    .accessibilityLabel(L10n.string("Receiver effect color"))
                 }
 
                 PremiumRow(label: L10n.string("Speed")) {
@@ -1135,6 +1318,9 @@ private struct ReceiverSettingsRows: View {
                                 supportsOpacity: false
                             )
                             .labelsHidden()
+                            .accessibilityLabel(
+                                L10n.format("Receiver button %d color", function.index + 1)
+                            )
                         }
 
                         PremiumRow(label: L10n.string("Speed")) {
@@ -1188,13 +1374,13 @@ private struct ReceiverSettingsRows: View {
                 return color.swiftUIColor
             },
             set: { color in
-                guard var lighting = settings.rgbLighting,
-                      lighting.colors.indices.contains(index + 2) else { return }
-                let catalogColor = CatalogColor(color)
-                lighting.colors[index] = UInt8(clamping: catalogColor.red)
-                lighting.colors[index + 1] = UInt8(clamping: catalogColor.green)
-                lighting.colors[index + 2] = UInt8(clamping: catalogColor.blue)
-                settings.rgbLighting = lighting
+                guard let lighting = settings.rgbLighting,
+                      let updated = ReceiverColorDraft.settingRGB(
+                          CatalogColor(color),
+                          at: index,
+                          in: lighting
+                      ) else { return }
+                settings.rgbLighting = updated
             }
         )
     }

@@ -3,6 +3,28 @@ import BibimbapLocalization
 import PulsarProtocol
 import SwiftUI
 
+/// Largeurs minimales de la bibliothèque, de l'éditeur et de l'inspecteur.
+///
+/// L'éditeur de table est la partie la plus exigeante : il reste lisible dans la
+/// composition à trois colonnes uniquement quand il dispose d'une vraie largeur. Sinon
+/// `ViewThatFits` choisit la pile verticale, que le ScrollView de la fenêtre peut montrer
+/// en entier.
+enum MacroLayoutMetrics {
+    static let libraryWidth: CGFloat = 220
+    static let editorMinimumWidth: CGFloat = 620
+    static let inspectorWidth: CGFloat = 280
+    static let columnSpacing: CGFloat = Theme.Space.medium
+    static let workspaceMinimumHeight: CGFloat = 560
+
+    static var minimumColumnWidth: CGFloat {
+        libraryWidth + editorMinimumWidth + inspectorWidth + columnSpacing * 2
+    }
+
+    static func usesColumns(availableWidth: CGFloat) -> Bool {
+        availableWidth >= minimumColumnWidth
+    }
+}
+
 /// Macro A : bibliothèque, table d'événements et inspecteur d'affectation.
 struct MacrosSection: View {
     @Bindable var model: AppModel
@@ -51,17 +73,23 @@ struct MacrosSection: View {
 
     private var macroWorkspace: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(alignment: .top, spacing: Theme.Space.small) {
+            HStack(alignment: .top, spacing: MacroLayoutMetrics.columnSpacing) {
                 libraryPanel
-                    .frame(width: 230)
+                    .frame(width: MacroLayoutMetrics.libraryWidth)
 
                 editorPanel
-                    .frame(maxWidth: .infinity)
+                    .frame(
+                        minWidth: MacroLayoutMetrics.editorMinimumWidth,
+                        maxWidth: .infinity
+                    )
 
                 inspectorPanel
-                    .frame(width: 300)
+                    .frame(width: MacroLayoutMetrics.inspectorWidth)
             }
-            .frame(minHeight: 520)
+            .frame(
+                minWidth: MacroLayoutMetrics.minimumColumnWidth,
+                minHeight: MacroLayoutMetrics.workspaceMinimumHeight
+            )
 
             VStack(spacing: Theme.Space.large) {
                 libraryPanel
@@ -124,7 +152,8 @@ struct MacrosSection: View {
 
                             VStack(alignment: .leading, spacing: Theme.Space.hairline) {
                                 Text(binding?.macro.name ?? L10n.format("Macro %d", slot + 1))
-                                    .lineLimit(1)
+                                    .lineLimit(2)
+                                    .fixedSize(horizontal: false, vertical: true)
                                 Text(button.numberLabel)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
@@ -133,7 +162,7 @@ struct MacrosSection: View {
                         }
                         .padding(.horizontal, Theme.Space.small)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 52)
+                        .frame(minHeight: 56)
                         .background(
                             RoundedRectangle(cornerRadius: Theme.Radius.control)
                                 .fill(
@@ -154,6 +183,13 @@ struct MacrosSection: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(
+                        L10n.format(
+                            "%@, %@",
+                            binding?.macro.name ?? L10n.format("Macro %d", slot + 1),
+                            button.numberLabel
+                        )
+                    )
                     .accessibilityAddTraits(selectedSlot == slot ? .isSelected : [])
                 }
 
@@ -361,16 +397,17 @@ private struct MacroTableEditor: View {
 
     private var editorHeader: some View {
         VStack(alignment: .leading, spacing: Theme.Space.large) {
-            HStack {
+            HStack(alignment: .center, spacing: Theme.Space.medium) {
                 TextField("", text: $binding.macro.name)
                     .textFieldStyle(.plain)
                     .font(.title2.weight(.semibold))
                     .accessibilityLabel(L10n.string("Macro name"))
-
-                Spacer()
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                 addEventMenu
+            }
 
+            HStack(spacing: Theme.Space.small) {
                 Button {
                     selection = Set(MacroEditing.duplicate(
                         ids: selection,
@@ -403,35 +440,71 @@ private struct MacroTableEditor: View {
                 }
                 .disabled(selection.isEmpty)
             }
+            .controlSize(.small)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            HStack(spacing: Theme.Space.medium) {
-                Label(
-                    L10n.format(
-                        "%d of %d steps",
-                        binding.macro.steps.count,
-                        PulsarMacro.stepCapacity
-                    ),
-                    systemImage: "list.number"
-                )
-                Text(
-                    L10n.format(
-                        "%d / %d bytes",
-                        MacroCodec.encodedLength(binding.macro),
-                        MacroCodec.blockLength
-                    )
-                )
-                Text(
-                    L10n.format(
-                        "Name: %d / %d bytes",
-                        binding.macro.name.utf8.count,
-                        PulsarMacro.nameCapacity
-                    )
-                )
-                Text(L10n.format("Delays: %@", binding.macro.delaySummary))
+            ViewThatFits(in: .horizontal) {
+                macroMetricsLine
+                macroMetricsStack
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
         }
+    }
+
+    private var macroMetricsLine: some View {
+        HStack(spacing: Theme.Space.medium) {
+            stepsSummary
+            encodedSummary
+            nameSummary
+            delaysSummary
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+    }
+
+    private var macroMetricsStack: some View {
+        VStack(alignment: .leading, spacing: Theme.Space.hairline) {
+            stepsSummary
+            encodedSummary
+            nameSummary
+            delaysSummary
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+    }
+
+    private var stepsSummary: some View {
+        Label(
+            L10n.format(
+                "%d of %d steps",
+                binding.macro.steps.count,
+                PulsarMacro.stepCapacity
+            ),
+            systemImage: "list.number"
+        )
+    }
+
+    private var encodedSummary: some View {
+        Text(
+            L10n.format(
+                "%d / %d bytes",
+                MacroCodec.encodedLength(binding.macro),
+                MacroCodec.blockLength
+            )
+        )
+    }
+
+    private var nameSummary: some View {
+        Text(
+            L10n.format(
+                "Name: %d / %d bytes",
+                binding.macro.name.utf8.count,
+                PulsarMacro.nameCapacity
+            )
+        )
+    }
+
+    private var delaysSummary: some View {
+        Text(L10n.format("Delays: %@", binding.macro.delaySummary))
     }
 
     private var addEventMenu: some View {
@@ -503,7 +576,7 @@ private struct MacroTableEditor: View {
                     systemImage: eventIcon(step)
                 )
             }
-            .width(min: 210, ideal: 250)
+            .width(min: 180, ideal: 220)
 
             TableColumn(L10n.string("Action")) { $step in
                 if step.kind?.isPointerEvent == true, step.kind != .mouseButton {
@@ -519,12 +592,12 @@ private struct MacroTableEditor: View {
                     .labelsHidden()
                 }
             }
-            .width(min: 120, ideal: 150)
+            .width(min: 100, ideal: 130)
 
             TableColumn(L10n.string("Value")) { $step in
                 valueEditor(for: $step)
             }
-            .width(min: 150, ideal: 200)
+            .width(min: 140, ideal: 180)
 
             TableColumn(L10n.string("Delay")) { $step in
                 HStack(spacing: Theme.Space.tight) {
@@ -539,7 +612,7 @@ private struct MacroTableEditor: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .width(min: 150, ideal: 180)
+            .width(min: 160, ideal: 180)
         }
         .frame(minHeight: 420)
     }
