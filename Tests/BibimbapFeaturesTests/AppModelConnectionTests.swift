@@ -66,6 +66,7 @@ extension AppModelTests {
         let base = model.draft.debounceMilliseconds
         model.draft.debounceMilliseconds = base + 2
         #expect(model.snapshot?.signalStrength == 4)
+        #expect(model.snapshot?.wirelessSignalStatus == .strength(4))
 
         await transport.setSignalStrength(1)
 
@@ -74,6 +75,47 @@ extension AppModelTests {
         })
         #expect(model.draft.debounceMilliseconds == base + 2)
         await model.disconnect()
+    }
+
+    @Test("Le statut radio distingue une veille d'un RSSI faible")
+    func wirelessSleepIsNotReportedAsWeak() async {
+        let (transport, model) = Self.makeModel()
+        await model.connect()
+
+        await transport.setSignalStrength(0)
+        #expect(await waitUntil(.seconds(5)) {
+            model.snapshot?.wirelessSignalStatus == .strength(0)
+        })
+
+        await transport.setDeviceOnline(false)
+        #expect(await waitUntil(.seconds(5)) {
+            model.snapshot?.wirelessSignalStatus == .sleeping
+        })
+        #expect(model.snapshot?.signalStrength == nil)
+
+        await transport.setDeviceOnline(true)
+        await transport.setSignalStrength(1)
+        #expect(await waitUntil(.seconds(5)) {
+            model.snapshot?.wirelessSignalStatus == .strength(1)
+        })
+        await model.disconnect()
+    }
+
+    @Test("Le suivi radio est espacé et s'arrête avant la déconnexion")
+    func signalMonitoringStopsWithoutExtraTraffic() async {
+        let (transport, model) = Self.makeModel()
+        await model.connect()
+        let afterConnect = await transport.commandCount(.getRSSIValue)
+
+        // Le premier rafraîchissement attend l'intervalle : la connexion ne déclenche
+        // pas une seconde lecture immédiate après l'instantané initial.
+        try? await Task.sleep(for: .milliseconds(800))
+        #expect(await transport.commandCount(.getRSSIValue) == afterConnect)
+
+        await model.disconnect()
+        let afterDisconnect = await transport.commandCount(.getRSSIValue)
+        try? await Task.sleep(for: .milliseconds(2_300))
+        #expect(await transport.commandCount(.getRSSIValue) == afterDisconnect)
     }
 
     @Test("Plusieurs candidats passent la main à l'utilisateur, sans rien ouvrir")

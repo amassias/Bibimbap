@@ -116,6 +116,28 @@ private final class DeviceArtworkStore {
     }
 }
 
+/// Dimensions partagées par la carte et la composition adaptative de Customize.
+///
+/// La largeur minimale de la colonne d'affectation laisse une ligne garder son libellé
+/// et son sélecteur, tandis que les éditeurs de paramètres peuvent descendre sur une
+/// seconde ligne. Elle est volontairement assez compacte pour que la fenêtre par défaut
+/// conserve deux colonnes, mais assez large pour ne jamais demander à un éditeur de se
+/// comprimer horizontalement.
+enum CustomizeLayoutMetrics {
+    static let mapWidth: CGFloat = 455
+    static let assignmentMinimumWidth: CGFloat = 420
+    static let columnSpacing: CGFloat = Theme.Space.large
+    static let canvasHeight: CGFloat = 410
+
+    static var minimumColumnWidth: CGFloat {
+        mapWidth + columnSpacing + assignmentMinimumWidth
+    }
+
+    static func usesColumns(availableWidth: CGFloat) -> Bool {
+        availableWidth >= minimumColumnWidth
+    }
+}
+
 /// Carte des commandes exposées par le modèle connecté.
 ///
 /// La liste vient de `AppModel.buttonPresentations`, la même que celle des lignes
@@ -147,8 +169,8 @@ struct DeviceButtonMap: View {
                 }
 
                 canvas
-                    .frame(height: 410)
-                    .accessibilityElement(children: .ignore)
+                    .frame(height: CustomizeLayoutMetrics.canvasHeight)
+                    .accessibilityElement(children: .contain)
                     .accessibilityLabel(
                         model.deviceDisplayName + ", \(buttons.count) "
                             + L10n.string( "configurable buttons")
@@ -188,6 +210,14 @@ struct DeviceButtonMap: View {
                             y: marker.y * side
                         )
                         .help(button.label)
+                        .accessibilityLabel(button.numberLabel + ": " + button.label)
+                        .onHover { isHovering in
+                            if isHovering {
+                                highlighted = button.firmwareIndex
+                            } else if highlighted == button.firmwareIndex {
+                                highlighted = nil
+                            }
+                        }
                     }
                 }
             }

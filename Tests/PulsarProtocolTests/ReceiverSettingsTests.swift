@@ -41,4 +41,16 @@ struct ReceiverSettingsTests {
         #expect(original.setting(enabled: false).colors == original.colors)
         #expect(original.setting(enabled: true).colors == original.colors)
     }
+
+    @Test("Le RGB du dongle encode exactement le mode et les neuf canaux")
+    func dongleLightingPayloadIsExact() {
+        let state = DongleLightingState(
+            mode: 2,
+            colors: [10, 20, 30, 40, 50, 60, 70, 80, 90]
+        )
+
+        #expect(state.payload == [2, 10, 20, 30, 40, 50, 60, 70, 80, 90])
+        #expect(DongleLightingState(payload: state.payload) == state)
+        #expect(DongleLightingState(payload: Array(repeating: 0, count: 9)) == nil)
+    }
 }

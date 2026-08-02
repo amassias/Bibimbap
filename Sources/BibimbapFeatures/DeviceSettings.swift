@@ -368,7 +368,16 @@ public struct DeviceSnapshot: Equatable, Sendable {
     public var receiverCapabilities: ReceiverCapabilities = .none
     public var flashCapabilities: DeviceFlashCapabilities = DeviceFlashCapabilities()
     public var battery: BatteryState?
-    public var signalStrength: Int?
+    /// État radio complet, y compris la veille et l'absence de capacité.
+    public var wirelessSignalStatus: WirelessSignalStatus = .unknown
+    /// Accès historique pour les appelants qui ne savent afficher qu'un RSSI numérique.
+    /// Une souris endormie ou une capacité absente renvoie `nil` ici.
+    public var signalStrength: Int? {
+        get { wirelessSignalStatus.numericStrength }
+        set {
+            wirelessSignalStatus = newValue.map { .strength($0) } ?? .unknown
+        }
+    }
     public var activeProfile: Int?
     public var settings: DeviceSettings
 
@@ -382,7 +391,7 @@ public struct DeviceSnapshot: Equatable, Sendable {
             && lhs.receiverCapabilities == rhs.receiverCapabilities
             && lhs.flashCapabilities == rhs.flashCapabilities
             && lhs.battery == rhs.battery
-            && lhs.signalStrength == rhs.signalStrength
+            && lhs.wirelessSignalStatus == rhs.wirelessSignalStatus
             && lhs.activeProfile == rhs.activeProfile
             && lhs.settings == rhs.settings
     }

@@ -36,11 +36,14 @@ struct DeviceHeaderView: View {
                     )
                 }
 
-                if let signal = snapshot.signalStrength {
+                if !snapshot.connection.isWired {
+                    let signalState = WirelessSignalPresentation.state(
+                        for: snapshot.wirelessSignalStatus
+                    )
                     metric(
-                        systemImage: "antenna.radiowaves.left.and.right",
-                        title: L10n.string( "Signal"),
-                        detail: "\(signal)/5"
+                        systemImage: WirelessSignalPresentation.systemImage(for: signalState),
+                        title: L10n.string("Signal"),
+                        detail: WirelessSignalPresentation.label(for: signalState)
                     )
                 }
 

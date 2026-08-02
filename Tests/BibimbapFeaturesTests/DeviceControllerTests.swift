@@ -88,6 +88,13 @@ struct DeviceControllerTests {
             return false
         }
         #expect(commandOperations.allSatisfy { $0.rollback != nil })
+        let rgbOperation = try #require(plan.operations.first { $0.id == "receiver.rgb" })
+        guard case .command(let rgbCommand, let rgbPayload) = rgbOperation.payload else {
+            Issue.record("l'opération RGB doit être une commande hors flash")
+            return
+        }
+        #expect(rgbCommand == .set4KDongleRGB)
+        #expect(rgbPayload == [0, 10, 20, 30, 40, 50, 60, 70, 80, 90])
 
         let result = try await controller.apply(plan)
         #expect(result.outcome == .succeeded)
@@ -150,6 +157,7 @@ struct DeviceControllerTests {
     func unsupportedReceiverSettingsAreNotExposed() async throws {
         var faults = SimulatedHIDTransport.Faults()
         faults.unsupportedCommands = [
+            .get4KDongleRGBValue,
             .getPulsarDongleLightParam,
             .getPulsarDongleDPILightParam,
             .getPulsarDongleOButtonCurrentMode,
@@ -158,7 +166,8 @@ struct DeviceControllerTests {
         let (_, controller) = makeController(faults: faults)
         let snapshot = try await controller.connect()
         let capabilities = await controller.capabilities(for: snapshot)
-        #expect(capabilities.receiver.supportsRGBLighting)
+        #expect(!capabilities.receiver.supportsRGBLighting)
+        #expect(snapshot.settings.receiver?.rgbLighting == nil)
         #expect(!capabilities.receiver.supportsEffect)
         #expect(!capabilities.receiver.supportsDPILighting)
         #expect(!capabilities.receiver.supportsButtonMode)

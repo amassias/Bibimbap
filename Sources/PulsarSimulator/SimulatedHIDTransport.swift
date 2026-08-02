@@ -70,6 +70,7 @@ public actor SimulatedHIDTransport: HIDTransport {
     private var writeOperations = 0
     private var responseCount = 0
     private var onlinePolls = 0
+    private var commandCounts: [UInt8: Int] = [:]
     /// Nombre d'ouvertures réussies, pour vérifier qu'aucune session ne fuit après un échec.
     private var openCount = 0
     private var closeCount = 0
@@ -242,6 +243,7 @@ public actor SimulatedHIDTransport: HIDTransport {
         receivedFrames = 0
         writeOperations = 0
         onlinePolls = 0
+        commandCounts = [:]
     }
 
     public func close() async {
@@ -260,6 +262,12 @@ public actor SimulatedHIDTransport: HIDTransport {
 
     public func openSessionCount() -> Int { openCount - closeCount }
     public func totalOpenCount() -> Int { openCount }
+
+    /// Compteur de trames par commande, pour vérifier qu'un rafraîchissement arrêté ne
+    /// continue pas à générer du trafic HID en arrière-plan.
+    public func commandCount(_ command: PulsarCommand) -> Int {
+        commandCounts[command.rawValue, default: 0]
+    }
 
     public func currentDevice() async -> HIDDeviceIdentifier? { isOpen ? identifier : nil }
 
@@ -299,6 +307,7 @@ public actor SimulatedHIDTransport: HIDTransport {
         guard let frame = try? PulsarFrame(decoding: bytes) else { return }
 
         receivedFrames += 1
+        commandCounts[frame.command.rawValue, default: 0] += 1
         if let limit = faults.disconnectAfterFrames, receivedFrames > limit {
             await close()
             throw HIDTransportError.disconnected
@@ -388,7 +397,7 @@ public actor SimulatedHIDTransport: HIDTransport {
             return PulsarFrame(command: .setLongRangeMode)
 
         case .get4KDongleRGBValue:
-            guard !identity.connectionType.isWired else {
+            guard !identity.connectionType.isWired, identity.dongleType > 0 else {
                 return PulsarFrame(command: .get4KDongleRGBValue, status: 1)
             }
             return PulsarFrame(
@@ -397,7 +406,8 @@ public actor SimulatedHIDTransport: HIDTransport {
             )
 
         case .set4KDongleRGB:
-            guard !identity.connectionType.isWired else {
+            guard !identity.connectionType.isWired, identity.dongleType > 0,
+                  frame.payload.count == DongleLightingState.commandPayloadLength else {
                 return PulsarFrame(command: .set4KDongleRGB, status: 1)
             }
             if !faults.dropReceiverWrites {
@@ -602,6 +612,11 @@ public actor SimulatedHIDTransport: HIDTransport {
     /// Change le RSSI relu par `GetRSSIValue`, afin de tester le suivi sans fil en continu.
     public func setSignalStrength(_ strength: Int) {
         signalStrength = min(max(strength, 0), 5)
+    }
+
+    /// Simule l'état `DeviceOnLine` de la souris tout en gardant le récepteur ouvert.
+    public func setDeviceOnline(_ online: Bool) {
+        faults.staysOffline = !online
     }
 
     /// Débranche le périphérique : la collection disparaît de l'énumération, la session

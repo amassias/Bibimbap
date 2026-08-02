@@ -55,6 +55,10 @@ ce risque n'existe pas.
   d'avoir joint la souris. Lire la flash à ce moment-là expire sans explication utile. Il
   faut interroger `DeviceOnLine` jusqu'à ce que l'octet 9 retombe à zéro — c'est ce que
   fait `waitUntilOnline()`.
+- **Statut radio.** Pendant une session sans fil déjà ouverte, `DeviceOnLine` reste la
+  source de vérité : `data[5] = 0` classe la souris comme endormie et suspend la lecture
+  RSSI ; un RSSI numérique faible reste un `GetRSSIValue` lu après `data[5] = 1` et ne doit
+  pas être converti en veille.
 
 ## 1. Interface HID
 
@@ -140,8 +144,8 @@ attente de 5 ms par tour et 40 tours au maximum, soit un timeout de ~200 ms par 
 | 16 | `ReadCIDMID` | — |
 | 17 | `EnterMTKMode` | Phase 2 uniquement |
 | 18 | `ReadVersionID` | Version : `"v" + data[5] + "." + hex2(data[6])` |
-| 20 | `Set4KDongleRGB` | `mode=data[5]`, puis trois couleurs RGB en `6`, `9`, `12` |
-| 21 | `Get4KDongleRGBValue` | `mode=data[5]`, trois couleurs RGB en `6`, `9`, `12` |
+| 20 | `Set4KDongleRGB` | Charge utile exacte de 10 octets : `mode=data[5]`, puis trois couleurs RGB en `6`, `9`, `12` |
+| 21 | `Get4KDongleRGBValue` | Getter de capacité ; réponse exploitable seulement avec `status=0` et 10 octets : `mode=data[5]`, trois couleurs RGB en `6`, `9`, `12` |
 | 22 | `SetLongRangeMode` | — |
 | 23 | `GetLongRangeMode` | `actif=data[5]` ; `status = 1` ⇒ non supporté |
 | 24 | `SetPulsarDongleLightParam` | — |
