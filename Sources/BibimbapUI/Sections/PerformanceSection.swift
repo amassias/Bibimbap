@@ -1,12 +1,43 @@
+import Foundation
 import BibimbapFeatures
 import BibimbapLocalization
 import PulsarCatalog
 import SwiftUI
 
+/// Geometry contracts for the two-column Performance composition.
+///
+/// The split candidate is given a real minimum width so `ViewThatFits` cannot declare it
+/// valid merely by squeezing stage cards and picker rows into unreadable widths.
+enum PerformanceLayout {
+    static let columnSpacing: CGFloat = Theme.Space.large
+    static let inspectorWidth: CGFloat = 360
+    static let mainColumnMinimumWidth: CGFloat = 500
+    static let stageCardMinimumWidth: CGFloat = 108
+
+    static var splitMinimumWidth: CGFloat {
+        mainColumnMinimumWidth + columnSpacing + inspectorWidth
+    }
+
+    static func splitFits(width: CGFloat) -> Bool {
+        width >= splitMinimumWidth
+    }
+}
+
+enum PerformancePreviewSchedule {
+    static func shouldAnimate(
+        isEnabled: Bool,
+        isBreathing: Bool,
+        isViewActive: Bool
+    ) -> Bool {
+        isEnabled && isBreathing && isViewActive
+    }
+}
+
 /// Performance reprend la composition validée : réglages de précision à gauche,
 /// capteur et mouvement dans un inspecteur stable à droite.
 struct PerformanceSection: View {
     @Bindable var model: AppModel
+    @Environment(\.scenePhase) private var scenePhase
     @State private var unlockedDPIAxes: Set<Int> = []
 
     var body: some View {
@@ -19,14 +50,16 @@ struct PerformanceSection: View {
                         mainColumn(capabilities)
                             .frame(maxWidth: .infinity)
                         inspectorColumn(capabilities)
-                            .frame(width: 400)
+                            .frame(width: PerformanceLayout.inspectorWidth)
                     }
+                    .frame(minWidth: PerformanceLayout.splitMinimumWidth, alignment: .top)
 
                     VStack(spacing: Theme.Space.xlarge) {
                         mainColumn(capabilities)
                         inspectorColumn(capabilities)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .top)
             }
         }
     }
@@ -54,10 +87,12 @@ struct PerformanceSection: View {
     private func dpiPanel(_ capabilities: DeviceCapabilities) -> some View {
         return PremiumPanel {
             VStack(alignment: .leading, spacing: Theme.Space.large) {
-                HStack {
+                HStack(alignment: .firstTextBaseline, spacing: Theme.Space.medium) {
                     Text(L10n.string("DPI Stages"))
                         .font(.headline)
-                    Spacer()
+                        .lineLimit(1)
+                        .layoutPriority(1)
+                    Spacer(minLength: Theme.Space.small)
                     if capabilities.supportsDPIEditing {
                         Menu {
                             ForEach(1...capabilities.maximumStages, id: \.self) { count in
@@ -91,7 +126,16 @@ struct PerformanceSection: View {
                     }
                 }
 
-                HStack(spacing: Theme.Space.small) {
+                LazyVGrid(
+                    columns: [
+                        GridItem(
+                            .adaptive(minimum: PerformanceLayout.stageCardMinimumWidth),
+                            spacing: Theme.Space.small
+                        ),
+                    ],
+                    alignment: .leading,
+                    spacing: Theme.Space.small
+                ) {
                     ForEach(
                         model.draft.dpiStages.prefix(model.draft.enabledStageCount)
                     ) { stage in
@@ -476,7 +520,8 @@ struct PerformanceSection: View {
 
                 DPIEffectPreview(
                     effect: model.draft.dpiEffect,
-                    colors: Array(colors)
+                    colors: Array(colors),
+                    isActive: scenePhase == .active
                 )
 
                 PremiumRow(label: L10n.string("Effect")) {
@@ -579,7 +624,11 @@ private struct DPIStageCard: View {
                     .minimumScaleFactor(0.72)
             }
             .padding(Theme.Space.medium)
-            .frame(maxWidth: .infinity, minHeight: 74)
+            .frame(
+                minWidth: PerformanceLayout.stageCardMinimumWidth,
+                maxWidth: .infinity,
+                minHeight: 74
+            )
             .background(
                 RoundedRectangle(cornerRadius: Theme.Radius.chip)
                     .fill(
@@ -624,46 +673,61 @@ private enum DPIColorPalette {
 private struct DPIEffectPreview: View {
     let effect: DeviceSettings.DPIEffect
     let colors: [CatalogColor]
+    let isActive: Bool
 
+    @ViewBuilder
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.05)) { context in
-            let isActive = effect.enabled && effect.mode != .off
-            let duration = max(0.35, 2.4 - Double(effect.speed) * 0.2)
-            let phase = (sin(
-                context.date.timeIntervalSinceReferenceDate / duration * 2 * Double.pi
-            ) + 1) / 2
-            let brightness = Double(min(max(effect.brightness, 0), 9) + 1) / 10
-            let intensity = isActive
-                ? effect.mode == .breathing ? 0.25 + phase * 0.75 : 1
-                : 0.12
-
-            HStack(spacing: Theme.Space.small) {
-                ForEach(Array(colors.enumerated()), id: \.offset) { _, color in
-                    Circle()
-                        .fill(color.swiftUIColor)
-                        .frame(width: 22, height: 22)
-                        .opacity(isActive ? brightness * intensity : intensity)
-                }
-                if colors.isEmpty {
-                    Circle()
-                        .fill(Color.secondary)
-                        .frame(width: 22, height: 22)
-                        .opacity(intensity)
-                }
-                Spacer()
-                Text(effect.mode.label)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        if PerformancePreviewSchedule.shouldAnimate(
+            isEnabled: effect.enabled,
+            isBreathing: effect.mode == .breathing,
+            isViewActive: isActive
+        ) {
+            TimelineView(.animation(minimumInterval: 0.12)) { context in
+                preview(phase: breathingPhase(at: context.date.timeIntervalSinceReferenceDate))
             }
-            .padding(.horizontal, Theme.Space.medium)
-            .padding(.vertical, Theme.Space.small)
-            .background(
-                RoundedRectangle(cornerRadius: Theme.Radius.control)
-                    .fill(PremiumPalette.elevated.opacity(0.45))
-            )
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(L10n.string("DPI lighting preview"))
+        } else {
+            preview(phase: effect.enabled && effect.mode != .off ? 1 : 0)
         }
+    }
+
+    private func breathingPhase(at time: TimeInterval) -> Double {
+        let duration = max(0.35, 2.4 - Double(effect.speed) * 0.2)
+        return (sin(time / duration * 2 * Double.pi) + 1) / 2
+    }
+
+    private func preview(phase: Double) -> some View {
+        let isActive = effect.enabled && effect.mode != .off
+        let brightness = Double(min(max(effect.brightness, 0), 9) + 1) / 10
+        let intensity = isActive
+            ? effect.mode == .breathing ? 0.25 + phase * 0.75 : 1
+            : 0.12
+
+        return HStack(spacing: Theme.Space.small) {
+            ForEach(Array(colors.enumerated()), id: \.offset) { _, color in
+                Circle()
+                    .fill(color.swiftUIColor)
+                    .frame(width: 22, height: 22)
+                    .opacity(isActive ? brightness * intensity : intensity)
+            }
+            if colors.isEmpty {
+                Circle()
+                    .fill(Color.secondary)
+                    .frame(width: 22, height: 22)
+                    .opacity(intensity)
+            }
+            Spacer()
+            Text(effect.mode.label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, Theme.Space.medium)
+        .padding(.vertical, Theme.Space.small)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.Radius.control)
+                .fill(PremiumPalette.elevated.opacity(0.45))
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(L10n.string("DPI lighting preview"))
     }
 }
 

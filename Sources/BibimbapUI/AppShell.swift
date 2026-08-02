@@ -29,6 +29,7 @@ struct AppShell: View {
             sidebarResizeHandle
                 .offset(x: sidebarWidth - 4)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(PremiumPalette.canvas)
     }
 
@@ -45,6 +46,8 @@ struct AppShell: View {
 
             if showsContent {
                 AppDetail(model: model)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .layoutPriority(1)
             } else {
                 Color.clear
             }
@@ -61,6 +64,7 @@ struct AppShell: View {
                     .frame(minHeight: Theme.Shell.footerHeight)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var sidebarResizeHandle: some View {
@@ -464,12 +468,15 @@ private struct AppDetail: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(PremiumPalette.canvas)
     }
 
     private var sectionScrollView: some View {
-        ScrollView {
+        // This is the single vertical scroll surface for the active section. The shell
+        // gives it the remaining window height; keeping the section views themselves
+        // non-scrolling lets wheel events reach this container consistently.
+        ScrollView(.vertical) {
             SectionContent(model: model)
                 .padding(.horizontal, Theme.Space.section)
                 .padding(.top, model.section == .settings ? Theme.Space.section : Theme.Space.small)
@@ -477,6 +484,7 @@ private struct AppDetail: View {
                 .frame(maxWidth: Theme.Shell.detailMaximumWidth, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .top)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .scrollBounceBehavior(.basedOnSize)
     }
 }
