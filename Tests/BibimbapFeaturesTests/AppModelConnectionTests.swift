@@ -58,6 +58,24 @@ extension AppModelTests {
         await model.disconnect()
     }
 
+    @Test("Le signal radio est relu en continu sans écraser le brouillon")
+    func signalStrengthRefreshesWhileConnected() async {
+        let (transport, model) = Self.makeModel()
+        await model.connect()
+
+        let base = model.draft.debounceMilliseconds
+        model.draft.debounceMilliseconds = base + 2
+        #expect(model.snapshot?.signalStrength == 4)
+
+        await transport.setSignalStrength(1)
+
+        #expect(await waitUntil(.seconds(3)) {
+            model.snapshot?.signalStrength == 1
+        })
+        #expect(model.draft.debounceMilliseconds == base + 2)
+        await model.disconnect()
+    }
+
     @Test("Plusieurs candidats passent la main à l'utilisateur, sans rien ouvrir")
     func multipleCandidatesRequireSelection() async {
         let (transport, model) = Self.makeModel { $0.extraCandidates = [Self.secondCandidate()] }

@@ -316,6 +316,16 @@ public actor DeviceController {
 
     // MARK: Lecture
 
+    /// Relit uniquement la qualité radio, sans relire la flash ni toucher au brouillon.
+    ///
+    /// Cette lecture courte est utilisée par le rafraîchissement périodique de l'interface.
+    /// Elle reste dans le contrôleur afin que l'état de connexion et la session active
+    /// soient vérifiés au même endroit que les autres lectures matérielles.
+    public func readSignalStrength() async throws -> Int? {
+        guard let session, identifier != nil else { throw ControllerError.notConnected }
+        return try await session.readSignalStrength()
+    }
+
     /// Relit intégralement l'état du périphérique.
     public func readSnapshot() async throws -> DeviceSnapshot {
         guard let session, let identifier else { throw ControllerError.notConnected }

@@ -30,7 +30,7 @@ Download the latest `.dmg` file from [GitHub Releases](https://github.com/amassi
 
 The DMG contains the application and nothing else is required to run it.
 
-The current packaged build is [`dist/Bibimbap-0.1.0.dmg`](dist/Bibimbap-0.1.0.dmg). Its SHA-256 checksum is in [`dist/Bibimbap-0.1.0.dmg.sha256`](dist/Bibimbap-0.1.0.dmg.sha256).
+The current packaged build is published on the [Bibimbap 0.1.1 release page](https://github.com/amassias/Bibimbap/releases/tag/v0.1.1), with a versioned DMG, ZIP, manifest, and SHA-256 checksums.
 
 > [!NOTE]
 > Free builds are not notarized. If macOS blocks the first launch, Control-click Bibimbap, choose **Open**, and confirm once. Only use builds downloaded from the official release page.
@@ -131,7 +131,7 @@ The catalog covers more models than the current hardware tests. The X2 CrazyLigh
 Each release is distributed as a disk image:
 
 ```text
-Bibimbap-0.1.0.dmg
+Bibimbap-0.1.1-arm64.dmg
 └── Bibimbap.app
 ```
 

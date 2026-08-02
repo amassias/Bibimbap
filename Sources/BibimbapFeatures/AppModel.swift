@@ -169,6 +169,8 @@ public final class AppModel {
     private let controller: DeviceController
     private let catalog: DeviceCatalog
     private var notificationTask: Task<Void, Never>?
+    /// Rafraîchit la qualité radio sans reconstruire l'instantané complet.
+    private var signalTask: Task<Void, Never>?
     private var eventTask: Task<Void, Never>?
     private var wakeTask: Task<Void, Never>?
     /// Unique tâche de connexion ou de reconnexion en vol.
@@ -433,6 +435,7 @@ public final class AppModel {
             hasLiveSession = true
             connection = .connected
             await observeDevice()
+            startSignalMonitoring()
         } catch {
             // La liste reste affichable : un candidat qui refuse la connexion ne doit pas
             // faire disparaître les autres, et surtout pas en faire ouvrir un autre tout seul.
@@ -466,6 +469,7 @@ public final class AppModel {
         connectionTask = nil
         notificationTask?.cancel()
         notificationTask = nil
+        stopSignalMonitoring()
         eventTask?.cancel()
         eventTask = nil
         wakeTask?.cancel()
@@ -655,6 +659,7 @@ public final class AppModel {
                 adopt(refreshed)
                 connection = .connected
             }
+            startSignalMonitoring()
         } catch {
             // L'incertitude reste volontairement visible : aucun essai de réécriture ne
             // peut être lancé tant qu'une lecture complète n'a pas réussi.
@@ -1158,6 +1163,7 @@ public final class AppModel {
     private func observeDevice() async {
         notificationTask?.cancel()
         isUserInitiatedDisconnect = false
+        stopSignalMonitoring()
 
         let notifications = await controller.changeNotifications()
         notificationTask = Task { @MainActor [weak self] in
@@ -1203,6 +1209,54 @@ public final class AppModel {
         }
     }
 
+    /// Lance une lecture RSSI courte et régulière tant que la session sans fil est vivante.
+    ///
+    /// Le premier instantané reste la source des réglages et du brouillon. Cette tâche ne
+    /// remplace que `signalStrength`, ce qui permet de suivre un éloignement du récepteur
+    /// sans effacer une modification en attente ni relire plusieurs centaines d'octets de
+    /// flash à chaque passage.
+    private func startSignalMonitoring() {
+        stopSignalMonitoring()
+        guard let snapshot,
+              !snapshot.connection.isWired,
+              capabilities?.supportsSignalStrength == true else { return }
+
+        signalTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                await self.refreshSignalStrength()
+                try? await Task.sleep(for: Self.signalRefreshInterval)
+            }
+        }
+    }
+
+    private func stopSignalMonitoring() {
+        signalTask?.cancel()
+        signalTask = nil
+    }
+
+    private func refreshSignalStrength() async {
+        guard hasLiveSession,
+              connection == .connected,
+              let current = snapshot,
+              !current.connection.isWired,
+              capabilities?.supportsSignalStrength == true else { return }
+
+        do {
+            guard let signal = try await controller.readSignalStrength() else { return }
+            guard !Task.isCancelled, hasLiveSession, let current = snapshot else { return }
+            guard current.signalStrength != signal else { return }
+
+            var refreshed = current
+            refreshed.signalStrength = signal
+            snapshot = refreshed
+        } catch {
+            // Une lecture RSSI isolée peut expirer pendant une transition radio. On garde
+            // la dernière valeur connue ; les évènements HID restent responsables de la
+            // reconnexion et pourront relancer le monitoring avec la prochaine session.
+        }
+    }
+
     // MARK: Évènements HID et reconnexion
 
     private func handle(_ event: HIDDeviceEvent) async {
@@ -1235,6 +1289,7 @@ public final class AppModel {
     }
 
     private func handleDetachment() async {
+        stopSignalMonitoring()
         hasLiveSession = false
         if case .writing = connection {
             // Une écriture coupée en plein vol laisse un état qu'aucune relecture
@@ -1291,6 +1346,9 @@ public final class AppModel {
         .milliseconds(250), .milliseconds(500), .seconds(1), .seconds(2), .seconds(2),
     ]
     private static let reconnectionBudget: Duration = .seconds(10)
+    /// Deux lectures par seconde donnent un retour visuel rapide sans saturer le canal
+    /// de configuration du receiver.
+    private static let signalRefreshInterval: Duration = .milliseconds(500)
 
     private func performReconnection() async {
         let deadline = ContinuousClock.now + Self.reconnectionBudget
@@ -1334,6 +1392,7 @@ public final class AppModel {
                 hasLiveSession = true
                 await reconcile(with: refreshed, cause: .reconnected)
                 await observeDevice()
+                startSignalMonitoring()
                 return
             } catch DeviceController.ControllerError.permissionDenied {
                 connection = .permissionDenied

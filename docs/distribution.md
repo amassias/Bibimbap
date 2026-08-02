@@ -38,7 +38,7 @@ Run the metadata check first, then package into the ignored `.build` directory:
 
 ```bash
 ./scripts/validate_distribution.sh
-./scripts/package_macos.sh --version 0.1.0 --output .build/distribution --arch arm64
+./scripts/package_macos.sh --version 0.1.1 --output .build/distribution --arch arm64
 ./scripts/validate_distribution.sh --artifacts .build/distribution
 ```
 
@@ -53,7 +53,7 @@ To use a local Developer ID identity:
 ```bash
 BIBIMBAP_SIGNING_IDENTITY='Developer ID Application: Example (TEAMID)' \
   BIBIMBAP_DEVELOPMENT_TEAM='TEAMID' \
-  ./scripts/package_macos.sh --version 0.1.0 --output .build/distribution
+  ./scripts/package_macos.sh --version 0.1.1 --output .build/distribution
 ```
 
 The identity and team must already be present in the local keychain. No certificate,
