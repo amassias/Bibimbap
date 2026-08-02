@@ -383,10 +383,19 @@ private struct DeviceStatusHeader: View {
     }
 
     private var connectionDetail: String {
-        if let signal = model.snapshot?.signalStrength {
-            return "\(min(100, max(0, signal * 20)))%"
+        guard let snapshot = model.snapshot else { return "—" }
+        guard !snapshot.connection.isWired else {
+            return L10n.string("Wired")
         }
-        return model.snapshot?.connection.isWired == true ? L10n.string("Wired") : "100%"
+
+        switch WirelessSignalPresentation.state(for: snapshot.wirelessSignalStatus) {
+        case .numeric(let signal):
+            return "\(min(100, max(0, signal * 20)))%"
+        case .unknown, .unsupported, .sleeping:
+            return WirelessSignalPresentation.label(
+                for: WirelessSignalPresentation.state(for: snapshot.wirelessSignalStatus)
+            )
+        }
     }
 
     private func profilePicker(current: Int) -> some View {
