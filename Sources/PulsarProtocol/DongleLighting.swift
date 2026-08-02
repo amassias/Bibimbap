@@ -5,6 +5,9 @@ import Foundation
 /// Les neuf octets de couleur sont conservés même lorsque le mode vaut zéro afin de
 /// pouvoir rallumer le récepteur sans remplacer les couleurs choisies auparavant.
 public struct DongleLightingState: Hashable, Sendable, Codable {
+    public static let colorChannelCount = 9
+    public static let commandPayloadLength = 1 + colorChannelCount
+
     public var mode: UInt8
     public var colors: [UInt8]
 
@@ -12,7 +15,14 @@ public struct DongleLightingState: Hashable, Sendable, Codable {
 
     public init(mode: UInt8, colors: [UInt8]) {
         self.mode = mode
-        self.colors = Array((colors + [UInt8](repeating: 255, count: 9)).prefix(9))
+        self.colors = Array((colors + [UInt8](repeating: 255, count: Self.colorChannelCount))
+            .prefix(Self.colorChannelCount))
+    }
+
+    /// Décode exactement la charge utile des commandes RGB du récepteur.
+    public init?(payload: [UInt8]) {
+        guard payload.count == Self.commandPayloadLength else { return nil }
+        self.init(mode: payload[0], colors: Array(payload.dropFirst()))
     }
 
     public func setting(enabled: Bool) -> DongleLightingState {
@@ -20,6 +30,11 @@ public struct DongleLightingState: Hashable, Sendable, Codable {
             mode: enabled ? max(mode, 1) : 0,
             colors: colors
         )
+    }
+
+    /// Charge utile commune aux getters/setters : mode puis trois groupes RGB.
+    public var payload: [UInt8] {
+        [mode] + colors
     }
 }
 
@@ -29,22 +44,18 @@ extension PulsarSession {
         guard let response = await probe(PulsarFrame(command: .get4KDongleRGBValue)) else {
             return nil
         }
-        guard response.payload.count >= 10 else { return nil }
-        return DongleLightingState(
-            mode: response[byte: 5],
-            colors: (6...14).map { response[byte: $0] }
-        )
+        return DongleLightingState(payload: response.payload)
     }
 
-    /// Applique le mode en préservant les couleurs lues sur le récepteur.
+    /// Applique le mode et les neuf canaux couleur avec une charge utile complète.
     public func setDongleLighting(_ state: DongleLightingState) async throws {
-        guard state.colors.count == 9 else {
+        guard state.payload.count == DongleLightingState.commandPayloadLength else {
             throw PulsarSession.SessionError.malformedResponse(.set4KDongleRGB)
         }
         try await request(
             PulsarFrame(
                 command: .set4KDongleRGB,
-                payload: [state.mode] + state.colors
+                payload: state.payload
             )
         )
     }

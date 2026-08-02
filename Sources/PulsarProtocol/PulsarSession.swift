@@ -2,6 +2,30 @@ import Foundation
 import BibimbapLocalization
 import PulsarHID
 
+/// État sémantique du lien radio.
+///
+/// `strength` ne doit être utilisé que lorsque `DeviceOnLine` a confirmé que la souris
+/// est active. `sleeping` représente donc une souris derrière un récepteur encore
+/// joignable, tandis que `unknown` conserve une session utilisable dont la lecture n'a
+/// pas abouti. `unsupported` signifie que la connexion est filaire ou que la commande
+/// RSSI a été refusée par le périphérique.
+public enum WirelessSignalStatus: Equatable, Sendable, Codable {
+    case unknown
+    case unsupported
+    case sleeping
+    case strength(Int)
+
+    /// Compatibilité avec les appelants qui ne savent afficher qu'un nombre.
+    public var numericStrength: Int? {
+        guard case .strength(let value) = self else { return nil }
+        return value
+    }
+
+    public var isSupported: Bool {
+        self != .unsupported
+    }
+}
+
 /// Dialogue requête/réponse avec un périphérique Pulsar.
 ///
 /// Le protocole n'a pas d'identifiant de transaction : la corrélation repose sur le fait
@@ -94,6 +118,11 @@ public actor PulsarSession {
             waiter = nil
             pending.continuation.resume(returning: nil)
         }
+    }
+
+    private func cancelWaiter(_ id: UUID) {
+        guard waiter?.id == id else { return }
+        finishWaiter()
     }
 
     // MARK: Réception
@@ -235,13 +264,23 @@ public actor PulsarSession {
     /// transport se termine entre-temps.
     private func awaitResponse(command: PulsarCommand, address: UInt16?) async -> PulsarFrame? {
         let id = UUID()
-        return await withCheckedContinuation { continuation in
-            waiter = Waiter(id: id, command: command, address: address, continuation: continuation)
-            timeoutTask = Task { [timing] in
-                try? await Task.sleep(for: timing.responseTimeout)
-                await self.expire(id)
+        let session = self
+        return await withTaskCancellationHandler(operation: {
+            await withCheckedContinuation { continuation in
+                waiter = Waiter(id: id, command: command, address: address, continuation: continuation)
+                timeoutTask = Task { [timing] in
+                    try? await Task.sleep(for: timing.responseTimeout)
+                    self.expire(id)
+                }
+                // Cancellation can happen between installing the waiter and registering
+                // the cancellation handler. Resolve that race synchronously on the actor.
+                if Task.isCancelled {
+                    cancelWaiter(id)
+                }
             }
-        }
+        }, onCancel: {
+            Task { await session.cancelWaiter(id) }
+        })
     }
 
     private func expire(_ id: UUID) {
@@ -328,6 +367,41 @@ extension PulsarSession {
     public func readSignalStrength() async throws -> Int? {
         guard let response = await probe(PulsarFrame(command: .getRSSIValue)) else { return nil }
         return Int(response[byte: 5])
+    }
+
+    /// Relit l'état radio sans confondre une souris inactive avec un RSSI faible.
+    ///
+    /// Le getter RSSI n'est interrogé qu'après `DeviceOnLine`. Cette séquence est
+    /// importante : certains récepteurs renvoient encore une valeur nulle lorsque la
+    /// souris dort, mais cette valeur n'est pas un RSSI numérique à afficher.
+    public func readWirelessSignalStatus(
+        receiverBacked: Bool,
+        knownOnline: Bool? = nil
+    ) async throws -> WirelessSignalStatus {
+        guard receiverBacked else { return .unsupported }
+
+        let online: Bool
+        if let knownOnline {
+            online = knownOnline
+        } else {
+            online = try await isOnline()
+        }
+        guard online else { return .sleeping }
+
+        do {
+            let response = try await requestData(PulsarFrame(command: .getRSSIValue))
+            guard !response.payload.isEmpty else { return .unknown }
+            return .strength(Int(response[byte: 5]))
+        } catch let error as SessionError {
+            switch error {
+            case .unsupported:
+                return .unsupported
+            case .timedOut, .malformedResponse:
+                return .unknown
+            default:
+                throw error
+            }
+        }
     }
 
     public func readActiveProfile() async throws -> Int? {

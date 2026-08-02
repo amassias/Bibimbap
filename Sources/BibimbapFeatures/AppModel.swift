@@ -435,7 +435,7 @@ public final class AppModel {
             hasLiveSession = true
             connection = .connected
             await observeDevice()
-            startSignalMonitoring()
+            await startSignalMonitoring()
         } catch {
             // La liste reste affichable : un candidat qui refuse la connexion ne doit pas
             // faire disparaître les autres, et surtout pas en faire ouvrir un autre tout seul.
@@ -469,7 +469,7 @@ public final class AppModel {
         connectionTask = nil
         notificationTask?.cancel()
         notificationTask = nil
-        stopSignalMonitoring()
+        await stopSignalMonitoring()
         eventTask?.cancel()
         eventTask = nil
         wakeTask?.cancel()
@@ -512,6 +512,7 @@ public final class AppModel {
             .plan(from: snapshot.settings, to: draft)
         guard !plan.isEmpty else { return }
 
+        await stopSignalMonitoring()
         writeProgress = WriteProgress(
             completed: 0,
             total: plan.count,
@@ -534,6 +535,7 @@ public final class AppModel {
             } else {
                 adopt(refreshed)
                 connection = .connected
+                await startSignalMonitoring()
             }
         } catch {
             // L'échec de la relecture est le pire cas : on ne sait plus ce que porte
@@ -582,11 +584,13 @@ public final class AppModel {
             return
         }
         guard snapshot != nil else { return }
+        await stopSignalMonitoring()
         connection = .reading
         do {
             adopt(try await controller.readSnapshot())
             requiresExplicitReread = false
             connection = .connected
+            await startSignalMonitoring()
         } catch {
             if requiresExplicitReread {
                 await reconnectAndRecoverUncertainHardware()
@@ -601,6 +605,7 @@ public final class AppModel {
     /// état matériel incertain.
     public func rereadAndCompare() async {
         guard snapshot != nil, !connection.isBusy else { return }
+        await stopSignalMonitoring()
         connection = .reading
         do {
             let refreshed = try await controller.readSnapshot()
@@ -611,6 +616,7 @@ public final class AppModel {
                 adopt(refreshed)
                 connection = .connected
             }
+            await startSignalMonitoring()
         } catch {
             if requiresExplicitReread {
                 await reconnectAndRecoverUncertainHardware()
@@ -659,7 +665,7 @@ public final class AppModel {
                 adopt(refreshed)
                 connection = .connected
             }
-            startSignalMonitoring()
+            await startSignalMonitoring()
         } catch {
             // L'incertitude reste volontairement visible : aucun essai de réécriture ne
             // peut être lancé tant qu'une lecture complète n'a pas réussi.
@@ -669,11 +675,13 @@ public final class AppModel {
     }
 
     public func factoryReset() async {
+        await stopSignalMonitoring()
         connection = .writing(progress: 0)
         do {
             adopt(try await controller.factoryReset())
             lastResult = WriteResult(outcome: .succeeded, applied: [L10n.string( "Réinitialisation")])
             connection = .connected
+            await startSignalMonitoring()
         } catch {
             connection = .failed(message(for: error))
         }
@@ -683,6 +691,7 @@ public final class AppModel {
         guard (0..<Self.profileCount).contains(profile), canChangeProfile else { return }
         guard profile != snapshot?.activeProfile else { return }
         let original = snapshot?.activeProfile
+        await stopSignalMonitoring()
         connection = .reading
         do {
             let selected = try await controller.readProfile(profile)
@@ -690,6 +699,7 @@ public final class AppModel {
             profileComparison = nil
             profileCopyPreview = nil
             connection = .connected
+            await startSignalMonitoring()
         } catch {
             if let original {
                 await failProfileOperation(error, restoring: original)
@@ -1138,7 +1148,7 @@ public final class AppModel {
             connection: snapshot.identity.connectionType,
             supportsProfiles: snapshot.activeProfile != nil,
             supportsLongDistance: snapshot.family.power.supportsLongDistance,
-            supportsSignalStrength: snapshot.signalStrength != nil,
+            supportsSignalStrength: snapshot.wirelessSignalStatus.isSupported,
             flashCapabilities: snapshot.flashCapabilities,
             receiver: snapshot.receiverCapabilities
         )
@@ -1163,7 +1173,7 @@ public final class AppModel {
     private func observeDevice() async {
         notificationTask?.cancel()
         isUserInitiatedDisconnect = false
-        stopSignalMonitoring()
+        await stopSignalMonitoring()
 
         let notifications = await controller.changeNotifications()
         notificationTask = Task { @MainActor [weak self] in
@@ -1209,51 +1219,68 @@ public final class AppModel {
         }
     }
 
-    /// Lance une lecture RSSI courte et régulière tant que la session sans fil est vivante.
+    /// Lance une lecture radio espacée tant que la session sans fil est vivante.
     ///
     /// Le premier instantané reste la source des réglages et du brouillon. Cette tâche ne
-    /// remplace que `signalStrength`, ce qui permet de suivre un éloignement du récepteur
+    /// remplace que `wirelessSignalStatus`, ce qui permet de suivre un éloignement ou une
+    /// mise en veille du récepteur
     /// sans effacer une modification en attente ni relire plusieurs centaines d'octets de
     /// flash à chaque passage.
-    private func startSignalMonitoring() {
-        stopSignalMonitoring()
+    private func startSignalMonitoring() async {
+        await stopSignalMonitoring()
         guard let snapshot,
               !snapshot.connection.isWired,
               capabilities?.supportsSignalStrength == true else { return }
 
         signalTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
-                guard let self else { return }
-                await self.refreshSignalStrength()
-                try? await Task.sleep(for: Self.signalRefreshInterval)
+                do {
+                    try await Task.sleep(for: Self.signalRefreshInterval)
+                } catch {
+                    return
+                }
+                guard !Task.isCancelled, let self else { return }
+                guard await self.refreshSignalStatus() else { return }
             }
         }
     }
 
-    private func stopSignalMonitoring() {
-        signalTask?.cancel()
+    /// Annule puis attend la tâche avant d'en créer une autre. Sans cette attente, une
+    /// requête RSSI déjà suspendue pouvait rester dans la file de `PulsarSession` pendant
+    /// qu'une nouvelle tâche commençait à interroger le même canal.
+    private func stopSignalMonitoring() async {
+        guard let task = signalTask else { return }
         signalTask = nil
+        task.cancel()
+        await task.value
     }
 
-    private func refreshSignalStrength() async {
+    @discardableResult
+    private func refreshSignalStatus() async -> Bool {
         guard hasLiveSession,
               connection == .connected,
               let current = snapshot,
               !current.connection.isWired,
-              capabilities?.supportsSignalStrength == true else { return }
+              capabilities?.supportsSignalStrength == true else { return false }
 
         do {
-            guard let signal = try await controller.readSignalStrength() else { return }
-            guard !Task.isCancelled, hasLiveSession, let current = snapshot else { return }
-            guard current.signalStrength != signal else { return }
+            let status = try await controller.readWirelessSignalStatus(receiverBacked: true)
+            guard !Task.isCancelled, hasLiveSession, let current = snapshot else { return false }
+            guard current.wirelessSignalStatus != status else {
+                return status != .unsupported
+            }
 
             var refreshed = current
-            refreshed.signalStrength = signal
+            refreshed.wirelessSignalStatus = status
             snapshot = refreshed
+            if status == .unsupported {
+                capabilities?.supportsSignalStrength = false
+            }
+            return status != .unsupported
         } catch {
-            // Une lecture RSSI isolée peut expirer pendant une transition radio. On garde
-            // la dernière valeur connue ; les évènements HID restent responsables de la
-            // reconnexion et pourront relancer le monitoring avec la prochaine session.
+            // Une panne de transport arrête seulement cette tâche. Les évènements HID et
+            // le flux de réveil restent actifs pour préserver la reconnexion.
+            return false
         }
     }
 
@@ -1289,7 +1316,7 @@ public final class AppModel {
     }
 
     private func handleDetachment() async {
-        stopSignalMonitoring()
+        await stopSignalMonitoring()
         hasLiveSession = false
         if case .writing = connection {
             // Une écriture coupée en plein vol laisse un état qu'aucune relecture
@@ -1346,9 +1373,9 @@ public final class AppModel {
         .milliseconds(250), .milliseconds(500), .seconds(1), .seconds(2), .seconds(2),
     ]
     private static let reconnectionBudget: Duration = .seconds(10)
-    /// Deux lectures par seconde donnent un retour visuel rapide sans saturer le canal
-    /// de configuration du receiver.
-    private static let signalRefreshInterval: Duration = .milliseconds(500)
+    /// La qualité radio n'a pas besoin d'une cadence de télémétrie. Deux secondes
+    /// limitent les trames HID tout en conservant un retour assez rapide après un réveil.
+    private static let signalRefreshInterval: Duration = .seconds(2)
 
     private func performReconnection() async {
         let deadline = ContinuousClock.now + Self.reconnectionBudget
@@ -1392,7 +1419,7 @@ public final class AppModel {
                 hasLiveSession = true
                 await reconcile(with: refreshed, cause: .reconnected)
                 await observeDevice()
-                startSignalMonitoring()
+                await startSignalMonitoring()
                 return
             } catch DeviceController.ControllerError.permissionDenied {
                 connection = .permissionDenied

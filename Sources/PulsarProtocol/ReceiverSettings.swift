@@ -254,7 +254,11 @@ extension PulsarSession {
         var settings = ReceiverSettings()
         var capabilities = ReceiverCapabilities()
 
-        if let rgb = try? await readDongleLighting() {
+        // Le getter RGB appartient au chemin récepteur. Un handshake sans type de
+        // dongle ne doit pas transformer une réponse vide ou tolérante en capacité
+        // d'écriture ; seule une charge utile complète de 10 octets remonte depuis
+        // `readDongleLighting()`.
+        if dongleType > 0, let rgb = try? await readDongleLighting() {
             settings.rgbLighting = rgb
             capabilities.supportsRGBLighting = true
         }

@@ -101,7 +101,27 @@ struct SimulatorHappyPathTests {
     func capabilityProbing() async throws {
         let (_, wired) = try await makeSession(connectionType: .wired1k)
         #expect(try await wired.readSignalStrength() == nil)
+        #expect(try await wired.readWirelessSignalStatus(receiverBacked: false) == .unsupported)
         await wired.stop()
+    }
+
+    @Test("Un RSSI faible reste numérique et une souris inactive devient endormie")
+    func wirelessStatusDistinguishesWeakFromSleeping() async throws {
+        let (transport, session) = try await makeSession()
+
+        #expect(try await session.readWirelessSignalStatus(receiverBacked: true) == .strength(4))
+        await transport.setSignalStrength(0)
+        #expect(try await session.readWirelessSignalStatus(receiverBacked: true) == .strength(0))
+
+        await transport.setDeviceOnline(false)
+        #expect(try await session.readWirelessSignalStatus(receiverBacked: true) == .sleeping)
+
+        await transport.setDeviceOnline(true)
+        var faults = SimulatedHIDTransport.Faults()
+        faults.unsupportedCommands = [.getRSSIValue]
+        await transport.setFaults(faults)
+        #expect(try await session.readWirelessSignalStatus(receiverBacked: true) == .unsupported)
+        await session.stop()
     }
 
     @Test("L'éclairage du dongle conserve ses couleurs lors d'une extinction")

@@ -215,7 +215,7 @@ public actor DeviceController {
 
             // 8. Relire l'instantané complet.
             log(.snapshot, candidate: target, .started)
-            let snapshot = try await readSnapshot()
+            let snapshot = try await readSnapshot(knownOnline: true)
             log(.snapshot, candidate: target, .succeeded(snapshot.family.theme))
             return snapshot
         } catch {
@@ -326,11 +326,24 @@ public actor DeviceController {
         return try await session.readSignalStrength()
     }
 
+    /// Relit le statut radio sémantique sans relire la flash.
+    public func readWirelessSignalStatus(receiverBacked: Bool) async throws -> WirelessSignalStatus {
+        guard let session, identifier != nil else { throw ControllerError.notConnected }
+        return try await session.readWirelessSignalStatus(receiverBacked: receiverBacked)
+    }
+
     /// Relit intégralement l'état du périphérique.
     public func readSnapshot() async throws -> DeviceSnapshot {
+        guard let session else { throw ControllerError.notConnected }
+        guard try await session.waitUntilOnline() else { throw ControllerError.deviceOffline }
+        return try await readSnapshot(knownOnline: true)
+    }
+
+    /// Variante interne utilisée juste après l'attente `DeviceOnLine` du handshake, afin
+    /// de ne pas émettre une seconde interrogation avant la lecture de l'instantané.
+    private func readSnapshot(knownOnline: Bool) async throws -> DeviceSnapshot {
         guard let session, let identifier else { throw ControllerError.notConnected }
 
-        try await session.waitUntilOnline()
         let identity = try await session.identify()
         guard let family = catalog.family(cid: identity.cid, mid: identity.mid) else {
             throw ControllerError.unrecognisedDevice(cid: identity.cid, mid: identity.mid)
@@ -342,7 +355,10 @@ public actor DeviceController {
             ? nil
             : await session.readReceiverSettings(dongleType: identity.dongleType)
         let battery = identity.connectionType.isWired ? nil : try? await session.readBattery()
-        let signal = try? await session.readSignalStrength()
+        let signalStatus = (try? await session.readWirelessSignalStatus(
+            receiverBacked: !identity.connectionType.isWired,
+            knownOnline: knownOnline
+        )) ?? .unknown
         let profile = try? await session.readActiveProfile()
         let longDistance = try? await session.readLongDistanceMode()
 
@@ -381,7 +397,7 @@ public actor DeviceController {
             receiverCapabilities: receiverReadback?.capabilities ?? .none,
             flashCapabilities: flashCapabilities,
             battery: battery,
-            signalStrength: signal ?? nil,
+            wirelessSignalStatus: signalStatus,
             activeProfile: profile ?? nil,
             settings: settings
         )
@@ -432,7 +448,7 @@ public actor DeviceController {
             connection: snapshot.identity.connectionType,
             supportsProfiles: snapshot.activeProfile != nil,
             supportsLongDistance: snapshot.family.power.supportsLongDistance,
-            supportsSignalStrength: snapshot.signalStrength != nil,
+            supportsSignalStrength: snapshot.wirelessSignalStatus.isSupported,
             flashCapabilities: snapshot.flashCapabilities,
             receiver: snapshot.receiverCapabilities
         )
@@ -555,10 +571,10 @@ public actor DeviceController {
         guard let session else { throw ControllerError.notConnected }
         guard !plan.isEmpty else { return WriteResult(outcome: .succeeded, applied: []) }
 
-        try? await session.hold(true)
-        defer { Task { try? await session.hold(false) } }
+        guard try await session.hold(true) else { throw ControllerError.deviceOffline }
 
         var applied: [WriteOperation] = []
+        var failureResult: WriteResult?
         for (index, operation) in plan.operations.enumerated() {
             await progress(WriteProgress(
                 completed: applied.count,
@@ -585,15 +601,21 @@ public actor DeviceController {
                 let message = (error as? LocalizedError)?.errorDescription
                     ?? String(describing: error)
                 let failure = L10n.format("%@ : %@", operation.label, message)
-                return WriteResult(
+                failureResult = WriteResult(
                     outcome: uncertain.isEmpty
                         ? .failedAndRestored(failure: failure)
                         : .failedAndUncertain(failure: failure, uncertain: uncertain),
                     applied: applied.map(\.label)
                 )
+                break
             }
         }
-        return WriteResult(outcome: .succeeded, applied: applied.map(\.label))
+        let result = failureResult ?? WriteResult(outcome: .succeeded, applied: applied.map(\.label))
+        // Relâcher le verrou avant de rendre la main garantit que la relecture complète
+        // de `AppModel.apply()` et un éventuel rafraîchissement suivant ne se retrouvent
+        // pas en concurrence avec une tâche de fond détachée.
+        _ = try? await session.hold(false)
+        return result
     }
 
     private func perform(_ operation: WriteOperation, using session: PulsarSession) async throws {
@@ -626,9 +648,9 @@ public actor DeviceController {
     ) async throws {
         switch command {
         case .set4KDongleRGB:
-            guard payload.count == 10,
+            guard let expected = DongleLightingState(payload: payload),
                   let actual = try await session.readDongleLighting(),
-                  actual == DongleLightingState(mode: payload[0], colors: Array(payload.dropFirst()))
+                  actual == expected
             else { throw PulsarSession.SessionError.commandReadbackMismatch(command) }
 
         case .setPulsarDongleLightParam:
