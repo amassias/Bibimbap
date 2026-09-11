@@ -416,6 +416,10 @@ private struct DeviceStatusHeader: View {
                     Text(L10n.format("Profile %d", index + 1)).tag(index)
                 }
             }
+            // Le libellé du Picker répéterait la légende posée juste au-dessus, et il
+            // mangeait surtout la largeur : la valeur se retrouvait tronquée en
+            // « Prof… » alors que les 160 points suffisent largement à « Profile 1 ».
+            .labelsHidden()
             .frame(width: 160)
             .disabled(!model.canChangeProfile)
             .help(model.activeHardwareLocationLabel)

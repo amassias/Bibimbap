@@ -2,145 +2,6 @@ import BibimbapLocalization
 import BibimbapFeatures
 import SwiftUI
 
-/// En-tête permanent : périphérique, connexion, batterie, signal, profil, synchronisation.
-struct DeviceHeaderView: View {
-    @Bindable var model: AppModel
-
-    var body: some View {
-        if let snapshot = model.snapshot {
-            HStack(alignment: .center, spacing: 20) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(snapshot.productName)
-                        .font(.headline)
-                    HStack(spacing: 6) {
-                        syncIndicator
-                        Text(syncLabel)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Spacer(minLength: 12)
-
-                metric(
-                    systemImage: snapshot.connection.isWired ? "cable.connector" : "wifi",
-                    title: snapshot.connection.label,
-                    detail: snapshot.settings.reportRateHertz.formatted(.number) + " Hz"
-                )
-
-                if let battery = snapshot.battery {
-                    metric(
-                        systemImage: batterySymbol(battery.percentage, charging: battery.isCharging),
-                        title: L10n.string( "Batterie"),
-                        detail: "\(battery.percentage) %"
-                    )
-                }
-
-                if !snapshot.connection.isWired {
-                    let signalState = WirelessSignalPresentation.state(
-                        for: snapshot.wirelessSignalStatus
-                    )
-                    metric(
-                        systemImage: WirelessSignalPresentation.systemImage(for: signalState),
-                        title: L10n.string("Signal"),
-                        detail: WirelessSignalPresentation.label(for: signalState)
-                    )
-                }
-
-                    if let profile = snapshot.activeProfile, model.capabilities?.supportsProfiles == true {
-                        profilePicker(current: profile)
-                    }
-            }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 14)
-            .accessibilityElement(children: .contain)
-        }
-    }
-
-    // MARK: Éléments
-
-    private func metric(systemImage: String, title: String, detail: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: systemImage)
-                .font(.title3)
-                .foregroundStyle(.secondary)
-                .frame(width: 22)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(detail)
-                    .font(.callout.monospacedDigit())
-            }
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title) : \(detail)")
-    }
-
-    private func profilePicker(current: Int) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Picker(L10n.string( "Profil actif"), selection: Binding(
-                get: { current },
-                set: { profile in
-                    guard model.canChangeProfile else { return }
-                    Task { await model.selectProfile(profile) }
-                }
-            )) {
-                ForEach(model.supportedProfileIndices, id: \.self) { index in
-                    Text("Profil \(index + 1)").tag(index)
-                }
-            }
-            .pickerStyle(.menu)
-            .frame(width: 130)
-            .disabled(!model.canChangeProfile)
-            .accessibilityLabel(L10n.string( "Profil actif"))
-
-            Text(model.activeHardwareLocationLabel)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .frame(width: 130, alignment: .leading)
-        }
-    }
-
-    @ViewBuilder
-    private var syncIndicator: some View {
-        switch model.connection {
-        case .writing, .reading:
-            ProgressView()
-                .controlSize(.mini)
-        case .disconnectedDuringWrite:
-            Circle().fill(.orange).frame(width: 7, height: 7)
-        case .connected where model.hasPendingChanges:
-            Circle().fill(.blue).frame(width: 7, height: 7)
-        default:
-            Circle().fill(.green).frame(width: 7, height: 7)
-        }
-    }
-
-    private var syncLabel: String {
-        switch model.connection {
-        case .reading: L10n.string( "Lecture…")
-        case .writing: L10n.string( "Écriture…")
-        case .disconnectedDuringWrite: L10n.string( "État matériel incertain")
-        case .connected where model.hasPendingChanges: L10n.string( "Modifications non appliquées")
-        default: L10n.string( "Synchronisé")
-        }
-    }
-
-    private func batterySymbol(_ percentage: Int, charging: Bool) -> String {
-        if charging { return "battery.100percent.bolt" }
-        switch percentage {
-        case ..<15: return "battery.0percent"
-        case ..<40: return "battery.25percent"
-        case ..<70: return "battery.50percent"
-        case ..<90: return "battery.75percent"
-        default: return "battery.100percent"
-        }
-    }
-}
-
 /// Barre d'actions, visible uniquement quand il y a quelque chose à appliquer ou à signaler.
 struct PendingChangesBar: View {
     @Bindable var model: AppModel
@@ -214,27 +75,32 @@ struct PendingChangesBar: View {
 
                 Spacer()
 
-                HStack(spacing: Theme.Space.large) {
-                    ShortcutHint("⌘R")
-                    Text(L10n.string("Revert"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    ShortcutHint("⌘↩")
-                    Text(L10n.string("Apply"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Button(L10n.string("Revert")) {
+                // Le raccourci est rappelé dans le bouton qu'il déclenche, pas dans une
+                // colonne séparée : une ligne « ⌘R Revert ⌘↩ Apply » posée à côté des
+                // boutons se lisait comme une seconde paire de commandes.
+                //
+                // Les deux raccourcis sont déclarés une seule fois, dans les commandes de
+                // la scène. Les redéclarer ici en ferait une paire concurrente, alors que
+                // cette barre disparaît dans Réglages et tant qu'aucun périphérique n'est
+                // relu.
+                Button {
                     model.revert()
+                } label: {
+                    HStack(spacing: Theme.Space.snug) {
+                        Text(L10n.string("Revert"))
+                        ShortcutHint("⌘R")
+                    }
                 }
-                .keyboardShortcut("r", modifiers: .command)
                 .disabled(!model.hasPendingChanges)
 
-                Button(L10n.string("Apply")) {
+                Button {
                     Task { await model.apply() }
+                } label: {
+                    HStack(spacing: Theme.Space.snug) {
+                        Text(L10n.string("Apply"))
+                        ShortcutHint("⌘↩", onAccent: true)
+                    }
                 }
-                .keyboardShortcut(.return, modifiers: .command)
                 .buttonStyle(.borderedProminent)
                 .disabled(!model.canApply)
             }

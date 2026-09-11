@@ -23,9 +23,17 @@ struct MenuBarPreferencesTests {
     @Test("La transition Dark Light System retire l'override explicite")
     @MainActor
     func darkLightSystemTransitionClearsOverride() {
-        let suiteName = "BibimbapUITests.Appearance.\(UUID().uuidString)"
+        // Un nom fixe plutôt qu'un UUID par exécution. `removePersistentDomain` vide bien
+        // le domaine, mais cfprefsd a déjà écrit le plist et le réécrit derrière nous :
+        // le fichier survit à la suppression, quoi qu'on tente. Avec un UUID, chaque
+        // lancement de la suite abandonnait donc un dictionnaire vide de plus dans
+        // ~/Library/Preferences. Un nom stable borne les dégâts à un seul fichier réutilisé.
+        let suiteName = "BibimbapUITests.Appearance"
         let defaults = UserDefaults(suiteName: suiteName)!
-        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+            UserDefaults.standard.removeSuite(named: suiteName)
+        }
 
         let preferences = MenuBarPreferences(defaults: defaults)
         preferences.appearance = .dark
