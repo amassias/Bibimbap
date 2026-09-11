@@ -48,5 +48,6 @@ let package = Package(
         .testTarget(name: "PulsarSimulatorTests", dependencies: ["PulsarSimulator"]),
         .testTarget(name: "BibimbapFeaturesTests", dependencies: ["BibimbapFeatures"]),
         .testTarget(name: "BibimbapUITests", dependencies: ["BibimbapUI"]),
+        .testTarget(name: "BibimbapLocalizationTests", dependencies: ["BibimbapLocalization"]),
     ]
 )
