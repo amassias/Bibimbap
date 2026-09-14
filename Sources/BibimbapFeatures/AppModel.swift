@@ -182,6 +182,13 @@ public final class AppModel {
     /// Vrai tant qu'une session HID est réellement ouverte. `snapshot` ne suffit pas :
     /// il survit volontairement à un débranchement, pour ne pas vider l'écran.
     private var hasLiveSession = false
+    /// Vrai tant que la fenêtre principale affiche l'indicateur de qualité radio.
+    ///
+    /// La qualité radio n'apparaît que dans la fenêtre principale (pas dans l'icône de
+    /// la barre des menus) : interroger le récepteur toutes les deux secondes alors que
+    /// personne ne regarde cet indicateur ne fait que réveiller la souris pour rien,
+    /// pendant des heures, quand l'application vit repliée dans la barre des menus.
+    private var isSignalUIVisible = false
 
     public init(controller: DeviceController, catalog: DeviceCatalog = .embedded, isSimulated: Bool) {
         self.controller = controller
@@ -1226,9 +1233,25 @@ public final class AppModel {
     /// mise en veille du récepteur
     /// sans effacer une modification en attente ni relire plusieurs centaines d'octets de
     /// flash à chaque passage.
+    /// Active ou coupe le suivi radio selon la visibilité de la fenêtre principale.
+    ///
+    /// Appelé depuis l'occlusion de la fenêtre SwiftUI : masquée, minimisée ou couverte,
+    /// elle ne compte pas comme visible, et le suivi s'arrête immédiatement plutôt que
+    /// d'attendre le prochain cycle de deux secondes.
+    public func setSignalUIVisible(_ visible: Bool) async {
+        guard isSignalUIVisible != visible else { return }
+        isSignalUIVisible = visible
+        if visible {
+            await startSignalMonitoring()
+        } else {
+            await stopSignalMonitoring()
+        }
+    }
+
     private func startSignalMonitoring() async {
         await stopSignalMonitoring()
-        guard let snapshot,
+        guard isSignalUIVisible,
+              let snapshot,
               !snapshot.connection.isWired,
               capabilities?.supportsSignalStrength == true else { return }
 

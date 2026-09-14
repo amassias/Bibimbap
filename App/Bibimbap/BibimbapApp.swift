@@ -114,5 +114,58 @@ private struct AppWindowContent: View {
             // L'accessoire de barre des menus lance la même connexion : le garde-fou
             // évite deux balayages quand les deux scènes apparaissent au lancement.
             .task { if model.connection == .idle { await model.connect() } }
+            .background(WindowOcclusionObserver { visible in
+                Task { await model.setSignalUIVisible(visible) }
+            })
+    }
+}
+
+/// Observe l'occlusion de la fenêtre qui l'héberge, sans rien afficher elle-même.
+///
+/// Couverte par une autre fenêtre, minimisée, ou sur un autre espace : `occlusionState`
+/// le détecte dans tous ces cas, contrairement à `isVisible` qui reste vrai. C'est ce
+/// signal-là qui doit couper le suivi radio, pas seulement la fermeture explicite.
+private struct WindowOcclusionObserver: NSViewRepresentable {
+    let onChange: (Bool) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        DispatchQueue.main.async { context.coordinator.attach(to: view.window, onChange: onChange) }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async { context.coordinator.attach(to: nsView.window, onChange: onChange) }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    @MainActor
+    final class Coordinator: NSObject {
+        private weak var window: NSWindow?
+        private var onChange: ((Bool) -> Void)?
+
+        func attach(to window: NSWindow?, onChange: @escaping (Bool) -> Void) {
+            guard let window, window !== self.window else { return }
+            NotificationCenter.default.removeObserver(
+                self, name: NSWindow.didChangeOcclusionStateNotification, object: self.window
+            )
+            self.window = window
+            self.onChange = onChange
+            onChange(window.occlusionState.contains(.visible))
+            NotificationCenter.default.addObserver(
+                self, selector: #selector(occlusionStateChanged),
+                name: NSWindow.didChangeOcclusionStateNotification, object: window
+            )
+        }
+
+        @objc private func occlusionStateChanged(_ notification: Notification) {
+            guard let window = notification.object as? NSWindow else { return }
+            onChange?(window.occlusionState.contains(.visible))
+        }
+
+        deinit {
+            NotificationCenter.default.removeObserver(self)
+        }
     }
 }

@@ -62,6 +62,7 @@ extension AppModelTests {
     func signalStrengthRefreshesWhileConnected() async {
         let (transport, model) = Self.makeModel()
         await model.connect()
+        await model.setSignalUIVisible(true)
 
         let base = model.draft.debounceMilliseconds
         model.draft.debounceMilliseconds = base + 2
@@ -81,6 +82,7 @@ extension AppModelTests {
     func wirelessSleepIsNotReportedAsWeak() async {
         let (transport, model) = Self.makeModel()
         await model.connect()
+        await model.setSignalUIVisible(true)
 
         await transport.setSignalStrength(0)
         #expect(await waitUntil(.seconds(5)) {
