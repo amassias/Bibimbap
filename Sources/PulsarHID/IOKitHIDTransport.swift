@@ -117,7 +117,10 @@ final class IOKitHIDBackend: @unchecked Sendable {
             }
         }
         thread.name = "gg.pulsar.bibimbap.hid"
-        thread.qualityOfService = QualityOfService.userInitiated
+        // La boucle passe presque tout son temps à attendre un rappel IOKit : une QoS
+        // `utility` laisse le système la reléguer sur un cœur efficient au repos, sans
+        // pénaliser la latence des rapports HID une fois un rappel effectivement déclenché.
+        thread.qualityOfService = QualityOfService.utility
         thread.start()
         self.thread = thread
         ready.wait()
