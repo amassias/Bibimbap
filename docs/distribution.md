@@ -44,7 +44,9 @@ Run the metadata check first, then package into the ignored `.build` directory:
 
 The script never chooses a development certificate implicitly. Without
 `BIBIMBAP_SIGNING_IDENTITY`, it disables Xcode signing and the manifest says
-`"signed": false`. If an identity is supplied, the resulting app must expose a
+`"signed": false`. It seals the complete app with an ad-hoc signature and verifies
+that seal again after extracting the distributed ZIP. This provides bundle integrity,
+not an Apple-verified developer identity or notarization. If an identity is supplied, the resulting app must expose a
 `Developer ID Application` authority and pass `codesign --verify --deep --strict`.
 An Apple Development identity is not accepted as a release signature.
 

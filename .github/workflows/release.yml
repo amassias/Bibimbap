@@ -60,6 +60,9 @@ jobs:
           swift test --filter HardwareFixtureTests
           swift test --filter CatalogTests
           swift test --filter SimulatorFaultTests
+          swift test --filter AppModelTests
+          swift test --filter MenuBarPreferencesTests
+          swift test --filter CatalogCoverageTests
 
       - name: Import Developer ID certificate when configured
         shell: bash

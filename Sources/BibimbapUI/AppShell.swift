@@ -11,7 +11,7 @@ struct AppShell: View {
     @Bindable var model: AppModel
     var forcePendingBar = false
     var showsContent = true
-    @State private var sidebarWidth = Theme.Shell.sidebarWidth
+    @State private var sidebarWidth = CGFloat(MenuBarPreferences.shared.sidebarWidth)
     @State private var sidebarDragStart: CGFloat?
 
     var body: some View {
@@ -31,6 +31,9 @@ struct AppShell: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(PremiumPalette.canvas)
+        .onChange(of: sidebarWidth) { _, width in
+            MenuBarPreferences.shared.sidebarWidth = Double(width)
+        }
     }
 
     private var detailColumn: some View {
@@ -58,7 +61,7 @@ struct AppShell: View {
             UncertainHardwareBanner(model: model)
             DraftRecoveryBanner(model: model)
 
-            if model.section != .settings, model.snapshot != nil {
+            if model.snapshot != nil {
                 Divider()
                 PendingChangesBar(model: model)
                     .frame(minHeight: Theme.Shell.footerHeight)

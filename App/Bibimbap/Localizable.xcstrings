@@ -11918,6 +11918,142 @@
           }
         }
       }
+    },
+    "Review in Bibimbap": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review in Bibimbap"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Examiner dans Bibimbap"
+          }
+        }
+      }
+    },
+    "Open the window to review changes or recover device settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the window to review changes or recover device settings"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrir la fenêtre pour examiner les modifications ou récupérer les réglages du périphérique"
+          }
+        }
+      }
+    },
+    "Quick actions unavailable: device verification required": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick actions unavailable: device verification required"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actions rapides indisponibles : vérification du périphérique requise"
+          }
+        }
+      }
+    },
+    "Quick actions unavailable: resolve pending recovery": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick actions unavailable: resolve pending recovery"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actions rapides indisponibles : résoudre la récupération en attente"
+          }
+        }
+      }
+    },
+    "Quick actions unavailable: operation in progress": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick actions unavailable: operation in progress"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actions rapides indisponibles : opération en cours"
+          }
+        }
+      }
+    },
+    "Quick actions unavailable: device disconnected": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick actions unavailable: device disconnected"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actions rapides indisponibles : périphérique déconnecté"
+          }
+        }
+      }
+    },
+    "Quick actions unavailable: unapplied changes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick actions unavailable: unapplied changes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actions rapides indisponibles : modifications non appliquées"
+          }
+        }
+      }
+    },
+    "Settings synchronized": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings synchronized"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réglages synchronisés"
+          }
+        }
+      }
     }
   }
 }
