@@ -81,8 +81,7 @@ struct PendingChangesBar: View {
                 //
                 // Les deux raccourcis sont déclarés une seule fois, dans les commandes de
                 // la scène. Les redéclarer ici en ferait une paire concurrente, alors que
-                // cette barre disparaît dans Réglages et tant qu'aucun périphérique n'est
-                // relu.
+                // cette barre reste partagée par toutes les sections.
                 Button {
                     model.revert()
                 } label: {

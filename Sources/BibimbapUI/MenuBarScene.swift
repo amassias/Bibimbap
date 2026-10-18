@@ -47,6 +47,7 @@ public struct MenuBarMenu: View {
     public var body: some View {
         header
         Divider()
+        synchronizationStatus
         quickSettings
         Divider()
         deviceActions
@@ -98,13 +99,6 @@ public struct MenuBarMenu: View {
     @ViewBuilder
     private var quickSettings: some View {
         if let snapshot = model.snapshot, let capabilities = model.capabilities {
-            // Écrire depuis le menu pendant qu'un brouillon attend dans la fenêtre
-            // mélangerait deux intentions dans la même écriture. On l'annonce et on
-            // renvoie à la fenêtre plutôt que de trancher à la place de l'utilisateur.
-            if model.hasPendingChanges {
-                Text("Modifications en attente dans la fenêtre")
-            }
-
             dpiMenu(snapshot: snapshot)
             reportRateMenu(snapshot: snapshot, capabilities: capabilities)
 
@@ -126,7 +120,7 @@ public struct MenuBarMenu: View {
                 )
             }
         }
-        .disabled(!canWriteDirectly || stages.isEmpty)
+        .disabled(!model.canApplyDirectly || stages.isEmpty)
     }
 
     private func stageLabel(_ stage: DeviceSettings.DPIStage) -> String {
@@ -147,7 +141,7 @@ public struct MenuBarMenu: View {
                 )
             }
         }
-        .disabled(!canWriteDirectly)
+        .disabled(!model.canApplyDirectly)
     }
 
     private func profileMenu(active: Int) -> some View {
@@ -170,8 +164,27 @@ public struct MenuBarMenu: View {
         Binding(get: { isOn }, set: { newValue in if newValue { select() } })
     }
 
-    private var canWriteDirectly: Bool {
-        model.snapshot != nil && !model.hasPendingChanges && !model.connection.isBusy
+    @ViewBuilder
+    private var synchronizationStatus: some View {
+        Text(synchronizationLabel)
+        if model.draftRecovery != nil || model.requiresExplicitReread || model.hasPendingChanges {
+            Button(L10n.string("Review in Bibimbap")) {
+                openWindow(id: "main")
+                NSApp.activate(ignoringOtherApps: true)
+            }
+            .accessibilityHint(L10n.string("Open the window to review changes or recover device settings"))
+        }
+    }
+
+    private var synchronizationLabel: String {
+        if model.requiresExplicitReread { return L10n.string("Quick actions unavailable: device verification required") }
+        if model.draftRecovery != nil { return L10n.string("Quick actions unavailable: resolve pending recovery") }
+        if model.connection.isBusy { return L10n.string("Quick actions unavailable: operation in progress") }
+        if model.connection != .connected || model.snapshot == nil {
+            return L10n.string("Quick actions unavailable: device disconnected")
+        }
+        if model.hasPendingChanges { return L10n.string("Quick actions unavailable: unapplied changes") }
+        return L10n.string("Settings synchronized")
     }
 
     // MARK: Périphérique

@@ -316,6 +316,15 @@ public final class AppModel {
         knownProfileArchives[index]
     }
 
+    /// Shared gate for menu actions and direct mutations of the draft.
+    public var canApplyDirectly: Bool {
+        snapshot != nil
+            && connection == .connected
+            && !hasPendingChanges
+            && draftRecovery == nil
+            && !requiresExplicitReread
+    }
+
     public var canChangeProfile: Bool {
         snapshot?.activeProfile != nil
             && connection == .connected
@@ -571,7 +580,7 @@ public final class AppModel {
     /// saurait plus nommer : tant que le brouillon porte des modifications non appliquées,
     /// la voie rapide est refusée, et le menu le dit plutôt que d'écrire les deux à la fois.
     public func applyDirect(_ mutate: (inout DeviceSettings) -> Void) async {
-        guard let snapshot, !connection.isBusy, !hasPendingChanges else { return }
+        guard canApplyDirectly, let snapshot else { return }
         var target = snapshot.settings
         mutate(&target)
         guard target != snapshot.settings else { return }

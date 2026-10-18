@@ -46,4 +46,27 @@ struct MenuBarPreferencesTests {
         #expect(preferences.preferredColorScheme == nil)
         #expect(preferences.appearance.resolvedColorScheme(for: .dark) == .dark)
     }
+    @Test("Sidebar width survives relaunch and rejects invalid preferences")
+    @MainActor
+    func sidebarWidthPersistence() {
+        let suite = "BibimbapUITests.Sidebar"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = MenuBarPreferences(defaults: defaults)
+        #expect(preferences.sidebarWidth == 235)
+        preferences.sidebarWidth = 310
+        #expect(MenuBarPreferences(defaults: defaults).sidebarWidth == 310)
+        preferences.sidebarWidth = 100
+        #expect(preferences.sidebarWidth == 210)
+        preferences.sidebarWidth = 900
+        #expect(preferences.sidebarWidth == 420)
+        preferences.sidebarWidth = .infinity
+        #expect(preferences.sidebarWidth == 235)
+        defaults.set("invalid", forKey: "sidebarWidth")
+        #expect(MenuBarPreferences(defaults: defaults).sidebarWidth == 235)
+        defaults.set(-50.0, forKey: "sidebarWidth")
+        #expect(MenuBarPreferences(defaults: defaults).sidebarWidth == 210)
+    }
+
 }

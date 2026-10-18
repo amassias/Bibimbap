@@ -19,6 +19,19 @@ public final class MenuBarPreferences {
         static let dockIcon = "dockIconHidden"
         static let language = L10n.defaultsKey
         static let appearance = "appAppearance"
+        static let sidebarWidth = "sidebarWidth"
+    }
+
+    public var sidebarWidth: Double {
+        get { Self.validSidebarWidth(defaults.object(forKey: Key.sidebarWidth) as? Double) }
+        set {
+            defaults.set(Self.validSidebarWidth(newValue), forKey: Key.sidebarWidth)
+        }
+    }
+
+    private static func validSidebarWidth(_ value: Double?) -> Double {
+        guard let value, value.isFinite else { return Double(Theme.Shell.sidebarWidth) }
+        return min(max(value, Double(Theme.Shell.sidebarMinimumWidth)), Double(Theme.Shell.sidebarMaximumWidth))
     }
 
     private let defaults: UserDefaults

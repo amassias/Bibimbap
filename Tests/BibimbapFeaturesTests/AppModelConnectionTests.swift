@@ -44,6 +44,30 @@ extension AppModelTests {
         return condition()
     }
 
+    @Test("Quick actions preserve the draft when unavailable and write when synchronized")
+    func directActionsRespectAvailability() async {
+        let (transport, model) = Self.makeModel()
+        var invoked = false
+        await model.applyDirect { _ in invoked = true }
+        #expect(!invoked)
+        await model.connect()
+        #expect(model.canApplyDirectly)
+        let base = model.draft.debounceMilliseconds
+        await model.applyDirect { $0.debounceMilliseconds = base + 1 }
+        #expect(model.snapshot?.settings.debounceMilliseconds == base + 1)
+        #expect(!model.hasPendingChanges)
+        #expect(await transport.flashImage().slice(at: FlashMap.debounceTime, count: 1).first == UInt8(base + 1))
+        model.draft.debounceMilliseconds = base + 2
+        #expect(!model.canApplyDirectly)
+        await model.applyDirect { _ in invoked = true }
+        #expect(!invoked)
+        #expect(model.draft.debounceMilliseconds == base + 2)
+        #expect(await transport.flashImage().slice(at: FlashMap.debounceTime, count: 1).first == UInt8(base + 1))
+        await model.disconnect()
+        await model.applyDirect { _ in invoked = true }
+        #expect(!invoked)
+    }
+
     // MARK: Sélection
 
     @Test("Un seul candidat se connecte sans rien demander")
@@ -296,6 +320,11 @@ extension AppModelTests {
         await transport.pushChangeNotification(primary: 1, secondary: 0)
 
         #expect(await waitUntil { model.draftRecovery != nil })
+        #expect(!model.canApplyDirectly)
+        var directInvoked = false
+        await model.applyDirect { _ in directInvoked = true }
+        #expect(!directInvoked)
+        #expect(await transport.flashImage().slice(at: FlashMap.debounceTime, count: 1).first == UInt8(base + 4))
         let recovery = model.draftRecovery!
         #expect(recovery.cause == .deviceReportedChange)
         #expect(recovery.conflicts.count == 1)
@@ -402,6 +431,14 @@ extension AppModelTests {
             return
         }
         #expect(model.requiresExplicitReread)
+        #expect(!model.canApplyDirectly)
+        let preservedDraft = model.draft
+        let preservedFlash = await transport.flashImage().slice(at: FlashMap.debounceTime, count: 1)
+        var directInvoked = false
+        await model.applyDirect { _ in directInvoked = true }
+        #expect(!directInvoked)
+        #expect(model.draft == preservedDraft)
+        #expect(await transport.flashImage().slice(at: FlashMap.debounceTime, count: 1) == preservedFlash)
         // Aucune réécriture automatique : Apply reste fermé tant qu'on n'a pas relu.
         #expect(!model.canApply)
         await model.disconnect()
