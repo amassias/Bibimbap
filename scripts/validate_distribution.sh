@@ -114,6 +114,12 @@ if [[ -n "$artifact_dir" ]]; then
     )
     unzip -l "${zips[0]}" | grep -E 'Bibimbap\.app/Contents/MacOS/Bibimbap$' >/dev/null \
         || die "ZIP does not contain the Bibimbap executable"
+
+    # Validate the distributed bundle, not only the build directory or ZIP structure.
+    validation_root="$(mktemp -d "${TMPDIR:-/tmp}/bibimbap-validate.XXXXXX")"
+    trap 'rm -rf "$validation_root"' EXIT
+    /usr/bin/ditto -x -k "${zips[0]}" "$validation_root"
+    /usr/bin/codesign --verify --deep --strict --verbose=2 "$validation_root/Bibimbap.app"
     hdiutil imageinfo "${dmgs[0]}" >/dev/null \
         || die "DMG cannot be inspected by hdiutil"
 

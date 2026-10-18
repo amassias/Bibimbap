@@ -209,6 +209,11 @@ else
     if ! printf '%s\n' "$signature_info" | grep -Eq 'Signature=adhoc|code object is not signed at all'; then
         die "could not prove that the build is unsigned"
     fi
+
+    # The linker-only arm64 signature does not seal the application resources.
+    # Seal the complete bundle without claiming a trusted Developer ID identity.
+    /usr/bin/codesign --force --sign - "$app_path"
+    /usr/bin/codesign --verify --deep --strict --verbose=2 "$app_path"
 fi
 
 staging_dir="$work_root/staging"
